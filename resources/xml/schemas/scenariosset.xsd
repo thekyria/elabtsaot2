@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+<xs:element name="scenarioSet">
+	<xs:complexType>
+		<xs:sequence>
+		
+			<xs:element name="id" type="xs:integer"/>
+			<xs:element name="name" type="xs:string"/>
+			<xs:element name="description" type="xs:string"/>
+			
+			<xs:element name="scenario" minOccurs ="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:sequence>
+					
+						<xs:element name="extId" type="xs:integer"/>
+						<xs:element name="name" type="xs:string"/>
+						<xs:element name="description" type="xs:string"/>
+						<xs:element name="startTime" type="xs:decimal"/>
+						<xs:element name="stopTime" type="xs:decimal"/>
+						<xs:element name="status" type="xs:integer"/>
+						
+						<xs:element name="event" minOccurs ="0" maxOccurs="unbounded">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="name" type="xs:string"/>
+									<xs:element name="time" type="xs:decimal"/>
+									<xs:element name="description" type="xs:string"/>
+									<xs:element name="status" type="xs:integer"/>
+									<xs:element name="element_type" type="xs:integer"/>
+									<xs:element name="element_extId" type="xs:integer"/>
+									<xs:element name="event_type" type="xs:integer"/>
+									<xs:element name="bool_arg" type="xs:integer"/>
+									<xs:element name="double_arg" type="xs:decimal"/>
+									<xs:element name="double_arg_1" type="xs:decimal"/>
+									<xs:element name="double_arg_2" type="xs:decimal"/>
+									<xs:element name="uint_arg" type="xs:decimal"/>
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			
+		</xs:sequence>
+	</xs:complexType>
+</xs:element>
+
+</xs:schema>

@@ -1,0 +1,155 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+<xs:element name="powersystem">
+	<xs:complexType>
+		<xs:sequence>
+			<xs:element name="info">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="name" type="xs:string"/>
+						<xs:element name="description" type="xs:string"/>
+						<xs:element name="baseMVA" type="xs:decimal" default="100"/>
+						<xs:element name="baseFreq" type="xs:decimal"/>
+						<xs:element name="slackBus" type="xs:integer"/>
+						<xs:element name="slackGen" type="xs:integer"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+
+			<xs:element name="buses">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="bus" minOccurs = "0" maxOccurs="unbounded">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="id" type="xs:integer"/>
+									<xs:element name="name" type="xs:string"/>
+									<xs:element name="shconductance" type="xs:decimal"/>
+									<xs:element name="shsusceptance" type="xs:decimal"/>
+									<xs:element name="baseKV" type="xs:decimal"/>
+									<xs:element name="vmax" type="xs:decimal"/>
+									<xs:element name="vmin" type="xs:decimal"/>
+									<xs:element name="v_steadystate" type="xs:decimal"/>
+									<xs:element name="th_steadystate" type="xs:decimal"/>
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			
+			<xs:element name="branches">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="branch"  minOccurs = "0" maxOccurs="unbounded">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="id" type="xs:integer"/>
+									<xs:element name="name" type="xs:string"/>
+									<xs:element name="frombus" type="xs:integer"/>
+									<xs:element name="tobus" type="xs:integer"/>
+									<xs:element name="resistance" type="xs:decimal"/>
+									<xs:element name="reactance" type="xs:decimal"/>
+									<xs:element name="susceptance" type="xs:decimal"/>
+									<xs:element name="series_capacitance" type="xs:decimal"/>
+									<xs:element name="xratio" type="xs:decimal"/>
+									<xs:element name="xratio_tap" type="xs:decimal"/>
+									<xs:element name="xratio_base" type="xs:decimal"/>
+									<xs:element name="xratio_tap_min" type="xs:decimal"/>
+									<xs:element name="xratio_tap_max" type="xs:decimal"/>
+									<xs:element name="xratio_tap_step" type="xs:decimal"/>
+									<xs:element name="xshift" type="xs:decimal"/>
+									<xs:element name="xshift_tap" type="xs:decimal"/>
+									<xs:element name="xshift_base" type="xs:decimal"/>
+									<xs:element name="xshift_tap_min" type="xs:decimal"/>
+									<xs:element name="xshift_tap_max" type="xs:decimal"/>
+									<xs:element name="xshift_tap_step" type="xs:decimal"/>
+									<xs:element name="status" type="xs:boolean"/>
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			
+			<xs:element name="generators">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="generator"  minOccurs = "0" maxOccurs="unbounded">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="id" type="xs:integer"/>
+									<xs:element name="name" type="xs:string"/>
+									<xs:element name="atbus" type="xs:integer"/>
+									<xs:element name="avr" type="xs:boolean"/>
+									<xs:element name="vsetpoint" type="xs:decimal"/>
+									<xs:element name="status" type="xs:integer"/>
+									<xs:element name="generation">
+										<xs:complexType>
+											<xs:sequence>
+												<xs:element name="pgen" type="xs:decimal"/>
+												<xs:element name="qgen" type="xs:decimal"/>
+												<xs:element name="pmin" type="xs:decimal"/>
+												<xs:element name="pmax" type="xs:decimal"/>
+												<xs:element name="qmin" type="xs:decimal"/>
+												<xs:element name="qmax" type="xs:decimal"/>
+											</xs:sequence>
+										</xs:complexType>
+									</xs:element>
+									<xs:element name="dynamic">
+										<xs:complexType>
+											<xs:sequence>
+												<xs:element name="model" type="xs:string"/>
+												<xs:element name="leakage_reactance" type="xs:decimal"/>
+												<xs:element name="armature_resistance" type="xs:decimal"/>
+												<xs:element name="synchronous_direct_reactance" type="xs:decimal"/>
+												<xs:element name="transient_direct_reactance" type="xs:decimal"/>
+												<xs:element name="subtransient_direct_reactance" type="xs:decimal"/>
+												<xs:element name="transient_direct_time_const" type="xs:decimal"/>
+												<xs:element name="subtransient_direct_time_const" type="xs:decimal"/>
+												<xs:element name="synchronous_quadrature_reactance" type="xs:decimal"/>
+												<xs:element name="transient_quadrature_reactance" type="xs:decimal"/>
+												<xs:element name="subtransient_quadrature_reactance" type="xs:decimal"/>
+												<xs:element name="transient_quadrature_time_const" type="xs:decimal"/>
+												<xs:element name="subtransient_quadrature_time_const" type="xs:decimal"/>
+												<xs:element name="mechanical_starting_time" type="xs:decimal"/>
+												<xs:element name="damping_coefficient" type="xs:decimal"/>
+											</xs:sequence>
+										</xs:complexType>
+									</xs:element>
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			
+			<xs:element name="loads">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="load"  minOccurs = "0" maxOccurs="unbounded">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="id" type="xs:integer"/>
+									<xs:element name="name" type="xs:string"/>
+									<xs:element name="atbus" type="xs:integer"/>
+									<xs:element name="pdemand" type="xs:decimal"/>
+									<xs:element name="qdemand" type="xs:decimal"/>
+									<xs:element name="status" type="xs:boolean"/>
+									<xs:element name="v_exp_a" type="xs:decimal"/>
+									<xs:element name="v_exp_b" type="xs:decimal"/>
+									<xs:element name="k_p_f" type="xs:decimal"/>
+									<xs:element name="k_q_f" type="xs:decimal"/>
+								</xs:sequence>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			
+		</xs:sequence>
+	</xs:complexType>
+</xs:element>
+
+</xs:schema>
