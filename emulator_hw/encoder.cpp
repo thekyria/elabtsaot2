@@ -1165,15 +1165,13 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   // 000000 [ tempMSB  ] [ tempLSB  ]
   // 000000 [         temp          ]
   // --------------------------------
-  size_t rows, cols;
-  sl.ana.size(rows,cols);
-  size_t atomCount = rows*cols;
+  size_t rows, cols; sl.ana.size(rows,cols); size_t atomCount = rows*cols;
   vector<pair<int,int> > pos = sl.dig.pipe_gen.position();
   double real_gain, imag_gain;
   for ( k = 0 ; k != atomCount ; ++k ){
-    Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
 
     if ( k < sl.dig.pipe_gen.element_count() ){
+      Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_gain = sl.ana.got_gain() * am->node_imag_adc_gain_corr();
       real_gain = sl.ana.got_gain() * am->node_real_adc_gain_corr();
     } else { // k >= sl.dig.pipe_gen.element_count()
@@ -1197,9 +1195,9 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   double real_offset, imag_offset;
   int32_t mask12 = (1 << 12) - 1;
   for ( k = 0 ; k != atomCount ; ++k ){
-    Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
 
     if ( k < sl.dig.pipe_gen.element_count() ){
+      Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_offset = sl.ana.got_offset() + am->node_imag_adc_offset_corr();
       real_offset = sl.ana.got_offset() + am->node_real_adc_offset_corr();
     } else { // k >= sl.dig.pipe_gen.element_count()
@@ -1364,9 +1362,9 @@ int encoder::detail::encode_TDzloads( Slice const& sl,
   vector<pair<int,int> > pos = sl.dig.pipe_zload.position();
   double real_gain, imag_gain;
   for ( k = 0 ; k != atomCount ; ++k ){
-    Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
 
     if ( k < sl.dig.pipe_zload.element_count() ){
+      Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_gain = sl.ana.got_gain() * am->node_imag_adc_gain_corr();
       real_gain = sl.ana.got_gain() * am->node_real_adc_gain_corr();
     } else { // k >= sl.dig.pipe_zload.element_count()
@@ -1389,9 +1387,9 @@ int encoder::detail::encode_TDzloads( Slice const& sl,
   double real_offset, imag_offset;
   int32_t mask12 = (1 << 12) - 1;
   for ( k = 0 ; k != atomCount ; ++k ){
-    Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
 
     if ( k < sl.dig.pipe_zload.element_count() ){
+      Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_offset = sl.ana.got_offset() + am->node_imag_adc_offset_corr();
       real_offset = sl.ana.got_offset() + am->node_real_adc_offset_corr();
     } else { // k >= sl.dig.pipe_zload.element_count()
@@ -1456,9 +1454,9 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
   vector<pair<int,int> > pos = sl.dig.pipe_iload.position();
   double real_gain, imag_gain;
   for ( k = 0 ; k != atomCount ; ++k ){
-    Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
 
     if ( k < sl.dig.pipe_iload.element_count() ){
+      Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_gain = sl.ana.got_gain() * am->node_imag_adc_gain_corr();
       real_gain = sl.ana.got_gain() * am->node_real_adc_gain_corr();
     } else { // k >= sl.dig.pipe_iload.element_count()
@@ -1481,9 +1479,9 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
   double real_offset, imag_offset;
   int32_t mask12 = (1 << 12) - 1;
   for ( k = 0 ; k != atomCount ; ++k ){
-    Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
 
     if ( k < sl.dig.pipe_iload.element_count() ){
+      Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_offset = sl.ana.got_offset() + am->node_imag_adc_offset_corr();
       real_offset = sl.ana.got_offset() + am->node_real_adc_offset_corr();
     } else { // k >= sl.dig.pipe_iload.element_count()
@@ -1545,32 +1543,22 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
   }
 
   // --- Initial currents of the constant impedance loads (zloads) ---
-  // TODO: check if elPtr in pipelines gets invalidated
   for ( k = 0 ; k != sl.dig.pipe_zload.element_count() ; ++k ){
     pseudo_id = static_cast<size_t>(sl.dig.pipe_zload.position()[k].first) *
                 sl.dig.pipe_zload.hor_id_max() +
                 static_cast<size_t>(sl.dig.pipe_zload.position()[k].second);
-    Load const* pLoad = sl.dig.pipe_zload.elPtrs()[k];
-    complex<double> S = complex<double>(pLoad->pdemand(), pLoad->qdemand());
-    complex<double> U = pLoad->Uss();
-    complex<double> I = conj(S) / conj(U);
-    detail::form_word(    -I.real()   , 12, 7, true, &tempLSB );
-    detail::form_word(  -(-I.imag())  , 12, 7, true, &tempMSB );
+    detail::form_word(    -sl.dig.pipe_zload.real_I()[k]   , 12, 7, true, &tempLSB );
+    detail::form_word(  -(-sl.dig.pipe_zload.imag_I()[k])  , 12, 7, true, &tempMSB );
     temp = (tempMSB << 12) | (tempLSB);
     iloads_conf[pseudo_id] = static_cast<uint32_t>(temp);
   }
   // --- Initial currents of the constant power loads (ploads) ---
-  // TODO: check if elPtr in pipelines gets invalidated
   for ( k = 0 ; k != sl.dig.pipe_pload.element_count() ; ++k ){
     pseudo_id = static_cast<size_t>(sl.dig.pipe_pload.position()[k].first) *
                 sl.dig.pipe_pload.hor_id_max() +
                 static_cast<size_t>(sl.dig.pipe_pload.position()[k].second);
-    Load const* pLoad = sl.dig.pipe_pload.elPtrs()[k];
-    complex<double> S = complex<double>(pLoad->pdemand(), pLoad->qdemand());
-    complex<double> U = pLoad->Uss();
-    complex<double> I = conj(S) / conj(U);
-    detail::form_word(    -I.real()   , 12, 7, true, &tempLSB );
-    detail::form_word(  -(-I.imag())  , 12, 7, true, &tempMSB );
+    detail::form_word(    -sl.dig.pipe_pload.real_I()[k]   , 12, 7, true, &tempLSB );
+    detail::form_word(  -(-sl.dig.pipe_pload.imag_I()[k])  , 12, 7, true, &tempMSB );
     temp = (tempMSB << 12) | (tempLSB);
     iloads_conf[pseudo_id] = static_cast<uint32_t>(temp);
   }

@@ -48,8 +48,8 @@ int SliceAnalog::reset(bool complete){
 
 void SliceAnalog::size(size_t& ver, size_t& hor) const{
   ver = _atomSet.size();
-  if (_atomSet.size()==0)  hor = 0;
-  else                    ver = _atomSet[0].size();
+  if (_atomSet.size()==0) hor = 0;
+  else                    hor = _atomSet[0].size();
 }
 
 double SliceAnalog::getMinMaxAchievableR() const{

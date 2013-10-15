@@ -54,7 +54,6 @@ class ConstILoadPipeline : public Pipeline {
 
   /*! \name Getters */
   //@{
-  std::vector<Load const*> elPtrs() const;
   std::vector<double> real_I() const;  //!< getter for _real_I
   std::vector<double> imag_I() const;  //!< getter for _imag_I
   //@}
@@ -67,7 +66,6 @@ class ConstILoadPipeline : public Pipeline {
 
  private:
 
-  std::vector<Load const*> _elPtrs; //!< ptrs to loads mapped to the pipeline
   std::vector<double> _real_I; //!< Real part of the ss. current (const) in [pu]
   std::vector<double> _imag_I; //!< Imag part of the ss. current (const) in [pu]
 

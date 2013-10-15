@@ -36,16 +36,15 @@ using std::min;
 #define DEFRATIOV 1
 #define DEFMAXIPU 16
 
-//! See Emulator constructor for details on properties
-enum EmulatorProperties{
-  EMU_PROPERTY_AUTOZ
-};
-
 Emulator::Emulator( Powersystem const* pws ) :
     _emuhw(new EmulatorHw()),
     _pws(pws),
     _mmd(new PwsMapperModel(_pws,_emuhw)),
     _usb(new USBFPGAInterface()),
+    _ratioZ(DEFRATIOZ),
+    _ratioV(DEFRATIOV),
+    _ratioI(_ratioV/_ratioZ),
+    _maxIpu(DEFMAXIPU),
     _state(EMU_STATE_START),
     _state_calibration(EMU_CALSTATE_YES) {
 
@@ -73,15 +72,6 @@ Emulator::Emulator( Powersystem const* pws ) :
   _vRefsPrecalibrationMapW[ L"Emulator 6" ] = make_pair( 32820, 32758 ); // new
   _vRefsPrecalibrationMapW[ L"Emulator 7" ] = make_pair( 32781, 32706 ); // new
   _vRefsPrecalibrationMapW[ L"Emulator 8" ] = make_pair( 32828, 32865 ); // new
-
-  // ----- Prepare properties -----
-  property_type tempPt;
-  tempPt.key = EMU_PROPERTY_AUTOZ;
-  tempPt.dataType = PROPERTYT_DTYPE_BOOL;
-  tempPt.name = "Auto-scale ratioZ";
-  tempPt.description = "Scale ratioZ according to maximum X values in the powersystem, so as to maximize the range of the potentiometers that is used";
-  tempPt.defaultValue = true;
-  _properties[tempPt] = tempPt.defaultValue;
 }
 
 Emulator::~Emulator(){
@@ -108,6 +98,13 @@ int Emulator::init( Powersystem const* pws ){
   }
   // Anyway reinitialize the usb connection
   ans |= _usb->init();
+
+  // init private members
+  _ratioZ = static_cast<double>(DEFRATIOZ);
+  _ratioV = static_cast<double>(DEFRATIOV);
+  _ratioI = static_cast<double>(_ratioV/_ratioZ);
+  _maxIpu = static_cast<double>(DEFMAXIPU);
+
   return ans;
 }
 
@@ -222,7 +219,7 @@ int Emulator::setSliceCount(size_t val){
   _ratioZ = static_cast<double>(DEFRATIOZ);
   _ratioV = static_cast<double>(DEFRATIOV);
   _ratioI = static_cast<double>( _ratioV / _ratioZ );
-  _max_I_pu = static_cast<double>(DEFMAXIPU);
+  _maxIpu = static_cast<double>(DEFMAXIPU);
 
   // Update emulator
   int ans = _emuhw->init( val );
@@ -246,7 +243,7 @@ int Emulator::resetEmulator( bool complete ){
   _ratioZ = static_cast<double>(DEFRATIOZ);
   _ratioV = static_cast<double>(DEFRATIOV);
   _ratioI = static_cast<double>( _ratioV / _ratioZ );
-  _max_I_pu = static_cast<double>(DEFMAXIPU);
+  _maxIpu = static_cast<double>(DEFMAXIPU);
 
   // Reset emulator hardware
   int ans = _emuhw->reset( complete );
@@ -482,18 +479,18 @@ int Emulator::autoAssignSlicesToDevices(){
 
   // Initializes devices
   int ans = initializeUSB();
-  if ( ans ) return 1;
+  if (ans) return 1;
 
   // Clear current assignemnt
   ans = clearSliceDeviceMap();
 
   // Sets number of slices
   size_t deviceCount = _usb->devices.size();
-  if ( deviceCount > 2*MAX_SLICE_COUNT )
+  if (deviceCount > 2*MAX_SLICE_COUNT)
     return 2;
   size_t sliceCount = deviceCount;
-  ans = setSliceCount( sliceCount );
-  if ( ans ) return 3;
+  ans = setSliceCount(sliceCount);
+  if (ans) return 3;
 
   // Assign slices to devices according to expected device names
   for ( size_t k = 0 ; k != sliceCount ; ++k ){
@@ -651,7 +648,7 @@ void Emulator::set_ratioV(double val){
   _ratioV = val;
   _ratioI = _ratioV/_ratioZ;
 }
-void Emulator::set_max_I_pu(double val){ _max_I_pu = val; }
+void Emulator::set_maxIpu(double val){ _maxIpu = val; }
 
 int Emulator::resetMapping(){
 
@@ -730,6 +727,22 @@ int Emulator::validateMapping(){
   return 0;
 }
 
+void Emulator::autoRatioZ(){
+  double maxX = _pws->getMaxX();
+  // the following cannot be 2 * POTENTIOMETER_RAB, as generator xd_1's have to
+  // be taken into account
+  double maxAchievableR = _emuhw->getMinMaxAchievableR();
+  double newRatioZ = maxAchievableR / maxX;
+  set_ratioZ( newRatioZ );
+}
+
+void Emulator::defaultRatios(){
+  _ratioZ = static_cast<double>(DEFRATIOZ);
+  _ratioV = static_cast<double>(DEFRATIOV);
+  _ratioI = static_cast<double>(_ratioV/_ratioZ);
+  _maxIpu = static_cast<double>(DEFMAXIPU);
+}
+
 int Emulator::autoFitting(vector<string>* outputMsg){
 
   // Calling autoFitting() downsets the state of the Emulator to
@@ -761,16 +774,6 @@ int Emulator::autoFitting(vector<string>* outputMsg){
 //  // ----- Reset fitting before autoFitting again -----
 //  ans =_emuhw->reset(false);
 //  if ( ans ) return 20;
-
-  // ----- Auto-scale ratioZ -----
-  if ( _getAutoRatioZ() ){
-    double maxX = _pws->getMaxX();
-    // the following cannot be 2 * POTENTIOMETER_RAB, as generator xd_1's have to
-    // be taken into account
-    double maxAchievableR = _emuhw->getMinMaxAchievableR();
-    double newRatioZ = maxAchievableR / maxX;
-    set_ratioZ( newRatioZ );
-  }
 
 //  // ----- Fit buses (maybe redundant) -----
 //  PwsMapperModelElement const* cdBus;
@@ -945,7 +948,7 @@ int Emulator::autoFitting(vector<string>* outputMsg){
       return 51;
 
     // Fit
-    ans = node_set(fit_tab,fit_row,fit_col, *pGen, _ratioZ,_ratioV,_ratioI,_max_I_pu);
+    ans = node_set(fit_tab,fit_row,fit_col, *pGen, _ratioZ,_ratioV,_ratioI,_maxIpu);
     if ( ans ){
       string msg( "Fitting generator with ext id " + auxiliary::to_string(cdGen->extId)
                   + " failed with code " + auxiliary::to_string(ans) );
@@ -976,7 +979,7 @@ int Emulator::autoFitting(vector<string>* outputMsg){
       return 53;
 
     // Fit
-    ans = node_set(fit_tab,fit_row,fit_col, *pLoad, _ratioI,_max_I_pu);
+    ans = node_set(fit_tab,fit_row,fit_col, *pLoad, _ratioI,_maxIpu);
     if ( ans ){
       string msg( "Fitting load with ext id "
                   + auxiliary::to_string(cdLoad->extId)
@@ -1087,7 +1090,7 @@ size_t Emulator::getUSBDevicesCount() const{ return _usb->devices.size(); }
 double Emulator::ratioZ() const{ return _ratioZ; }
 double Emulator::ratioV() const{ return _ratioV; }
 double Emulator::ratioI() const{ return _ratioI; }
-double Emulator::max_I_pu() const{ return _max_I_pu; }
+double Emulator::maxIpu() const{ return _maxIpu; }
 map<size_t, int> Emulator::sliceDeviceMap() const{ return _sliceDeviceMap; }
 int Emulator::sliceDeviceMap(size_t index) const{ return _sliceDeviceMap.at(index); }
 int Emulator::state() const{ return _state; }
@@ -1212,15 +1215,4 @@ int Emulator::_verifyEncoding(){
   }
 
   return 0;
-}
-
-bool Emulator::_getAutoRatioZ() const{
-  boost::any anyAutoRatioZ = _getPropertyValueFromKey(EMU_PROPERTY_AUTOZ);
-  bool autoRatioZ = boost::any_cast<bool>( anyAutoRatioZ );
-  return autoRatioZ;
-}
-
-int Emulator::_setAutoRatioZ( bool val ){
-  property prop(EMU_PROPERTY_AUTOZ, val);
-  return updateProperty( prop );
 }

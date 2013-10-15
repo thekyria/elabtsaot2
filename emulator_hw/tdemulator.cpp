@@ -365,7 +365,7 @@ int TDEmulator::do_setTimeStep( double seconds, double* pMismatch ){
 
   // Determine the greatest intTStepOption that is less than seconds
   int k;
-  for (k=0; k!=_int_tstep_values.size(); ++k)
+  for (k=0; k!=static_cast<int>(_int_tstep_values.size()); ++k)
     if (_int_tstep_values[k]>seconds) break;
   if (--k<0) return 1; // invalid time step requested
 

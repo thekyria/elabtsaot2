@@ -45,37 +45,35 @@ using std::string;
 
 enum MWShowEditor{
   MWSHOW_SPLASH = 0,
-  MWSHOW_NET = 1,
-  MWSHOW_SSANL = 2,
-  MWSHOW_SCE = 3,
-  MWSHOW_TDANL = 4,
-  MWSHOW_COM = 5,
-  MWSHOW_CAL = 6,
-  MWSHOW_MAP = 7,
-  MWSHOW_FIT = 8,
-  MWSHOW_AUX = 9
+  MWSHOW_NET    = 1,
+  MWSHOW_SSANL  = 2,
+  MWSHOW_SCE    = 3,
+  MWSHOW_TDANL  = 4,
+  MWSHOW_COM    = 5,
+  MWSHOW_CAL    = 6,
+  MWSHOW_MAP    = 7,
+  MWSHOW_FIT    = 8,
+  MWSHOW_AUX    = 9
 };
 
 MainWindow::MainWindow( Powersystem*& pws,
-                        Emulator*& emu,
+                        Emulator* emu,
                         SSEngine*& sse,
-                        MoteurRenard*& sse_mrn,
-                        MoteurFengtian*& sse_fen,
+                        MoteurRenard* sse_mrn,
+                        MoteurFengtian* sse_fen,
                         TDEngine*& tde,
-                        TDEmulator*& tde_hwe,
+                        TDEmulator* tde_hwe,
                         Simulator_sw*& tde_swe,
-                        ScenarioSet*& scs,
-                        TDResultsBank*& trb ) :
+                        ScenarioSet* scs,
+                        TDResultsBank* trb ) :
     _pws(pws),
     _emu(emu),
-    _tde_hwe(tde_hwe),
-    _scs(scs),
-    _trb(trb){
+    _scs(scs){
 
   // ----- Initialize the components -----
   _con = new Console(this);    // required for calls to 'cout<<'
-  _tde_hwe->setLogger( _con ); // redirect Logger of _tde_hwe to _con
-  tde_swe->setLogger( _con );  // redirect Logger of _tde_swe to _con
+  tde_hwe->setLogger( _con ); // redirect Logger of tde_hwe to _con
+  tde_swe->setLogger( _con );  // redirect Logger of tde_swe to _con
 
 
   _sip = new SidePane(this);
@@ -101,19 +99,9 @@ MainWindow::MainWindow( Powersystem*& pws,
            this, SLOT(showAuxiliary()) );
   _net = new PowersystemEditor( _pws, _emu->mmd(), this );
   _net->init();
-  _SSanl = new SSAnalysisEditor( _pws,
-                                 sse,
-                                 sse_mrn,
-                                 sse_fen,
-                                 this );
+  _SSanl = new SSAnalysisEditor( _pws, sse, sse_mrn, sse_fen, this );
   _sce = new ScenarioEditor( _scs, _pws, this );
-  _TDanl = new TDAnalysisEditor( _net->smd(),
-                                 _scs,
-                                 tde,
-                                 _tde_hwe,
-                                 tde_swe,
-                                 _trb,
-                                 this );
+  _TDanl = new TDAnalysisEditor( _net->smd(), _scs, tde, tde_hwe, tde_swe, trb, this );
 //  connect( _anl, SIGNAL(mmdChanged()),
 //           this, SLOT(mmdChangedSlot()) );
 //  connect( _anl, SIGNAL(emuChanged(bool)),
@@ -127,7 +115,7 @@ MainWindow::MainWindow( Powersystem*& pws,
   _cal = new CalibrationEditor( _emu, _con );
   _map = new MapperEditor( _emu, this );
   _fit = new FitterEditor( _emu, this );
-  _aux = new AuxiliaryEditor( _emu, _tde_hwe, this );
+  _aux = new AuxiliaryEditor( _emu, tde_hwe, this );
   _com->autoAssignSlicesToDevicesSlot();
 
   // ----- Initialize the menus  -----
@@ -520,8 +508,7 @@ void MainWindow::importMapping(const QString& filename){
   // ----- Update backend components -----
   // Import mmd proper
 //  mmd->clear();
-  ans = io::importMapping( filename.toStdString(),
-                           _emu->mmd(), _emu->emuhw(), _pws );
+  ans = io::importMapping( filename.toStdString(), _emu->mmd(), _emu->emuhw(), _pws );
   if ( ans ){
     cout << "Error importing mapping " << ans << endl;
     return;

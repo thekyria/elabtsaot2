@@ -13,6 +13,10 @@ EPFL
 
 #include <QSplitter>
 
+class QGroupBox;
+class QDoubleSpinBox;
+class QPushButton;
+
 namespace elabtsaot{
 
 class Emulator;
@@ -27,6 +31,12 @@ class AuxiliaryEditor : public QSplitter{
   AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* parent);
 
  private slots:
+
+  void ratioZSlot(double val);
+  void ratioVSlot(double val);
+  void maxIpuSlot(double val);
+  void autoRatioZSlot();
+  void defaultRatiosSlot();
 
   void hardResetPressedSlot();
   void endCalibrationSlot();
@@ -48,12 +58,20 @@ class AuxiliaryEditor : public QSplitter{
 
  private:
 
+  void _updtGlobals();
   int _rawReadFromDeviceDialog( size_t& devId,
                                 unsigned int& startAddress,
                                 size_t& wordCount );
 
   Emulator* _emu;
   TDEmulator* _tde_hwe; // used for _tde_hwe->resetEmulation() in resetEmulationSlot()
+
+  QDoubleSpinBox* ratioZForm;
+  QDoubleSpinBox* ratioVForm;
+  QDoubleSpinBox* ratioIForm;
+  QDoubleSpinBox* maxIpuForm;
+  QPushButton* autoRatioZBut;
+  QPushButton* defaultRatiosBut;
 
 };
 

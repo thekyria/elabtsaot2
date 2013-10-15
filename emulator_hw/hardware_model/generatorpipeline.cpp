@@ -15,7 +15,6 @@ using std::vector;
 GeneratorPipeline::GeneratorPipeline(size_t element_capacity,
                                      size_t ver_dim, size_t hor_dim) :
     Pipeline(element_capacity, ver_dim, hor_dim),
-    _elPtrs( _element_count_max, NULL ),
     _xd_1_inverse(_element_count_max, 0),
     _i_ss(_element_count_max, 0),
     _p_mechanical(_element_count_max, 0),
@@ -42,7 +41,6 @@ int GeneratorPipeline::reset(){
   if ( ans ) return 1;
   // element_count_max, ver_id_max, hor_id_max remain unchanged
 
-  _elPtrs.clear();
   _xd_1_inverse.clear();
   _i_ss.clear();
   _p_mechanical.clear();
@@ -56,7 +54,6 @@ int GeneratorPipeline::reset(){
   _omega_0.clear();
   _delta_0.clear();
 
-  _elPtrs.resize( _element_count_max, NULL );
   _xd_1_inverse.resize(_element_count_max, 0);
   _i_ss.resize(_element_count_max, 0);
   _p_mechanical.resize(_element_count_max, 0);
@@ -131,7 +128,6 @@ int GeneratorPipeline::insert_element(size_t ver_pos, size_t hor_pos,
     // Make space for new element
     for ( m = _element_count ; m != k ; --m ){
       _position[m] = _position[m-1];
-      _elPtrs[m] = _elPtrs[m-1];
       _xd_1_inverse[m] = _xd_1_inverse[m-1];
       _i_ss[m] = _i_ss[m-1];
       _p_mechanical[m] = _p_mechanical[m-1];
@@ -178,9 +174,6 @@ int GeneratorPipeline::insert_element(size_t ver_pos, size_t hor_pos,
   _omega_0[k] = 0;                    // steady state relative omega = 0
   _delta_0[k] = el.deltass();         // steady state delta [rad]
 
-  // Store pointer to the element
-  _elPtrs[k] = &el;
-
   if ( !pos_already_taken )
     ++_element_count;
 
@@ -189,15 +182,16 @@ int GeneratorPipeline::insert_element(size_t ver_pos, size_t hor_pos,
 
 int GeneratorPipeline::remove_element(size_t ver_pos, size_t hor_pos){
 
-  if ( _element_count == 0 )
-    // No gens to delete!
-    return 1;
-  if ( ver_pos >= _ver_id_max )
-    // Vertical index out of bounds! Nothing to delete!
-    return 2;
-  if ( hor_pos >= _hor_id_max )
-    // Horizontal index out of bounds! Nothing to delete!
-    return 3;
+  // Why should the following return non-zero?
+//  if ( _element_count == 0 )
+//    // No gens to delete!
+//    return 1;
+//  if ( ver_pos >= _ver_id_max )
+//    // Vertical index out of bounds! Nothing to delete!
+//    return 2;
+//  if ( hor_pos >= _hor_id_max )
+//    // Horizontal index out of bounds! Nothing to delete!
+//    return 3;
 
   size_t k = 0;
   bool gen_found = false;
@@ -209,9 +203,11 @@ int GeneratorPipeline::remove_element(size_t ver_pos, size_t hor_pos){
       // generator @ position (ver_pos, hor_pos) found at pipeline line n=k
       gen_found = true;
 
+      // decrease element count
+      --_element_count;
+
       // reset pipeline line to default values
       _position[k] = make_pair(-1,-1);
-      _elPtrs[k] = NULL;
       _xd_1_inverse[k] = 0;
       _i_ss[k] = 0;
       _p_mechanical[k] = 0;
@@ -234,7 +230,6 @@ int GeneratorPipeline::remove_element(size_t ver_pos, size_t hor_pos){
       // the k line, for all k lines after line n where the to-be-deleted
       // generator was found
       _position[k-1] = _position[k];
-      _elPtrs[k-1] = _elPtrs[k];
       _xd_1_inverse[k-1] = _xd_1_inverse[k];
       _i_ss[k-1] = _i_ss[k];
       _p_mechanical[k-1] = _p_mechanical[k];
@@ -251,11 +246,9 @@ int GeneratorPipeline::remove_element(size_t ver_pos, size_t hor_pos){
 
   }
 
-  if ( !gen_found )
-    // No gen @pos (ver_pos, hor_pos); nothing to delete!
-    return 4;
-
-  --_element_count;
+//  if ( !gen_found )
+//    // No gen @pos (ver_pos, hor_pos); nothing to delete!
+//    return 4;
 
   return 0;
 }
@@ -389,7 +382,6 @@ int GeneratorPipeline::set_delta_0(size_t pos, double val){
 
 // Low level getters
 vector<double> GeneratorPipeline::xd_1_inverse() const{ return _xd_1_inverse; }
-vector<Generator const*> GeneratorPipeline::elPtrs() const{ return _elPtrs; }
 vector<complex<double> > GeneratorPipeline::i_ss() const{ return _i_ss; }
 vector<double> GeneratorPipeline::p_mechanical() const{ return _p_mechanical; }
 vector<double> GeneratorPipeline::gain_1() const{ return _gain_1; }

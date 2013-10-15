@@ -51,27 +51,30 @@ class ConstPLoadPipeline : public Pipeline {
   //! An element is inserted at the pipeline
   int insert_element(size_t ver_pos, size_t hor_pos, Load const& el, bool overwrite);
   //! An element is removed from the pipeline
-  int remove_element(size_t ver_pos,
-                     size_t hor_pos);
-
-  /*! \name Getters */
-  //@{
-  std::vector<Load const*> elPtrs() const;
-  std::vector<double> P() const;  //!< getter for _P
-  std::vector<double> Q() const;  //!< getter for _Q
-  //@}
+  int remove_element(size_t ver_pos, size_t hor_pos);
 
   /*! \name Setters */
   //@{
   int set_P(size_t pos, double val);
   int set_Q(size_t pos, double val);
+  int set_real_I(size_t pos, double val);
+  int set_imag_I(size_t pos, double val);
+  //@}
+
+  /*! \name Getters */
+  //@{
+  std::vector<double> P() const;  //!< getter for _P
+  std::vector<double> Q() const;  //!< getter for _Q
+  std::vector<double> real_I() const;  //!< getter for _real_I
+  std::vector<double> imag_I() const;  //!< getter for _imag_I
   //@}
 
  private:
 
-  std::vector<Load const*> _elPtrs; //!< ptrs to loads mapped to the pipeline
   std::vector<double> _P;           //!< Constant active power (P) of the load in [pu]
   std::vector<double> _Q;           //!< Constant reactive power (Q) of the load in [pu]
+  std::vector<double> _real_I; //!< Real part of the ss. current (const) in [pu]
+  std::vector<double> _imag_I; //!< Imag part of the ss. current (const) in [pu]
 
 };
 

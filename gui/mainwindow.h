@@ -50,15 +50,15 @@ class MainWindow : public QMainWindow{
  public:
 
   MainWindow( Powersystem*& pws,
-              Emulator*& emu,
+              Emulator* emu,
               SSEngine*& sse,
-              MoteurRenard*& sse_mrn,
-              MoteurFengtian*& sse_fen,
+              MoteurRenard* sse_mrn,
+              MoteurFengtian* sse_fen,
               TDEngine*& tde,
-              TDEmulator*& tde_hwe,
+              TDEmulator* tde_hwe,
               Simulator_sw*& tde_swe,
-              ScenarioSet*& scs,
-              TDResultsBank*& trb );
+              ScenarioSet* scs,
+              TDResultsBank* trb );
   ~MainWindow();
 
   Console* con();
@@ -97,10 +97,8 @@ class MainWindow : public QMainWindow{
   //! Pointers to backend classes
   //@{
   Powersystem*& _pws;
-  Emulator*& _emu;
-  TDEmulator*& _tde_hwe;
-  ScenarioSet*& _scs;
-  TDResultsBank*& _trb;
+  Emulator* _emu;
+  ScenarioSet* _scs;
   //@}
 
  private:

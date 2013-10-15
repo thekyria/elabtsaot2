@@ -53,12 +53,10 @@ class TDEmulator : public TDEngine {
   int _getNIOSSampleRate() const;
   int _getDampIt() const;
   int _getTrigDelay() const;
-  bool _getAutoRatioZ() const;
   int _setIntTStepOption( int val );
   int _setNIOSSampleRate( int val );
   int _setDampIt( int val );
   int _setTrigDelay( int val );
-  int _setAutoRatioZ( bool val );
   void _updateTimeStep();
 
   // Encoding functions

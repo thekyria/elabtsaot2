@@ -11,7 +11,6 @@ EPFL
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
-#include "propertyholder.h"
 #include "emulatorhw.h"
 #include "usbfpgainterface.h"
 #include "pwsmappermodel.h"
@@ -54,7 +53,7 @@ enum EmulatorCalState{
   EMU_CALSTATE_NO   // Emulator is not in calibration
 };
 
-class Emulator : public PropertyHolder {
+class Emulator {
 
  public:
 
@@ -72,9 +71,9 @@ class Emulator : public PropertyHolder {
   int resetEmulator( bool complete );
   size_t getHwSliceCount() const;
   int node_set( size_t id_tab, size_t id_ver, size_t id_hor, Generator const& gen,
-                double ratioZ, double ratioV, double ratioI, double max_I_pu );
+                double ratioZ, double ratioV, double ratioI, double maxIpu );
   int node_set( size_t id_tab, size_t id_ver, size_t id_hor, Load const& load,
-                          double ratioI, double max_I_pu );
+                          double ratioI, double maxIpu );
   int embr_set(size_t id_tab, size_t id_ver, size_t id_hor, size_t pos,
                Branch const& br, double ratioZ, double distanceOfGndFromNearEnd);
 
@@ -99,7 +98,7 @@ class Emulator : public PropertyHolder {
   // Powersystem model - mapping & fitting
   void set_ratioZ(double val); //!< sets _ratioZ [Ohms/pu]; sets _ratioI=_ratioV/_ratioZ;
   void set_ratioV(double val); //!< sets _ratioZ [Volt/pu]; sets _ratioI=_ratioV/_ratioZ;
-  void set_max_I_pu(double val);
+  void set_maxIpu(double val);
   int resetMapping();
   void cleaMappingHints();
   void hintComponent( int type, unsigned int extId);
@@ -108,6 +107,8 @@ class Emulator : public PropertyHolder {
   int unmapComponent( int type, unsigned int extId);
   int autoMapping();
   int validateMapping();
+  void autoRatioZ();
+  void defaultRatios();
   int autoFitting(std::vector<std::string>* outputMsg = 0);
   int validateFitting();
 
@@ -124,7 +125,7 @@ class Emulator : public PropertyHolder {
   double ratioZ() const;
   double ratioV() const;
   double ratioI() const;
-  double max_I_pu() const;
+  double maxIpu() const;
   std::map<size_t, int> sliceDeviceMap() const;
   int sliceDeviceMap(size_t index) const;
   int state() const;
@@ -142,9 +143,6 @@ class Emulator : public PropertyHolder {
   int _endCalibrationMode( size_t devId );
   // Encoding functions
   int _verifyEncoding();
-  // Property functions
-  bool _getAutoRatioZ() const;
-  int _setAutoRatioZ(bool val);
 
   // ---------- Variables----------
   EmulatorHw* _emuhw;
@@ -158,7 +156,7 @@ class Emulator : public PropertyHolder {
   double _ratioZ;   //!< emulator_Z / physical_Z [Ohm/pu]
   double _ratioV;   //!< emulator_V / physical_V [V/pu]
   double _ratioI;   //!< emulator_I/physical_I [A/pu]: calculated as _ratioV/Z
-  double _max_I_pu; //!< Maximum current [p.u.] output by a pipeline
+  double _maxIpu; //!< Maximum current [p.u.] output by a pipeline
   std::map<size_t, int> _sliceDeviceMap;
   // Internal state machine variables
   int _state;

@@ -9,10 +9,10 @@
 #include "moteurfengtian.h"
 
 #include "tdengine.h"
-#include "scenarioset.h"
-#include "tdresultsbank.h"
 #include "tdemulator.h"
 #include "simulator_sw.h"
+#include "scenarioset.h"
+#include "tdresultsbank.h"
 
 #include "mainwindow.h"
 using namespace elabtsaot;
@@ -22,9 +22,8 @@ using namespace elabtsaot;
 #include <QIcon>
 #include <QTime>
 
-/*! This is the main function. It spawns an object of MainWindow and then
-executes it returning where the callback loop is escaped. */
 int main(int argc, char *argv[]){
+
   int ans;
   // ----- Initialize backend components -----
   qDebug() << "Creating powersystem ... ";
@@ -34,8 +33,7 @@ int main(int argc, char *argv[]){
   Emulator* emu( new Emulator(pws) );
   qDebug() << "Initializing hardware platform representation ... ";
   ans = emu->init();
-  if ( ans )
-    qDebug() << "Hardware platform representation initialization failed with code " << ans;
+  if (ans) qDebug() << "Hardware platform representation init failed: " << ans;
 
   // Steady state engines
   qDebug() << "Creating SSEngine 'MoteurRenard' ... ";
@@ -50,14 +48,9 @@ int main(int argc, char *argv[]){
   // Time domain engines
   qDebug() << "Creating TDEngine 'TDEmulator' ... ";
   TDEmulator* tde_hwe( new TDEmulator(pws, emu, NULL) );
-  qDebug() << "Initializing TDEngine 'TDEmulator' ... ";
 
   qDebug() << "Creating TDEngine 'Simulator_hw' ... ";
   Simulator_sw* tde_swe( new Simulator_sw(pws, sse, NULL) );
-  qDebug() << "Initializing TDEngine 'Simulator_hw' ... ";
-  ans = tde_swe->init();
-  if ( ans )
-    qDebug() << "Software TDengine initialization failed with code " << ans;
 
   qDebug() << "Setting TDEngine ptr ... ";
   TDEngine* tde( tde_hwe );
@@ -78,16 +71,9 @@ int main(int argc, char *argv[]){
   app.setOrganizationName("ELAB EPFL");
   app.setApplicationName("elab-tsaot");
   // Create an application object and show it
-  MainWindow* mainWindow( new MainWindow( pws,
-                                          emu,
-                                          sse,
-                                          sse_mrn,
-                                          sse_fen,
-                                          tde,
-                                          tde_hwe,
-                                          tde_swe,
-                                          scs,
-                                          trb) );
+  MainWindow* mainWindow(new MainWindow(pws, emu,
+                                        sse, sse_mrn, sse_fen,
+                                        tde, tde_hwe, tde_swe, scs, trb));
   mainWindow->show();
 
   // Application is event-driven

@@ -58,7 +58,6 @@ class GeneratorPipeline : public Pipeline{
   /*! \name Getters */
   //@{
   std::vector<double> xd_1_inverse() const;  //!< getter for _xd_1_inverse
-  std::vector<Generator const*> elPtrs() const;
   std::vector<std::complex<double> > i_ss() const;    //!< getter for _i_ss
   std::vector<double> p_mechanical() const;  //!< getter for _p_mechanical
   std::vector<double> gain_1() const;        //!< getter for _gain_1
@@ -90,7 +89,6 @@ class GeneratorPipeline : public Pipeline{
 
  private:
 
-  std::vector<Generator const*> _elPtrs; //!< pointers to gens mapped to the pipeline
   std::vector<double> _xd_1_inverse; //!< Inverse of the transient reactance [p.u.]
   std::vector<std::complex<double> > _i_ss; //!< Initial current flow [p.u.]
   std::vector<double> _p_mechanical; //!< Mechanical power [p.u.]

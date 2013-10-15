@@ -6,6 +6,7 @@ using namespace elabtsaot;
 
 // #include <complex>
 using std::conj;
+using std::complex;
 // #include <utility> // from parent class
 using std::make_pair;
 //#include <vector> // from parent class
@@ -14,9 +15,10 @@ using std::vector;
 ConstPLoadPipeline::ConstPLoadPipeline(size_t element_capacity,
                                        size_t ver_dim, size_t hor_dim) :
     Pipeline(element_capacity, ver_dim, hor_dim),
-    _elPtrs( _element_count_max, NULL ),
     _P(_element_count_max, 0),
-    _Q(_element_count_max, 0) {}
+    _Q(_element_count_max, 0),
+    _real_I(_element_count_max, 0),
+    _imag_I(_element_count_max, 0) {}
 
 int ConstPLoadPipeline::reset(){
   // Invoke reset of parent class
@@ -24,21 +26,21 @@ int ConstPLoadPipeline::reset(){
   if ( ans ) return 1;
   // element_count_max, ver_id_max, hor_id_max remain unchanged
 
-  _elPtrs.clear();
   _P.clear();
   _Q.clear();
+  _real_I.clear();
+  _imag_I.clear();
 
-  _elPtrs.resize( _element_count_max, NULL );
   _P.resize( _element_count_max, 0 );
   _Q.resize( _element_count_max, 0 );
+  _real_I.resize( _element_count_max, 0 );
+  _imag_I.resize( _element_count_max, 0 );
 
   return 0;
 }
 
-int ConstPLoadPipeline::insert_element( size_t ver_pos,
-                                        size_t hor_pos,
-                                        Load const& el,
-                                        bool overwrite){
+int ConstPLoadPipeline::insert_element( size_t ver_pos, size_t hor_pos,
+                                        Load const& el, bool overwrite){
 
   if ( _element_count == _element_count_max )
     // pipeline is full!
@@ -94,18 +96,21 @@ int ConstPLoadPipeline::insert_element( size_t ver_pos,
     // Make space for new element
     for ( m = _element_count ; m != k ; --m ){
       _position[m] = _position[m-1];
-      _elPtrs[m] = _elPtrs[m-1];
       _P[m] = _P[m-1];
       _Q[m] = _Q[m-1];
+      _real_I[m] = _real_I[m-1];
+      _imag_I[m] = _imag_I[m-1];
     }
 
   // Insert new element at pipeline position k
   _position[k] = make_pair((int) ver_pos, (int) hor_pos);
   _P[k] = el.pdemand();
   _Q[k] = el.qdemand();
-
-  // Store pointer to the element
-  _elPtrs[k] = &el;
+  complex<double> S(el.pdemand(), el.qdemand());
+  complex<double> U(el.Uss());
+  complex<double> I = conj(S) / conj(U);
+  _real_I[k] = real(I);
+  _imag_I[k] = imag(I);
 
   if ( !pos_already_taken )
     ++_element_count;
@@ -113,17 +118,17 @@ int ConstPLoadPipeline::insert_element( size_t ver_pos,
   return 0;
 }
 
-int ConstPLoadPipeline::remove_element( size_t ver_pos,
-                                        size_t hor_pos){
-  if ( _element_count == 0 )
-    // No elements to delete!
-    return 1;
-  if ( ver_pos >= _ver_id_max )
-    // Vertical index out of bounds! Nothing to delete!
-    return 2;
-  if ( hor_pos >= _hor_id_max )
-    // Horizontal index out of bounds! Nothing to delete!
-    return 3;
+int ConstPLoadPipeline::remove_element( size_t ver_pos, size_t hor_pos){
+  // Why should the following return non-zero?
+//  if ( _element_count == 0 )
+//    // No elements to delete!
+//    return 1;
+//  if ( ver_pos >= _ver_id_max )
+//    // Vertical index out of bounds! Nothing to delete!
+//    return 2;
+//  if ( hor_pos >= _hor_id_max )
+//    // Horizontal index out of bounds! Nothing to delete!
+//    return 3;
 
   size_t k = 0;
   bool el_found = false;
@@ -135,11 +140,15 @@ int ConstPLoadPipeline::remove_element( size_t ver_pos,
       // element @ position (ver_pos, hor_pos) found at pipeline line n=k
       el_found = true;
 
+      // decrease element count
+      --_element_count;
+
       // reset pipeline line to default values
       _position[k] = make_pair(-1,-1);
-      _elPtrs[k] = NULL;
       _P[k] = 0;
       _Q[k] = 0;
+      _real_I[k] = 0;
+      _imag_I[k] = 0;
 
       continue;
     }
@@ -150,18 +159,17 @@ int ConstPLoadPipeline::remove_element( size_t ver_pos,
       // the k line, for all k lines after line n where the to-be-deleted
       // element was found
       _position[k-1] = _position[k];
-      _elPtrs[k-1] = _elPtrs[k];
       _P[k-1] = _P[k];
       _Q[k-1] = _Q[k];
+      _real_I[k-1] = _real_I[k];
+      _imag_I[k-1] = _imag_I[k];
     }
 
   }
 
-  if ( !el_found )
-    // No element @pos (ver_pos, hor_pos); nothing to delete!
-    return 4;
-
-  --_element_count;
+//  if ( !el_found )
+//    // No element @pos (ver_pos, hor_pos); nothing to delete!
+//    return 4;
 
   return 0;
 }
@@ -173,7 +181,6 @@ int ConstPLoadPipeline::set_P(size_t pos, double val){
   _P[pos] = val;
   return 0;
 }
-
 int ConstPLoadPipeline::set_Q(size_t pos, double val){
   if ( pos >= _element_count_max )
     // Position out of bounds!
@@ -181,7 +188,22 @@ int ConstPLoadPipeline::set_Q(size_t pos, double val){
   _Q[pos] = val;
   return 0;
 }
+int ConstPLoadPipeline::set_real_I(size_t pos, double val){
+  if ( pos >= _element_count_max )
+    // Position out of bounds!
+    return 1;
+  _real_I[pos] = val;
+  return 0;
+}
+int ConstPLoadPipeline::set_imag_I(size_t pos, double val){
+  if ( pos >= _element_count_max )
+    // Position out of bounds!
+    return 1;
+  _imag_I[pos] = val;
+  return 0;
+}
 
-vector<Load const*> ConstPLoadPipeline::elPtrs() const{ return _elPtrs; }
 vector<double> ConstPLoadPipeline::P() const{ return _P; }
 vector<double> ConstPLoadPipeline::Q() const{ return _Q; }
+vector<double> ConstPLoadPipeline::real_I() const{ return _real_I; }
+vector<double> ConstPLoadPipeline::imag_I() const{ return _imag_I; }

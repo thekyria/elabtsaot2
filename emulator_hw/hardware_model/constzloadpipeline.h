@@ -53,24 +53,28 @@ class ConstZLoadPipeline : public Pipeline {
   //! An element is removed from the pipeline
   int remove_element(size_t ver_pos, size_t hor_pos);
 
-  /*! \name Getters */
-  //@{
-  std::vector<Load const*> elPtrs() const;
-  std::vector<double> real_Y() const;  //!< getter for _real_Y
-  std::vector<double> imag_Y() const;  //!< getter for _imag_Y
-  //@}
-
   /*! \name Setters */
   //@{
   int set_real_Y(size_t pos, double val);
   int set_imag_Y(size_t pos, double val);
+  int set_real_I(size_t pos, double val);
+  int set_imag_I(size_t pos, double val);
+  //@}
+
+  /*! \name Getters */
+  //@{
+  std::vector<double> real_Y() const;  //!< getter for _real_Y
+  std::vector<double> imag_Y() const;  //!< getter for _imag_Y
+  std::vector<double> real_I() const;  //!< getter for _real_I
+  std::vector<double> imag_I() const;  //!< getter for _imag_I
   //@}
 
  private:
 
-  std::vector<Load const*> _elPtrs; //!< ptrs to loads mapped to the pipeline
   std::vector<double> _real_Y; //!< Real part of the load admittance [p.u.]
   std::vector<double> _imag_Y; //!< Imag part of the load admittance [p.u.]
+  std::vector<double> _real_I; //!< Real part of the ss. current (const) in [pu]
+  std::vector<double> _imag_I; //!< Imag part of the ss. current (const) in [pu]
 
 };
 

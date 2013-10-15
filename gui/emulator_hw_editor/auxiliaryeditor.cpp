@@ -19,6 +19,9 @@ using namespace elabtsaot;
 #include <QSpinBox>
 #include <QPushButton>
 #include <QDialog>
+#include <QLabel>
+#include <QPushButton>
+#include <QGroupBox>
 
 //#include <iostream>
 using std::cout;
@@ -31,7 +34,73 @@ using std::string;
 AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* parent) :
   QSplitter(Qt::Vertical, parent), _emu(emu), _tde_hwe(tde_hwe) {
 
-  this->addWidget( new QFrame() ); // Space frame
+  // ---------------------------------------------------------------------------
+  // ----- Global parameters group box -----
+  QGroupBox* globalParamsBox = new QGroupBox("Global slice parameters", this);
+  QFormLayout* globalParamsLay = new QFormLayout(globalParamsBox);
+  globalParamsBox->setLayout( globalParamsLay );
+
+  // RatioZ
+  QLabel* ratioZLabel = new QLabel("RatioZ");
+  ratioZForm = new QDoubleSpinBox();
+  ratioZForm->setDecimals(0);
+  ratioZForm->setSingleStep(1);
+  ratioZForm->setRange(1., 100000.);
+//  ratioZForm->setValue( _emu->ratioZ() );
+  globalParamsLay->addRow( ratioZLabel, ratioZForm );
+
+  // RatioV
+  QLabel* ratioVLabel = new QLabel("RatioV");
+  ratioVForm = new QDoubleSpinBox();
+  ratioVForm->setDecimals(3);
+  ratioVForm->setSingleStep(0.010);
+  ratioVForm->setRange(0.100, 15.000);
+//  ratioVForm->setValue( _emu->ratioV() );
+  globalParamsLay->addRow( ratioVLabel, ratioVForm );
+
+  // RatioI
+  QLabel* ratioILabel = new QLabel("RatioI");
+  ratioIForm = new QDoubleSpinBox();
+  ratioIForm->setDecimals(6);
+  ratioIForm->setSingleStep(0.000010);
+//  ratioIForm->setValue( _emu->ratioI() );
+  ratioIForm->setRange(0.000001,0.05);
+  ratioIForm->setEnabled(false); // to prevent user editing this field
+  globalParamsLay->addRow( ratioILabel, ratioIForm );
+
+  // Maximum I [pu]
+  QLabel* maxIpuLabel = new QLabel("Max I [pu]");
+  maxIpuForm = new QDoubleSpinBox();
+  //  ratioIForm->setDecimals(0);
+  //  ratioIForm->setSingleStep(1);
+//  maxIpuForm->setValue( _emu->maxIpu() );
+  globalParamsLay->addRow( maxIpuLabel, maxIpuForm );
+
+  // Update values
+  _updtGlobals();
+
+  // Auto ratioZ
+  QLabel* autoRatioZLabel = new QLabel("Auto-scale RatioZ");
+  autoRatioZBut = new QPushButton("Auto-scale RatioZ");
+  globalParamsLay->addRow(autoRatioZLabel, autoRatioZBut);
+
+  // Default ratios
+  QLabel* defaultRatiosLabel = new QLabel("Default Ratios");
+  defaultRatiosBut = new QPushButton("Default Ratios");
+  globalParamsLay->addRow(defaultRatiosLabel, defaultRatiosBut);
+
+  // ----------------- Connect signals -----------------
+  connect( ratioZForm, SIGNAL(valueChanged(double)),
+           this, SLOT(ratioZSlot(double)) );
+  connect( ratioVForm, SIGNAL(valueChanged(double)),
+           this, SLOT(ratioVSlot(double)) );
+  connect( maxIpuForm, SIGNAL(valueChanged(double)),
+           this, SLOT(maxIpuSlot(double)) );
+  connect( autoRatioZBut, SIGNAL(clicked()),
+           this, SLOT(autoRatioZSlot()) );
+  connect( defaultRatiosBut, SIGNAL(clicked()),
+           this, SLOT(defaultRatiosSlot()) );
+
 
   // ---------------------------------------------------------------------------
   // ----- Toolbar -----
@@ -151,6 +220,27 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
            this, SLOT(rawWriteToDeviceSlot()) );
 }
 
+
+void AuxiliaryEditor::ratioZSlot(double val){
+  _emu->set_ratioZ(val);
+  ratioIForm->setValue(_emu->ratioI());
+}
+void AuxiliaryEditor::ratioVSlot(double val){
+  _emu->set_ratioV(val);
+  ratioIForm->setValue(_emu->ratioI());
+}
+void AuxiliaryEditor::maxIpuSlot(double val){
+  _emu->set_maxIpu(val);
+  ratioIForm->setValue(_emu->ratioI());
+}
+void AuxiliaryEditor::autoRatioZSlot(){
+  _emu->autoRatioZ();
+  _updtGlobals();
+}
+void AuxiliaryEditor::defaultRatiosSlot(){
+  _emu->defaultRatios();
+  _updtGlobals();
+}
 
 void AuxiliaryEditor::hardResetPressedSlot(){
   _emu->hardResetPressed();
@@ -314,6 +404,14 @@ void AuxiliaryEditor::rawWriteToDeviceSlot(){
          << " words starting at address " << startAddress
          << " was successful!" << endl;
 
+  return;
+}
+
+void AuxiliaryEditor::_updtGlobals(){
+  ratioZForm->setValue( _emu->ratioZ() );
+  ratioVForm->setValue( _emu->ratioV() );
+//  ratioIForm->setValue( _emu->ratioI() );
+  maxIpuForm->setValue( _emu->maxIpu() );
   return;
 }
 
