@@ -112,7 +112,7 @@ int PwsSchematicModel::validate(){
       return 11;
   }
   for ( k = 0; k != _pws->getBrSet_size() ; ++k ){
-    cur_extId = _pws->getBrSet().at(k).extId();
+    cur_extId = _pws->getBrSet().at(k).extId;
     found = false;
     for ( m = 0 ; m != _branchElements.size() ; ++m ){
       if ( _branchElements[k].extId == cur_extId ){
@@ -179,8 +179,8 @@ int PwsSchematicModel::planarizeSchematic( Powersystem const* pws ){
     // Get next branch
     Branch const* br = pws->getBranch(k);
     if( !br ) break;
-    int fr = pws->getBus_intId( br->fromBusExtId() );
-    int to = pws->getBus_intId( br->toBusExtId() );
+    int fr = pws->getBus_intId( br->fromBusExtId );
+    int to = pws->getBus_intId( br->toBusExtId );
     if( fr<0 || to<0 )
       return 1;
     // Add edge
@@ -345,13 +345,11 @@ int PwsSchematicModel::addBusElement( Bus bus, bool overwrite, int* mdlId ){
   return 0;
 }
 
-int PwsSchematicModel::addBranchElement( Branch br,
-                                         bool overwrite, int* mdlId ){
+int PwsSchematicModel::addBranchElement( Branch br, bool overwrite, int* mdlId ){
 
   // Add branch to model
   int tempMdlId;
-  int ans = addElement( PWSMODELELEMENTTYPE_BR, br.extId(),
-                         overwrite, &tempMdlId );
+  int ans = addElement( PWSMODELELEMENTTYPE_BR, br.extId, overwrite, &tempMdlId );
   if ( ans ){
 //    cout << "Error adding branch component (" << br.extId() << ")!" << endl;
     return 1;
@@ -363,11 +361,11 @@ int PwsSchematicModel::addBranchElement( Branch br,
 
   // Retrieve buses' elements
   PwsSchematicModelElement const* cd1;
-  cd1 = element(PWSMODELELEMENTTYPE_BUS, br.fromBusExtId() );
+  cd1 = element(PWSMODELELEMENTTYPE_BUS, br.fromBusExtId );
   if( cd1 == NULL )
     return 2;
   PwsSchematicModelElement const* cd2;
-  cd2 = element(PWSMODELELEMENTTYPE_BUS, br.toBusExtId() );
+  cd2 = element(PWSMODELELEMENTTYPE_BUS, br.toBusExtId );
   if( cd2 == NULL )
     return 3;
 

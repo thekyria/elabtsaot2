@@ -869,22 +869,22 @@ int Simulator_sw::_parseBusFault(Event &event){
     if (event.bool_arg()){
       //Storing the old
       _busintid.push_back(intid);
-      _oldgsh.push_back(busofevent->gsh);
-      _oldbsh.push_back(busofevent->bsh);
+      _oldgsh.push_back(busofevent->Gsh);
+      _oldbsh.push_back(busofevent->Bsh);
       double gsh;
       double bsh;
       gsh=1/event.double_arg_1();
       bsh=-1/event.double_arg_2();
-      busofevent->gsh = gsh;
-      busofevent->bsh = bsh;
+      busofevent->Gsh = gsh;
+      busofevent->Bsh = bsh;
     }
 
     //Restore the saved data
     else{
       for (size_t i=0;i<_busintid.size();++i){
         if (intid==_busintid[i]){
-          busofevent->gsh = _oldgsh[i];
-          busofevent->bsh = _oldbsh[i];
+          busofevent->Gsh = _oldgsh[i];
+          busofevent->Bsh = _oldbsh[i];
           _busintid.erase(_busintid.begin()+i);
           _oldgsh.erase(_oldgsh.begin()+i);
           _oldbsh.erase(_oldbsh.begin()+i);
@@ -911,33 +911,33 @@ int Simulator_sw::_parseBrFault(Event &event){
       if (DOUBLE_EQ(event.double_arg(),0)){
         // - on the from bus of line
         Bus* busofevent; // the bus of fault
-        int ans=_pwsLocal.getBus(branchofevent->fromBusExtId(),busofevent);
+        int ans=_pwsLocal.getBus(branchofevent->fromBusExtId,busofevent);
         if (ans) return 2;
 
-        _br_frombus_intid.push_back(_pwsLocal.getBus_intId(branchofevent->fromBusExtId()));
-        _br_frombus_oldgsh.push_back(busofevent->gsh);
-        _br_frombus_oldbsh.push_back(busofevent->bsh);
+        _br_frombus_intid.push_back(_pwsLocal.getBus_intId(branchofevent->fromBusExtId));
+        _br_frombus_oldgsh.push_back(busofevent->Gsh);
+        _br_frombus_oldbsh.push_back(busofevent->Bsh);
         double gsh;
         double bsh;
         gsh=1/event.double_arg_1();
         bsh=-1/event.double_arg_2();
-        busofevent->gsh = gsh;
-        busofevent->bsh = bsh;
+        busofevent->Gsh = gsh;
+        busofevent->Bsh = bsh;
       }
 
       // - on the to bus of line
       else if(DOUBLE_EQ(event.double_arg(),1)){
         Bus* busofevent;//the bus of fault
-        int ans=_pwsLocal.getBus(branchofevent->toBusExtId(),busofevent);
+        int ans=_pwsLocal.getBus(branchofevent->toBusExtId,busofevent);
         if (ans) return 3;
 
-        _br_tobus_intid.push_back(_pwsLocal.getBus_intId(branchofevent->toBusExtId()));
-        _br_tobus_oldgsh.push_back(busofevent->gsh);
-        _br_tobus_oldbsh.push_back(busofevent->bsh);
+        _br_tobus_intid.push_back(_pwsLocal.getBus_intId(branchofevent->toBusExtId));
+        _br_tobus_oldgsh.push_back(busofevent->Gsh);
+        _br_tobus_oldbsh.push_back(busofevent->Bsh);
         double gsh = 1/event.double_arg_1();
         double bsh = -1/event.double_arg_2();
-        busofevent->gsh = gsh;
-        busofevent->bsh = bsh;
+        busofevent->Gsh = gsh;
+        busofevent->Bsh = bsh;
       }
 
       // - at an other location of line between two buses
@@ -958,12 +958,9 @@ int Simulator_sw::_parseBrFault(Event &event){
         busofevent->extId = maxextid+1;
         double gsh = 1/event.double_arg_1();
         double bsh = -1/event.double_arg_2();
-        busofevent->gsh = gsh;
-        busofevent->bsh = bsh;
-        std::string busname="Fbus of F";
-        busname.append(branchofevent->name());
-        busofevent->name = busname;
-        branchofevent->set_status(false);//trip the old line
+        busofevent->Gsh = gsh;
+        busofevent->Bsh = bsh;
+        branchofevent->status = false; //trip the old line
         // Create a new branch  frombus the new faulty bus
         int ans = _pwsLocal.addBus(*busofevent);
         if ( ans ) return 4;
@@ -978,13 +975,16 @@ int Simulator_sw::_parseBrFault(Event &event){
 //        for ( maxextidfrombr = 0 ; maxextidfrombr != 0 ; ++maxextidfrombr )
 //        if ( _pws.getBr_intId( maxextidfrombr ) == -1 )
 //        break;
-        newfromline->set_extId(maxextidfrombr+1);
-        newfromline->set_fromBusExtId(branchofevent->fromBusExtId());
-        newfromline->set_toBusExtId(maxextid+1);//the fault bus extid
-        newfromline->set_r(branchofevent->r()*loc);
-        newfromline->set_x(branchofevent->x()*loc);
-        newfromline->set_b(branchofevent->b()*loc);
-        newfromline->set_status(true);
+        newfromline->extId = maxextidfrombr+1;
+        newfromline->status = true;
+        newfromline->fromBusExtId = branchofevent->fromBusExtId;
+        newfromline->toBusExtId = maxextid+1;//the fault bus extid
+        newfromline->R = branchofevent->R*loc;
+        newfromline->X = branchofevent->X*loc;
+        newfromline->Bfrom = branchofevent->Bfrom*loc;
+        newfromline->Bto = branchofevent->Bto*loc;
+        newfromline->Gfrom = branchofevent->Gfrom*loc;
+        newfromline->Gto = branchofevent->Gto*loc;
 
 
         // Create a new branch  tobus the new faulty bus
@@ -999,15 +999,18 @@ int Simulator_sw::_parseBrFault(Event &event){
 //        for ( maxextidtobr = 0 ; maxextidtobr != 0 ; ++maxextidtobr )
 //        if ( _pws.getBr_intId( maxextidtobr ) == -1 )
 //        break;
-        newtoline->set_extId(maxextidtobr+2);
-        newtoline->set_toBusExtId(branchofevent->toBusExtId());
-        newtoline->set_fromBusExtId(maxextid+1);
-        newtoline->set_r(branchofevent->r()*(1-loc));
-        newtoline->set_x(branchofevent->x()*(1-loc));
-        newtoline->set_b(branchofevent->b()*(1-loc));
-        newtoline->set_status(true);
+        newtoline->extId = maxextidtobr+2;
+        newtoline->status = true;
+        newtoline->toBusExtId = branchofevent->toBusExtId;
+        newtoline->fromBusExtId = maxextid+1;
+        newtoline->R = branchofevent->R*(1-loc);
+        newtoline->X = branchofevent->X*(1-loc);
+        newtoline->Bfrom = branchofevent->Bfrom*(1-loc);
+        newtoline->Bto = branchofevent->Bto*(1-loc);
+        newtoline->Gfrom = branchofevent->Gfrom*(1-loc);
+        newtoline->Gto = branchofevent->Gto*(1-loc);
 
-        _br_branchoffault_extid.push_back(branchofevent->extId());
+        _br_branchoffault_extid.push_back(branchofevent->extId);
         _br_faultbus_extid.push_back(maxextid+1);
 
         ans =_pwsLocal.addBranch(*newfromline);
@@ -1025,13 +1028,13 @@ int Simulator_sw::_parseBrFault(Event &event){
       if (DOUBLE_EQ(event.double_arg(),0)){
         // - on the from bus of line
         Bus* busofevent; // the bus of fault
-        int ans = _pwsLocal.getBus(branchofevent->fromBusExtId(),busofevent);
+        int ans = _pwsLocal.getBus(branchofevent->fromBusExtId,busofevent);
         if ( ans ) return 7;
 
         for(size_t i=0;i< _br_frombus_intid.size();++i){
-          if(_pwsLocal.getBus_intId(branchofevent->fromBusExtId())==_br_frombus_intid[i]){
-            busofevent->gsh = _br_frombus_oldgsh[i];
-            busofevent->bsh = _br_frombus_oldbsh[i];
+          if(_pwsLocal.getBus_intId(branchofevent->fromBusExtId)==_br_frombus_intid[i]){
+            busofevent->Gsh = _br_frombus_oldgsh[i];
+            busofevent->Bsh = _br_frombus_oldbsh[i];
             _br_frombus_intid.erase(_br_frombus_intid.begin()+i);
             _br_frombus_oldgsh.erase(_br_frombus_oldgsh.begin()+i);
             _br_frombus_oldbsh.erase(_br_frombus_oldbsh.begin()+i);
@@ -1042,13 +1045,13 @@ int Simulator_sw::_parseBrFault(Event &event){
       else if(DOUBLE_EQ(event.double_arg(),1)){
         // - on the to bus of line
         Bus* busofevent; // the bus of fault
-        int ans=_pwsLocal.getBus(branchofevent->toBusExtId(),busofevent);
+        int ans=_pwsLocal.getBus(branchofevent->toBusExtId,busofevent);
         if (ans) return 8;
 
         for(size_t i=0;i< _br_tobus_intid.size();++i){
-          if(_pwsLocal.getBus_intId(branchofevent->toBusExtId())==_br_tobus_intid[i]){
-            busofevent->gsh = _br_tobus_oldgsh[i];
-            busofevent->bsh = _br_tobus_oldbsh[i];
+          if(_pwsLocal.getBus_intId(branchofevent->toBusExtId)==_br_tobus_intid[i]){
+            busofevent->Gsh = _br_tobus_oldgsh[i];
+            busofevent->Bsh = _br_tobus_oldbsh[i];
             _br_tobus_intid.erase(_br_tobus_intid.begin()+i);
             _br_tobus_oldgsh.erase(_br_tobus_oldgsh.begin()+i);
             _br_tobus_oldbsh.erase(_br_tobus_oldbsh.begin()+i);
@@ -1064,7 +1067,7 @@ int Simulator_sw::_parseBrFault(Event &event){
         for (size_t i=0;i<_br_branchoffault_extid.size();++i){
           // We found the line in the two vectors that corresponds to the
           // particular branch
-          if (_br_branchoffault_extid[i]==branchofevent->extId()){
+          if (_br_branchoffault_extid[i]==branchofevent->extId){
             int ans=_pwsLocal.getBus(_br_faultbus_extid[i],busofevent);
             if (ans) return 9;
 
@@ -1076,7 +1079,7 @@ int Simulator_sw::_parseBrFault(Event &event){
             _br_branchoffault_extid.erase(_br_branchoffault_extid.begin()+i);
             _br_faultbus_extid.erase(_br_faultbus_extid.begin()+i);
 
-            branchofevent->set_status(true);
+            branchofevent->status = true;
           }
         }
       }
@@ -1089,7 +1092,7 @@ int Simulator_sw::_parseBrFault(Event &event){
       Bus* busofevent;
       // Search to find if the trip is in an already faulty branch
       for (size_t i=0;i<_br_branchoffault_extid.size();++i){
-        if (_br_branchoffault_extid[i]==branchofevent->extId()){
+        if (_br_branchoffault_extid[i]==branchofevent->extId){
 
           // We found the line in the two vectors that corresponds to the
           // particular branch
@@ -1106,17 +1109,17 @@ int Simulator_sw::_parseBrFault(Event &event){
         }
       }
 
-      branchofevent->set_status(false); //status == false meaning tripped
+      branchofevent->status = false; //status == false meaning tripped
     }
     else{
-      branchofevent->set_status(true);
+      branchofevent->status = true;
     }
   }
 
   // 2: short
   else if (event.event_type()==EVENT_EVENTTYPE_BRSHORT){
-    branchofevent->set_r(1e-14); // near 0
-    branchofevent->set_x(1e-14);
+    branchofevent->R = 1e-14; // near 0
+    branchofevent->R = 1e-14;
   }
 
   return 0;

@@ -85,34 +85,33 @@ int SSEngine::do_buildY( Powersystem const& pws,
 
   unsigned int fext, text;
   size_t f, t;
-  double r, x, xc, g_from, g_to, b_from, b_to, tap, th;
+  double r, x, g_from, g_to, b_from, b_to, tap, th;
   complex<double> ys, yp_from, yp_to, y11, y12, y21, y22;
   for ( size_t k = 0 ; k != pws.getBrSet_size() ; ++k ){
     Branch const* branch = pws.getBranch(k);
 
     // Check whether the branch is on-line
-    if (!branch->status()) continue;
+    if (!branch->status) continue;
 
     // Retrieve data of the branch
-    fext = branch->fromBusExtId();
-    text = branch->toBusExtId();
+    fext = branch->fromBusExtId;
+    text = branch->toBusExtId;
     f = pws.getBus_intId(fext);  // from bus internal index
     t = pws.getBus_intId(text);  // to bus internal index
 
-    r = branch->r();                     // resistance
-    x = branch->x();                     // reactance
-    xc = branch->c_series_x();           // series capacitance
-    ys = 1.0/(complex<double>(r,x+xc));  // series admittance
+    r = branch->R;                     // resistance
+    x = branch->X;                     // reactance
+    ys = 1.0/(complex<double>(r,x));  // series admittance
 
-    g_from = branch->g_from();           // from end shunt conductance
-    b_from = branch->b_from();           // from end shunt susceptance
-    yp_from = complex<double> (g_from, b_from); // from end shunt admittance
-    g_to = branch->g_to();               // to end shunt conductance
-    b_to = branch->b_to();               // to end shunt susceptance
-    yp_to = complex<double> (g_to, b_to); // to end shunt admittance
+    g_from = branch->Gfrom;           // from end shunt conductance
+    b_from = branch->Bfrom;           // from end shunt susceptance
+    yp_from = complex<double>(g_from, b_from); // from end shunt admittance
+    g_to = branch->Gto;               // to end shunt conductance
+    b_to = branch->Bto;               // to end shunt susceptance
+    yp_to = complex<double>(g_to, b_to); // to end shunt admittance
 
-    tap = branch->Xratio();              // Xformer tap ratio magnitude
-    th = branch->Xshift();               // Xformer phase shift angle
+    tap = branch->Xratio;              // Xformer tap ratio magnitude
+    th = branch->Xshift;               // Xformer phase shift angle
     if(tap == 0){
       tap = 1;                      // assuming that (tap==0) => denotes line
       th = 0;
@@ -137,7 +136,7 @@ int SSEngine::do_buildY( Powersystem const& pws,
 
   // Include bus shunt admittances
   for ( size_t k = 0 ; k != pws.getBusSet_size() ; ++k )
-    Y(k,k) += complex<double>( pws.getBus(k)->gsh, pws.getBus(k)->bsh );
+    Y(k,k) += complex<double>( pws.getBus(k)->Gsh, pws.getBus(k)->Bsh );
 
   return 0;
 }
@@ -167,7 +166,7 @@ int SSEngine::do_updatePowersystem( Powersystem& pws,
 
   // Calculate branch flows
   size_t fromBusIntId, toBusIntId;
-  double r, xbr, xc, g_from, g_to, b_from, b_to, tap, th;
+  double r, xbr, g_from, g_to, b_from, b_to, tap, th;
   complex<double> ys, yp_from, yp_to, y11, y12, y21, y22;
   complex<double> u_f, u_t, i_f, i_t, s_f, s_t;
 
@@ -175,25 +174,24 @@ int SSEngine::do_updatePowersystem( Powersystem& pws,
   for ( size_t k = 0 ; k != m ; ++k ){
     Branch* branch = pws.getBranch(k);
 
-    fromBusIntId = pws.getBus_intId( branch->fromBusExtId() );
+    fromBusIntId = pws.getBus_intId(branch->fromBusExtId);
     u_f = polar( x(n + fromBusIntId) , x(fromBusIntId) );
-    toBusIntId = pws.getBus_intId( branch->toBusExtId() );
+    toBusIntId = pws.getBus_intId(branch->toBusExtId);
     u_t = polar( x(n + toBusIntId) , x(toBusIntId) );
 
-    r = branch->r();                 // resistance
-    xbr = branch->x();               // reactance
-    xc = branch->c_series_x();       // series capacitance
-    ys = 1.0/(complex<double>(r,xbr+xc)); // series admittance
+    r = branch->R;                 // resistance
+    xbr = branch->X;               // reactance
+    ys = 1.0/(complex<double>(r,xbr)); // series admittance
 
-    g_from = branch->g_from();    // from end shunt conductance
-    b_from = branch->b_from();    // from end shunt susceptance
-    yp_from = complex<double> (g_from, b_from); // from end shunt admittance
-    g_to = branch->g_to();        // to end shunt conductance
-    b_to = branch->b_to();        // to end shunt susceptance
-    yp_to = complex<double> (g_to, b_to); // to end shunt admittance
+    g_from = branch->Gfrom;    // from end shunt conductance
+    b_from = branch->Bfrom;    // from end shunt susceptance
+    yp_from = complex<double>(g_from, b_from); // from end shunt admittance
+    g_to = branch->Gto;        // to end shunt conductance
+    b_to = branch->Bto;        // to end shunt susceptance
+    yp_to = complex<double>(g_to, b_to); // to end shunt admittance
 
-    tap = branch->Xratio();         // Xformer tap ratio magnitude
-    th = branch->Xshift();        // Xformer phase shift angle
+    tap = branch->Xratio;         // Xformer tap ratio magnitude
+    th = branch->Xshift;        // Xformer phase shift angle
     if(tap == 0){
       tap = 1;                      // assuming that (tap==0) => denotes line
       th = 0;
@@ -217,10 +215,10 @@ int SSEngine::do_updatePowersystem( Powersystem& pws,
     s_t = u_t * conj(i_t);
 
     // Store flow values into branch set
-    branch->set_ifrom(i_f);
-    branch->set_ito(i_t);
-    branch->set_sfrom(s_f);
-    branch->set_sto(s_t);
+    branch->Ifrom = i_f;
+    branch->Ito = i_t;
+    branch->Sfrom = s_f;
+    branch->Sto = s_t;
   }
 
   // Calculate distribution of generation between machines

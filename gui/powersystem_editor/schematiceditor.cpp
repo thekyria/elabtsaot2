@@ -186,12 +186,12 @@ void SchematicEditor::mouseMoveEvent(QMouseEvent* event){
         if ( cdEl == NULL )
           cout << "Branch update failed! extId=" << elExtId << endl;
         // Displace branch
-        if ( pBr->fromBusExtId() == cdBus->extId ){
+        if ( pBr->fromBusExtId == cdBus->extId ){
           // Bus moved is at the from end of the branch
           cdEl->x1 += dx;
           cdEl->y1 += dy;
         }
-        if ( pBr->toBusExtId() == cdBus->extId ){
+        if ( pBr->toBusExtId == cdBus->extId ){
           // Bus moved is at the to end of the branch
           cdEl->x2 += dx;
           cdEl->y2 += dy;

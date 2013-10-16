@@ -421,13 +421,13 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
 
     // Write its parameters to the xml file
     fprintf(f, "\t<bus>\n");
-    fprintf(f, "\t\t<id> %d </id>\n", bus->extId);
+    fprintf(f, "\t\t<extId> %d </extId>\n", bus->extId);
     fprintf(f, "\t\t<name> %s </name>\n", bus->name.c_str());
-    fprintf(f, "\t\t<shconductance> %.12f </shconductance>\n", bus->bsh);
-    fprintf(f, "\t\t<shsusceptance> %.12f </shsusceptance>\n", bus->gsh);
+    fprintf(f, "\t\t<Gsh> %.12f </Gsh>\n", bus->Bsh);
+    fprintf(f, "\t\t<Bsh> %.12f </Bsh>\n", bus->Gsh);
     fprintf(f, "\t\t<baseKV> %.12f </baseKV>\n", bus->baseKV);
-    fprintf(f, "\t\t<v_steadystate> %.12f </v_steadystate>\n", bus->V);
-    fprintf(f, "\t\t<th_steadystate> %.12f </th_steadystate>\n", bus->theta);
+    fprintf(f, "\t\t<V> %.12f </V>\n", bus->V);
+    fprintf(f, "\t\t<theta> %.12f </theta>\n", bus->theta);
     fprintf(f, "\t</bus>\n");
     fflush(f);
   }
@@ -444,48 +444,18 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
 
     // Write its parameters to the xml file
     fprintf(f, "\t<branch>\n");
-    fprintf(f, "\t\t<id> %d </id>\n",
-            br->extId());
-    fprintf(f, "\t\t<name> %s </name>\n",
-            br->name().c_str());
-    fprintf(f, "\t\t<frombus> %d </frombus>\n",
-            br->fromBusExtId());
-    fprintf(f, "\t\t<tobus> %d </tobus>\n",
-            br->toBusExtId());
-    fprintf(f, "\t\t<resistance> %.12f </resistance>\n",
-            br->r());
-    fprintf(f, "\t\t<reactance> %.12f </reactance>\n",
-            br->x());
-    fprintf(f, "\t\t<susceptance> %.12f </susceptance>\n",
-            br->b());
-    fprintf(f, "\t\t<series_capacitance> %.12f </series_capacitance>\n",
-            br->c_series_x());
-    fprintf(f, "\t\t<xratio> %.12f </xratio>\n",
-            br->Xratio());
-    fprintf(f, "\t\t<xratio_tap> %d </xratio_tap>\n",
-            br->Xratio_tap());
-    fprintf(f, "\t\t<xratio_base> %.12f </xratio_base>\n",
-            br->Xratio_base());
-    fprintf(f, "\t\t<xratio_tap_min> %d </xratio_tap_min>\n",
-            br->Xratio_tap_min());
-    fprintf(f, "\t\t<xratio_tap_max> %d </xratio_tap_max>\n",
-            br->Xratio_tap_max());
-    fprintf(f, "\t\t<xratio_tap_step> %.12f </xratio_tap_step>\n",
-            br->Xratio_tap_step());
-    fprintf(f, "\t\t<xshift> %.12f </xshift>\n",
-            br->Xshift());
-    fprintf(f, "\t\t<xshift_tap> %d </xshift_tap>\n",
-            br->Xshift_tap());
-    fprintf(f, "\t\t<xshift_base> %.12f </xshift_base>\n",
-            br->Xshift_base());
-    fprintf(f, "\t\t<xshift_tap_min> %d </xshift_tap_min>\n",
-            br->Xshift_tap_min());
-    fprintf(f, "\t\t<xshift_tap_max> %d </xshift_tap_max>\n",
-            br->Xshift_tap_max());
-    fprintf(f, "\t\t<xshift_tap_step> %.12f </xshift_tap_step>\n",
-            br->Xshift_tap_step());
-    fprintf(f, "\t\t<status> %d </status>\n",
-            static_cast<int>( br->status() ) );
+    fprintf(f, "\t\t<id> %d </id>\n", br->extId);
+    fprintf(f, "\t\t<status> %d </status>\n", static_cast<int>( br->status ) );
+    fprintf(f, "\t\t<fromBusExtId> %d </fromBusExtId>\n", br->fromBusExtId);
+    fprintf(f, "\t\t<toBusExtId> %d </toBusExtId>\n", br->toBusExtId);
+    fprintf(f, "\t\t<R> %.12f </R>\n", br->R);
+    fprintf(f, "\t\t<X> %.12f </X>\n", br->X);
+    fprintf(f, "\t\t<Bfrom> %.12f </Bfrom>\n", br->Bfrom);
+    fprintf(f, "\t\t<Bto> %.12f </Bto>\n", br->Bto);
+    fprintf(f, "\t\t<Gfrom> %.12f </Gfrom>\n", br->Gfrom);
+    fprintf(f, "\t\t<Gto> %.12f </Gto>\n", br->Gto);
+    fprintf(f, "\t\t<Xratio> %.12f </Xratio>\n", br->Xratio);
+    fprintf(f, "\t\t<Xshift> %.12f </Xshift>\n", br->Xshift);
     fprintf(f, "\t</branch>\n");
     fflush(f);
   }
@@ -503,18 +473,12 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
     // Write its parameters to the xml file
     fprintf(f, "\t<generator>\n");
 
-    fprintf(f, "\t\t<id> %d </id>\n",
-            gen->extId());
-    fprintf(f, "\t\t<name> %s </name>\n",
-            gen->name().c_str());
-    fprintf(f, "\t\t<atbus> %d </atbus>\n",
-            gen->busExtId() );
-    fprintf(f, "\t\t<avr> %d </avr>\n",
-            gen->avr());
-    fprintf(f, "\t\t<vsetpoint>%.12f</vsetpoint>\n",
-            gen->voltageSetpoint());
-    fprintf(f, "\t\t<status>%d</status>\n",
-            static_cast<int>( gen->status() ) );
+    fprintf(f, "\t\t<id> %d </id>\n", gen->extId());
+    fprintf(f, "\t\t<name> %s </name>\n", gen->name().c_str());
+    fprintf(f, "\t\t<atbus> %d </atbus>\n", gen->busExtId() );
+    fprintf(f, "\t\t<avr> %d </avr>\n", gen->avr());
+    fprintf(f, "\t\t<vsetpoint>%.12f</vsetpoint>\n", gen->voltageSetpoint());
+    fprintf(f, "\t\t<status>%d</status>\n", static_cast<int>( gen->status() ) );
 
     fprintf(f, "\t\t<generation>\n");
     fprintf(f, "\t\t\t<pgen> %.12f </pgen>\n", gen->pgen());

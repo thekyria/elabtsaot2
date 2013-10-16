@@ -349,8 +349,8 @@ int graph::countIslands( Powersystem const& pws ){
     Branch const* br = pws.getBranch(k);
     if( !br ) break;
 
-    int fr = pws.getBus_intId( br->fromBusExtId() );
-    int to = pws.getBus_intId( br->toBusExtId() );
+    int fr = pws.getBus_intId( br->fromBusExtId );
+    int to = pws.getBus_intId( br->toBusExtId );
 //    if( fr<0 || to<0 ) return false;
 
     boost::add_edge( fr, to, Gr );
@@ -415,8 +415,8 @@ bool graph::isPlanar( Powersystem const& pws ){
     if( !br )
       break;
 
-    int fr = pws.getBus_intId( br->fromBusExtId() );
-    int to = pws.getBus_intId( br->toBusExtId() );
+    int fr = pws.getBus_intId( br->fromBusExtId );
+    int to = pws.getBus_intId( br->toBusExtId );
 //    if( fr<0 || to<0 ) return false;
 
     // Add edge

@@ -2020,10 +2020,10 @@ int TDEmulator::_encodeScenarioBase( Scenario const& sce_,
     // Retrieve from and to bus of the branch
     Bus const* pFromBus;
     Bus const* pToBus;
-    ans = _pws->getBus( pBr->fromBusExtId(), pFromBus );
+    ans = _pws->getBus( pBr->fromBusExtId, pFromBus );
     if ( ans )
       return 10;
-    ans = _pws->getBus( pBr->toBusExtId(), pToBus );
+    ans = _pws->getBus( pBr->toBusExtId, pToBus );
     if ( ans )
       return 11;
     bool nodeFound = false;
@@ -2077,8 +2077,8 @@ int TDEmulator::_encodeScenarioBase( Scenario const& sce_,
       ans = _pws->getBranch( brExtId, pBr );
       if ( ans )
         return 16;
-      if ( pBr->x() > maxBrX ){
-        maxBrX = pBr->x();
+      if ( pBr->X > maxBrX ){
+        maxBrX = pBr->X;
         maxBrX_brExtId = brExtId;
       }
     }
@@ -2095,15 +2095,15 @@ int TDEmulator::_encodeScenarioBase( Scenario const& sce_,
 
     // Determine embr loc
     double embr_loc;
-    if ( pBr->fromBusExtId() == static_cast<unsigned int>(el_extId) )
+    if ( pBr->fromBusExtId == static_cast<unsigned int>(el_extId) )
       embr_loc = 0; // set fault at from end of the embr
-    else if ( pBr->toBusExtId() == static_cast<unsigned int>(el_extId) )
+    else if ( pBr->toBusExtId == static_cast<unsigned int>(el_extId) )
       embr_loc = 1; // set fault at to end of the embr
     else
       return 18;
 
     // Determine the mapping position of the branch
-    ans = _emu->mmd()->getElementMapping( PWSMODELELEMENTTYPE_BR, pBr->extId(),
+    ans = _emu->mmd()->getElementMapping( PWSMODELELEMENTTYPE_BR, pBr->extId,
                                    &tab, &row, &col, &embr_pos );
     if ( ans ) return 19;
     // Determine whether the branch in question is on one of the extensions

@@ -41,66 +41,48 @@ bool PowersystemXMLHandler::characters(QString const& ch){
   }
   // Find which attribute is set
   // --------------- Bus ---------------
-  if ( _p_bus ){
-    if( _tags.last()=="id" )
+  if (_p_bus){
+    if (_tags.last()=="id")
       _p_bus->extId = value.toInt();
-    if( _tags.last()=="name" )
+    if (_tags.last()=="name")
       _p_bus->name = value.toStdString();
-    if( _tags.last()=="shconductance" )
-      _p_bus->gsh = value.toDouble();
-    if( _tags.last()=="shsusceptance" )
-      _p_bus->bsh = value.toDouble();
-    if( _tags.last()=="baseKV" )
+    if (_tags.last()=="shconductance")
+      _p_bus->Gsh = value.toDouble();
+    if (_tags.last()=="shsusceptance")
+      _p_bus->Bsh = value.toDouble();
+    if (_tags.last()=="baseKV")
       _p_bus->baseKV = value.toDouble();
-    if( _tags.last()=="v_steadystate" )
+    if (_tags.last()=="v_steadystate")
       _p_bus->V = value.toDouble();
-    if( _tags.last()=="th_steadystate" )
+    if (_tags.last()=="th_steadystate")
       _p_bus->theta = value.toDouble();
 
   // --------------- Branch ---------------
-  } else if( _p_br ){
-    if( _tags.last()=="id" )
-      _p_br->set_extId( value.toDouble() );
-    if( _tags.last()=="name" )
-      _p_br->set_name( value.toStdString() );
-    if( _tags.last()=="frombus" )
-      _p_br->set_fromBusExtId( value.toInt() );
-    if( _tags.last()=="tobus" )
-      _p_br->set_toBusExtId( value.toInt() );
-    if( _tags.last()=="resistance" )
-      _p_br->set_r( value.toDouble() );
-    if( _tags.last()=="reactance" )
-      _p_br->set_x( value.toDouble() );
-    if( _tags.last()=="susceptance" )
-      _p_br->set_b( value.toDouble() );
-    if( _tags.last()=="series_capacitance" )
-      _p_br->set_c_series_x( value.toDouble() );
-    if (_tags.last() == "xratio" )
-      _p_br->set_Xratio( value.toDouble() );
-    if (_tags.last() == "xratio_tap" )
-      _p_br->set_Xratio_tap( value.toInt() );
-    if (_tags.last() == "xratio_base" )
-      _p_br->set_Xratio_base( value.toDouble() );
-    if (_tags.last() == "xratio_tap_min" )
-      _p_br->set_Xratio_tap_min( value.toInt() );
-    if (_tags.last() == "xratio_tap_max" )
-      _p_br->set_Xratio_tap_max( value.toInt() );
-    if (_tags.last() == "xratio_tap_step" )
-      _p_br->set_Xratio_tap_step( value.toDouble() );
-    if (_tags.last() == "xshift" )
-      _p_br->set_Xshift( value.toDouble() );
-    if (_tags.last() == "xshift_tap" )
-      _p_br->set_Xshift_tap( value.toInt() );
-    if (_tags.last() == "xshift_base" )
-      _p_br->set_Xshift_base( value.toDouble() );
-    if (_tags.last() == "xshift_tap_min" )
-      _p_br->set_Xshift_tap_min( value.toInt() );
-    if (_tags.last() == "xshift_tap_max" )
-      _p_br->set_Xshift_tap_max( value.toInt() );
-    if (_tags.last() == "xshift_tap_step" )
-      _p_br->set_Xshift_tap_step( value.toDouble() );
-    if( _tags.last()=="status" )
-      _p_br->set_status( static_cast<bool>( value.toInt() ) );
+  } else if(_p_br){
+    if (_tags.last()=="id")
+      _p_br->extId = value.toDouble();
+    if (_tags.last()=="status")
+      _p_br->status = static_cast<bool>(value.toInt());
+    if (_tags.last()=="fromBusExtId")
+      _p_br->fromBusExtId = value.toInt();
+    if (_tags.last()=="toBusExtId")
+      _p_br->toBusExtId = value.toInt();
+    if (_tags.last()=="R")
+      _p_br->R = value.toDouble();
+    if (_tags.last()=="X")
+      _p_br->X = value.toDouble();
+    if (_tags.last()=="Bfrom")
+      _p_br->Bfrom = value.toDouble();
+    if (_tags.last()=="Bto")
+      _p_br->Bto = value.toDouble();
+    if (_tags.last()=="Gfrom")
+      _p_br->Gfrom = value.toDouble();
+    if (_tags.last()=="Gto")
+      _p_br->Gto = value.toDouble();
+    if (_tags.last() == "Xratio" )
+      _p_br->Xratio = value.toDouble();
+    if (_tags.last() == "Xshift" )
+      _p_br->Xshift = value.toDouble();
 
   // --------------- Generator ---------------
   } else if( _p_gen ){

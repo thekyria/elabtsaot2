@@ -31,7 +31,7 @@ int TabularPowersystemInterface::columnCount(QModelIndex const& index) const{
   case PWSMODELELEMENTTYPE_BUS: // Buses
     return 9;
   case PWSMODELELEMENTTYPE_BR: // Branches
-    return 29;
+    return 20;
   case PWSMODELELEMENTTYPE_GEN: // Generators
     return 31;
   case PWSMODELELEMENTTYPE_LOAD: // Loads
@@ -41,8 +41,7 @@ int TabularPowersystemInterface::columnCount(QModelIndex const& index) const{
   return 0;
 }
 
-QVariant TabularPowersystemInterface::data(QModelIndex const& index,
-                                           int role) const{
+QVariant TabularPowersystemInterface::data(QModelIndex const& index, int role) const{
 
   // Check that a valid index has been provided as an argument
   if( !index.isValid() || index.row()>=rowCount(QModelIndex()) )
@@ -59,8 +58,8 @@ QVariant TabularPowersystemInterface::data(QModelIndex const& index,
     switch(index.column()){
     case 0: return _pws->getBus(index.row())->extId;
     case 1: return _pws->getBus(index.row())->name.c_str();
-    case 2: return _pws->getBus(index.row())->gsh;
-    case 3: return _pws->getBus(index.row())->bsh;
+    case 2: return _pws->getBus(index.row())->Gsh;
+    case 3: return _pws->getBus(index.row())->Bsh;
     case 4: return _pws->getBus(index.row())->baseKV;
 
     // Data resulting from the loadflow
@@ -74,39 +73,29 @@ QVariant TabularPowersystemInterface::data(QModelIndex const& index,
 
   case PWSMODELELEMENTTYPE_BR:{ // Branches
     switch(index.column()){
-    case  0: return _pws->getBranch(index.row())->extId();
-    case  1: return _pws->getBranch(index.row())->name().c_str();
-    case  2: return _pws->getBranch(index.row())->fromBusExtId();
-    case  3: return _pws->getBranch(index.row())->toBusExtId();
-    case  4: return _pws->getBranch(index.row())->r();
-    case  5: return _pws->getBranch(index.row())->x();
-    case  6: return _pws->getBranch(index.row())->b();
-    case  7: return _pws->getBranch(index.row())->c_series_x();
+    case  0: return _pws->getBranch(index.row())->extId;
+    case  1: return _pws->getBranch(index.row())->status;
+    case  2: return _pws->getBranch(index.row())->fromBusExtId;
+    case  3: return _pws->getBranch(index.row())->toBusExtId;
+    case  4: return _pws->getBranch(index.row())->R;
+    case  5: return _pws->getBranch(index.row())->X;
+    case  6: return _pws->getBranch(index.row())->Bfrom;
+    case  7: return _pws->getBranch(index.row())->Bto;
+    case  8: return _pws->getBranch(index.row())->Gfrom;
+    case  9: return _pws->getBranch(index.row())->Gto;
+    case 10: return _pws->getBranch(index.row())->Xratio;
+    case 11: return _pws->getBranch(index.row())->Xshift;
 
-    case  8: return _pws->getBranch(index.row())->Xratio();
-    case  9: return _pws->getBranch(index.row())->Xratio_tap();
-    case 10: return _pws->getBranch(index.row())->Xratio_base();
-    case 11: return _pws->getBranch(index.row())->Xratio_tap_min();
-    case 12: return _pws->getBranch(index.row())->Xratio_tap_max();
-    case 13: return _pws->getBranch(index.row())->Xratio_tap_step();
-    case 14: return _pws->getBranch(index.row())->Xshift();
-    case 15: return _pws->getBranch(index.row())->Xshift_tap();
-    case 16: return _pws->getBranch(index.row())->Xshift_base();
-    case 17: return _pws->getBranch(index.row())->Xshift_tap_min();
-    case 18: return _pws->getBranch(index.row())->Xshift_tap_max();
-    case 19: return _pws->getBranch(index.row())->Xshift_tap_step();
-
-    case 20: return _pws->getBranch(index.row())->status();
 
     // Data resulting from the loadflow
-    case 21: return _pws->getBranch(index.row())->ifrom().real();
-    case 22: return _pws->getBranch(index.row())->ifrom().imag();
-    case 23: return _pws->getBranch(index.row())->ito().real();
-    case 24: return _pws->getBranch(index.row())->ito().imag();
-    case 25: return _pws->getBranch(index.row())->sfrom().real();
-    case 26: return _pws->getBranch(index.row())->sfrom().imag();
-    case 27: return _pws->getBranch(index.row())->sto().real();
-    case 28: return _pws->getBranch(index.row())->sto().imag();
+    case 12: return _pws->getBranch(index.row())->Ifrom.real();
+    case 13: return _pws->getBranch(index.row())->Ifrom.imag();
+    case 14: return _pws->getBranch(index.row())->Ito.real();
+    case 15: return _pws->getBranch(index.row())->Ito.imag();
+    case 16: return _pws->getBranch(index.row())->Sfrom.real();
+    case 17: return _pws->getBranch(index.row())->Sfrom.imag();
+    case 18: return _pws->getBranch(index.row())->Sto.real();
+    case 19: return _pws->getBranch(index.row())->Sto.imag();
     }
     break;
   }
@@ -204,9 +193,9 @@ bool TabularPowersystemInterface::setData(QModelIndex const& index,
     case 1: if(v.convert(QVariant::String))
         bus->name = v.toString().toStdString(); break;
     case 2: if(v.convert(QVariant::Double))
-        bus->gsh = v.toFloat(); break;
+        bus->Gsh = v.toFloat(); break;
     case 3: if(v.convert(QVariant::Double))
-        bus->bsh = v.toFloat(); break;
+        bus->Bsh = v.toFloat(); break;
     case 4: if(v.convert(QVariant::Double))
         bus->baseKV = v.toFloat(); break;
     }
@@ -215,55 +204,35 @@ bool TabularPowersystemInterface::setData(QModelIndex const& index,
 
   case PWSMODELELEMENTTYPE_BR:{ // Branches
     Branch* branch = NULL;
-    _pws->getBranch( _pws->getBranch(index.row())->extId(), branch );
+    _pws->getBranch( _pws->getBranch(index.row())->extId, branch );
     if ( branch == NULL )
       return false;
 
     switch(index.column()){
     case  0: if(v.convert(QVariant::Int))
-        branch->set_extId( v.toInt() ); break;
-    case  1: if(v.convert(QVariant::String))
-        branch->set_name( v.toString().toStdString() );  break;
+        branch->extId = v.toInt(); break;
+    case  1: if(v.convert(QVariant::Int))
+        branch->status = v.toBool(); break;
     case  2: if(v.convert(QVariant::Int))
-        branch->set_fromBusExtId( v.toInt() ); break;
+        branch->fromBusExtId = v.toInt(); break;
     case  3: if(v.convert(QVariant::Int))
-        branch->set_toBusExtId( v.toInt() ); break;
+        branch->toBusExtId = v.toInt(); break;
     case  4: if(v.convert(QVariant::Double))
-        branch->set_r( v.toFloat() ); break;
+        branch->R = v.toFloat(); break;
     case  5: if(v.convert(QVariant::Double))
-        branch->set_x( v.toFloat() ); break;
+        branch->X = v.toFloat(); break;
     case  6: if(v.convert(QVariant::Double))
-        branch->set_b( v.toFloat() ); break;
+        branch->Bfrom = v.toFloat(); break;
     case  7: if(v.convert(QVariant::Double))
-        branch->set_c_series_x( v.toFloat() ); break;
-
+        branch->Bto = v.toFloat(); break;
     case  8: if(v.convert(QVariant::Double))
-        branch->set_Xratio( v.toDouble() ); break;
-    case  9: if(v.convert(QVariant::Int))
-        branch->set_Xratio_tap( v.toInt() ); break;
+        branch->Gfrom = v.toFloat(); break;
+    case  9: if(v.convert(QVariant::Double))
+        branch->Gto = v.toFloat(); break;
     case 10: if(v.convert(QVariant::Double))
-        branch->set_Xratio_base( v.toDouble() ); break;
-    case 11: if(v.convert(QVariant::Int))
-        branch->set_Xratio_tap_min( v.toInt() ); break;
-    case 12: if(v.convert(QVariant::Int))
-        branch->set_Xratio_tap_max( v.toInt() ); break;
-    case 13: if(v.convert(QVariant::Double))
-        branch->set_Xratio_tap_step( v.toDouble() ); break;
-    case 14: if(v.convert(QVariant::Double))
-        branch->set_Xshift( v.toDouble() ); break;
-    case 15: if(v.convert(QVariant::Int))
-        branch->set_Xshift_tap( v.toInt() ); break;
-    case 16: if(v.convert(QVariant::Double))
-        branch->set_Xshift_base( v.toDouble() ); break;
-    case 17: if(v.convert(QVariant::Int))
-        branch->set_Xshift_tap_min( v.toInt() ); break;
-    case 18: if(v.convert(QVariant::Int))
-        branch->set_Xshift_tap_max( v.toInt() ); break;
-    case 19: if(v.convert(QVariant::Double))
-        branch->set_Xshift_tap_step( v.toDouble() ); break;
-
-    case 20: if(v.convert(QVariant::Int))
-        branch->set_status( v.toBool() ); break;
+        branch->Xratio = v.toDouble(); break;
+    case 11: if(v.convert(QVariant::Double))
+        branch->Xshift = v.toDouble(); break;
     }
     break;
   }
@@ -406,38 +375,27 @@ QVariant TabularPowersystemInterface::headerData(int section,
 
   case PWSMODELELEMENTTYPE_BR:{ // Branches
     switch(section){
-    case  0: return "ID";
-    case  1: return "Name";
-    case  2: return "fBus";
-    case  3: return "tBus";
+    case  0: return "extId";
+    case  1: return "status";
+    case  2: return "fromBusExtId";
+    case  3: return "toBusExtId";
     case  4: return "R";
     case  5: return "X";
-    case  6: return "B";
-    case  7: return "Cser";
+    case  6: return "Bfrom";
+    case  7: return "Bto";
+    case  8: return "Gfrom";
+    case  9: return "Gto";
+    case 10: return "Xratio";
+    case 11: return "Xshift";
 
-    case  8: return "Xratio";
-    case  9: return "Xratio tap";
-    case 10: return "Xratio base";
-    case 11: return "Xratio tap min";
-    case 12: return "Xratio tap min";
-    case 13: return "Xratio tap step";
-    case 14: return "Xshift";
-    case 15: return "Xshift tap";
-    case 16: return "Xshift base";
-    case 17: return "Xshift tap min";
-    case 18: return "Xshift tap min";
-    case 19: return "Xshift tap step";
-
-    case 20: return "Status";
-
-    case 21: return "re(If)";
-    case 22: return "im(If)";
-    case 23: return "re(It)";
-    case 24: return "im(It)";
-    case 25: return "re(Sf)";
-    case 26: return "im(Sf)";
-    case 27: return "re(St)";
-    case 28: return "im(St)";
+    case 12: return "re(If)";
+    case 13: return "im(If)";
+    case 14: return "re(It)";
+    case 15: return "im(It)";
+    case 16: return "re(Sf)";
+    case 17: return "im(Sf)";
+    case 18: return "re(St)";
+    case 19: return "im(St)";
     }
     break;
   }

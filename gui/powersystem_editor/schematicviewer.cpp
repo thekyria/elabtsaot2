@@ -583,7 +583,7 @@ void SchematicViewer::_drawBranch( QPainter& painter,
   QPoint P0( brCd.x1, brCd.y1 );
   QPoint P1( brCd.x2, brCd.y2 );
   painter.drawLine( P0, P1 );
-  painter.drawText( (P0+P1)/2 , pBr->name().c_str() );
+  painter.drawText( (P0+P1)/2 , QString(pBr->extId) );
 
   return;
 }

@@ -26,8 +26,8 @@ class Bus {
 
   unsigned int extId; //! External id of the bus
   std::string name; //! Name of the bus
-  double gsh; //! Shunt conductance to ground at bus [pu]
-  double bsh; //! Shunt susceptance to ground at bus [pu]
+  double Gsh; //! Shunt conductance to ground at bus [pu]
+  double Bsh; //! Shunt susceptance to ground at bus [pu]
   double baseKV; //! Voltage base at the bus [kV]
 
   // Variables that result from the loadflow

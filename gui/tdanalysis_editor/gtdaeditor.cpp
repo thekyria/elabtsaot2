@@ -117,7 +117,7 @@ void GTDAEditor::branchStabCheckSlot(){
   // ----- the branches -----
   vector<Scenario> scenarios;
   for ( size_t k = 0 ; k != pws->getBrSet_size() ; ++k ){
-    unsigned int brExtId = pws->getBranch(k)->extId();
+    unsigned int brExtId = pws->getBranch(k)->extId;
     Scenario tempSce( k,
                       "Scenario for branch " + auxiliary::to_string(brExtId),
                       auxiliary::to_string(faultTime)
@@ -159,7 +159,7 @@ void GTDAEditor::branchStabCheckSlot(){
   // Parse checkStability results
   map<unsigned int,map<unsigned int,bool> > brGenStab;
   for ( unsigned int k = 0 ; k != pws->getBrSet_size() ; ++k ){
-    unsigned int brExtId = pws->getBranch(k)->extId();
+    unsigned int brExtId = pws->getBranch(k)->extId;
     brGenStab[brExtId] = genStable[k];
   }
 
@@ -218,7 +218,7 @@ void GTDAEditor::cctCheckSlot(){
   Powersystem const* pws(_tde->getPws());
   vector<Scenario> scenarios;
   for ( size_t k = 0 ; k != pws->getBrSet_size() ; ++k ){
-    unsigned int brExtId = pws->getBranch(k)->extId();
+    unsigned int brExtId = pws->getBranch(k)->extId;
     Scenario tempSce( k,
                       "Scenario for branch " + auxiliary::to_string(brExtId),
                       "CCT for 3ph fault in the middle of branch "
@@ -251,7 +251,7 @@ void GTDAEditor::cctCheckSlot(){
   timer.Start();
   ans = _tde->checkCCT(scenarios, precision, cctMin, cctMax);
   double elapsedTime = timer.Stop();
-  if ( ans ){
+  if (ans){
     cout << "CheckCCT failed with code " << ans << endl;
     return;
   }
@@ -259,7 +259,7 @@ void GTDAEditor::cctCheckSlot(){
   // ----- Parse results and output detailedly to console -----
   map<unsigned int, pair<double,double> > cctMap;
   for ( size_t k = 0 ; k != pws->getBrSet_size() ; ++k ){
-    unsigned int brExtId = pws->getBranch(k)->extId();
+    unsigned int brExtId = pws->getBranch(k)->extId;
     cctMap[brExtId] = make_pair(cctMin[k], cctMax[k]);
   }
   for ( map<unsigned int, pair<double,double> >::const_iterator itBr = cctMap.begin() ;

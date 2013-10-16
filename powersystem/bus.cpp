@@ -11,8 +11,8 @@ string Bus::serialize() const{
   stringstream ss;
   ss << extId << " ";
   ss << "_name:" << name << ":_name ";
-  ss << gsh << " ";
-  ss << bsh << " ";
+  ss << Gsh << " ";
+  ss << Bsh << " ";
   ss << baseKV << " ";
   ss << V << " ";
   ss << theta << " ";

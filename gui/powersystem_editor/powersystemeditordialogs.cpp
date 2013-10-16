@@ -96,7 +96,7 @@ int pwsEditorDialogs::busDialog(Bus *bus){
   QHBoxLayout layoutGsh;
   QLabel labelGsh("Shunt conductance [pu]:");
   QDoubleSpinBox formGsh;
-  formGsh.setValue( bus->gsh );
+  formGsh.setValue( bus->Gsh );
   layoutGsh.addWidget( &labelGsh );
   layoutGsh.addWidget( &formGsh );
   layoutMain.addLayout( &layoutGsh );
@@ -104,7 +104,7 @@ int pwsEditorDialogs::busDialog(Bus *bus){
   QHBoxLayout layoutBsh;
   QLabel labelBsh("Shunt susceptance [pu]:");
   QDoubleSpinBox formBsh;
-  formBsh.setValue( bus->bsh );
+  formBsh.setValue( bus->Bsh );
   layoutBsh.addWidget( &labelBsh );
   layoutBsh.addWidget( &formBsh );
   layoutMain.addLayout( &layoutBsh );
@@ -132,8 +132,8 @@ int pwsEditorDialogs::busDialog(Bus *bus){
     // Store values back
     bus->extId = formExtId.value();
     bus->name = formName.text().toStdString();
-    bus->gsh = formGsh.value();
-    bus->bsh = formBsh.value();
+    bus->Gsh = formGsh.value();
+    bus->Bsh = formBsh.value();
     bus->baseKV = formBaseKV.value();
 
     return 0;
@@ -165,26 +165,31 @@ int pwsEditorDialogs::branchDialog(Branch *branch){
   QLabel labelExtId("Id:");
   QSpinBox formExtId;
   formExtId.setMaximum( RAND_MAX );
-  formExtId.setValue( branch->extId() );
+  formExtId.setValue( branch->extId );
   layoutExtId.addWidget( &labelExtId );
   layoutExtId.addWidget( &formExtId );
   layoutMain.addLayout( &layoutExtId );
-  // name
-  QHBoxLayout layoutName;
-  QLabel labelName("Name:");
-  QLineEdit formName;
-  formName.setText( branch->name().c_str() );
-  layoutName.addWidget( &labelName );
-  layoutName.addWidget( &formName );
-  layoutMain.addLayout( &layoutName );
+  // status
+  QHBoxLayout layoutStatus;
+  QLabel labelStatus("Status:");
+  QRadioButton statusOn("On-line", &labelStatus);
+  if(branch->status) statusOn.setChecked(true);
+  QRadioButton statusOff("Off-line", &labelStatus);
+  if(!branch->status) statusOff.setChecked(true);
+  QHBoxLayout layoutSubstatus;
+  layoutSubstatus.addWidget( &statusOn );
+  layoutSubstatus.addWidget( &statusOff );
+  layoutStatus.addWidget( &labelStatus );
+  layoutStatus.addLayout( &layoutSubstatus );
+  layoutMain.addLayout( &layoutStatus );
   // formBus & toBus
   QHBoxLayout layoutBuses;
   QLabel labelBuses("From/To bus:");
   QSpinBox formFromBus, formToBus;
   formFromBus.setMaximum( RAND_MAX );
-  formFromBus.setValue( branch->fromBusExtId() );
+  formFromBus.setValue( branch->fromBusExtId );
   formToBus.setMaximum( RAND_MAX );
-  formToBus.setValue( branch->toBusExtId() );
+  formToBus.setValue( branch->toBusExtId );
   layoutBuses.addWidget( &labelBuses );
   layoutBuses.addWidget( &formFromBus );
   layoutBuses.addWidget( &formToBus );
@@ -194,7 +199,7 @@ int pwsEditorDialogs::branchDialog(Branch *branch){
   QLabel labelR("Resistance [pu]:");
   QDoubleSpinBox formR;
   formR.setDecimals( 5 );
-  formR.setValue( branch->r() );
+  formR.setValue( branch->R );
   layoutR.addWidget( &labelR );
   layoutR.addWidget( &formR );
   layoutMain.addLayout( &layoutR );
@@ -203,7 +208,7 @@ int pwsEditorDialogs::branchDialog(Branch *branch){
   QLabel labelX("Reactance [pu]:");
   QDoubleSpinBox formX;
   formX.setDecimals( 5 );
-  formX.setValue( branch->x() );
+  formX.setValue( branch->X );
   layoutX.addWidget( &labelX );
   layoutX.addWidget( &formX );
   layoutMain.addLayout( &layoutX );
@@ -213,8 +218,8 @@ int pwsEditorDialogs::branchDialog(Branch *branch){
   QDoubleSpinBox formBfr, formBto;
   formBfr.setDecimals( 5 );
   formBto.setDecimals( 5 );
-  formBfr.setValue( branch->b_from() );
-  formBto.setValue( branch->b_to() );
+  formBfr.setValue( branch->Bfrom );
+  formBto.setValue( branch->Bto );
   layoutB.addWidget( &labelB );
   layoutB.addWidget( &formBfr );
   layoutB.addWidget( &formBto );
@@ -225,86 +230,30 @@ int pwsEditorDialogs::branchDialog(Branch *branch){
   QDoubleSpinBox formGfr, formGto;
   formGfr.setDecimals( 5 );
   formGto.setDecimals( 5 );
-  formGfr.setValue( branch->g_from() );
-  formGto.setValue( branch->g_to() );
+  formGfr.setValue( branch->Gfrom );
+  formGto.setValue( branch->Gto );
   layoutG.addWidget( &labelG );
   layoutG.addWidget( &formGfr );
   layoutG.addWidget( &formGto );
   layoutMain.addLayout( &layoutG );
-  // in-series capacitance
-  QHBoxLayout layoutC;
-  QLabel labelC("In-series Capacitance [pu]:");
-  QDoubleSpinBox formCvalue;
-  formCvalue.setDecimals( 5 );
-  formCvalue.setMinimum( -formCvalue.maximum() );
-  formCvalue.setValue( branch->c_series_x() );
-  layoutC.addWidget( &labelC );
-  layoutC.addWidget( &formCvalue );
-  layoutMain.addLayout( &layoutC );
   // x ratio
   QHBoxLayout layoutXratio;
-  QLabel labelXratio("Transformer ratio \n (current/tap/base/tap_min/tap_max/tap_step):");
-  QDoubleSpinBox formXratio, formXratio_base, formXratio_tap_step;
-  QDoubleSpinBox formXratio_tap, formXratio_tap_min, formXratio_tap_max;
+  QLabel labelXratio("Transformer ratio:");
+  QDoubleSpinBox formXratio;
   formXratio.setDecimals( 5 );
-  formXratio_base.setDecimals( 5 );
-  formXratio_tap_step.setDecimals( 5 );
-  formXratio_tap.setDecimals( 5 );
-  formXratio_tap_min.setDecimals( 5 );
-  formXratio_tap_max.setDecimals( 5 );
-  formXratio.setValue( branch->Xratio() );
-  formXratio_tap.setValue( branch->Xratio_tap() );
-  formXratio_base.setValue( branch->Xratio_base() );
-  formXratio_tap_min.setValue( branch->Xratio_tap_min() );
-  formXratio_tap_max.setValue( branch->Xratio_tap_max() );
-  formXratio_tap_step.setValue( branch->Xratio_tap_step() );
+  formXratio.setValue( branch->Xratio );
   layoutXratio.addWidget( &labelXratio );
   layoutXratio.addWidget( &formXratio );
-  layoutXratio.addWidget( &formXratio_tap );
-  layoutXratio.addWidget( &formXratio_base );
-  layoutXratio.addWidget( &formXratio_tap_min );
-  layoutXratio.addWidget( &formXratio_tap_max );
-  layoutXratio.addWidget( &formXratio_tap_step );
   layoutMain.addLayout( &layoutXratio );
   // x shift
   QHBoxLayout layoutXshift;
-  QLabel labelXshift("Transformer shift \n (current/tap/base/tap_min/tap_max/tap_step):");
-  QDoubleSpinBox formXshift, formXshift_base, formXshift_tap_step;
-  QDoubleSpinBox formXshift_tap, formXshift_tap_min, formXshift_tap_max;
+  QLabel labelXshift("Transformer shift:");
+  QDoubleSpinBox formXshift;
   formXshift.setDecimals( 5 );
-  formXshift_base.setDecimals( 5 );
-  formXshift_tap_step.setDecimals( 5 );
-  formXshift_tap.setDecimals( 5 );
-  formXshift_tap_min.setDecimals( 5 );
-  formXshift_tap_max.setDecimals( 5 );
-  formXshift.setValue( branch->Xshift() );
-  formXshift_tap.setValue( branch->Xshift_tap() );
-  formXshift_base.setValue( branch->Xshift_base() );
-  formXshift_tap_min.setValue( branch->Xshift_tap_min() );
-  formXshift_tap_max.setValue( branch->Xshift_tap_max() );
-  formXshift_tap_step.setValue( branch->Xshift_tap_step() );
+  formXshift.setValue( branch->Xshift );
   layoutXshift.addWidget( &labelXshift );
   layoutXshift.addWidget( &formXshift );
-  layoutXshift.addWidget( &formXshift_tap );
-  layoutXshift.addWidget( &formXshift_base );
-  layoutXshift.addWidget( &formXshift_tap_min );
-  layoutXshift.addWidget( &formXshift_tap_max );
-  layoutXshift.addWidget( &formXshift_tap_step );
   layoutMain.addLayout( &layoutXshift );
-  // status
-  QHBoxLayout layoutStatus;
-  QLabel labelStatus("Status:");
-  QRadioButton statusOn("On-line", &labelStatus);
-  if( branch->status()==1 )
-    statusOn.setChecked(true);
-  QRadioButton statusOff("Off-line", &labelStatus);
-  if( branch->status()==0 ) statusOff.setChecked(true);
-  QHBoxLayout layoutSubstatus;
-  layoutSubstatus.addWidget( &statusOn );
-  layoutSubstatus.addWidget( &statusOff );
-  layoutStatus.addWidget( &labelStatus );
-  layoutStatus.addLayout( &layoutSubstatus );
-  layoutMain.addLayout( &layoutStatus );
   // Buttons
   QHBoxLayout layoutButtons;
   QPushButton ok("Ok");
@@ -318,32 +267,18 @@ int pwsEditorDialogs::branchDialog(Branch *branch){
   if( dialog.exec() ){
     // Dialog executed properly
     // Store values back
-    branch->set_extId( formExtId.value() );
-    branch->set_name( formName.text().toStdString() );
-    branch->set_fromBusExtId( formFromBus.value() );
-    branch->set_toBusExtId( formToBus.value() );
-    branch->set_r( formR.value() );
-    branch->set_x( formX.value() );
-    branch->set_b_from( formBfr.value() );
-    branch->set_b_to( formBto.value() );
-    branch->set_g_from( formGfr.value() );
-    branch->set_g_to( formBto.value() );
-    branch->set_c_series_x( formCvalue.value() );
-
-    branch->set_Xratio( formXratio.value() );
-    branch->set_Xratio_tap( formXratio_tap.value() );
-    branch->set_Xratio_base( formXratio_base.value() );
-    branch->set_Xratio_tap_min( formXratio_tap_min.value() );
-    branch->set_Xratio_tap_max( formXratio_tap_max.value() );
-    branch->set_Xratio_tap_step( formXratio_tap_step.value() );
-    branch->set_Xshift( formXshift.value() );
-    branch->set_Xshift_tap( formXshift_tap.value() );
-    branch->set_Xshift_base( formXshift_base.value() );
-    branch->set_Xshift_tap_min( formXshift_tap_min.value() );
-    branch->set_Xshift_tap_max( formXshift_tap_max.value() );
-    branch->set_Xshift_tap_step( formXshift_tap_step.value() );
-
-    branch->set_status( statusOn.isChecked() );
+    branch->extId = formExtId.value();
+    branch->status = statusOn.isChecked();
+    branch->fromBusExtId = formFromBus.value();
+    branch->toBusExtId = formToBus.value();
+    branch->R = formR.value();
+    branch->X = formX.value();
+    branch->Bfrom = formBfr.value();
+    branch->Bto = formBto.value();
+    branch->Gfrom = formGfr.value();
+    branch->Gto = formBto.value();
+    branch->Xratio = formXratio.value();
+    branch->Xshift = formXshift.value();
 
     return 0;
 

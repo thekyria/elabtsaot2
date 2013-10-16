@@ -373,9 +373,9 @@ int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Load const&
 int Emulator::embr_set(size_t id_tab, size_t id_ver, size_t id_hor, size_t pos,
                        Branch const& br, double ratioZ, double distanceOfGndFromNearEnd){
   Slice* slc = &_emuhw->sliceSet[id_tab];
-  double r_near = br.x() * ratioZ * distanceOfGndFromNearEnd;
-  double r_far  = br.x() * ratioZ * (1 - distanceOfGndFromNearEnd);
-  if (br.status())
+  double r_near = br.X * ratioZ * distanceOfGndFromNearEnd;
+  double r_far  = br.X * ratioZ * (1 - distanceOfGndFromNearEnd);
+  if (br.status)
     return slc->ana.embrConnect(id_ver,id_hor,pos,r_near,r_far);
   else
     return slc->ana.embrDisconnect(id_ver, id_hor, pos);

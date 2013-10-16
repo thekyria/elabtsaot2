@@ -63,13 +63,13 @@ void ScenarioSet::createScenariosPerBranch( Powersystem const* pws,
 
     // Retrieve branch
     const Branch* br( pws->getBranch(k) );
-    unsigned int brExtId = br->extId();
+    unsigned int brExtId = br->extId;
 
     // Create scenarios only for ON branches
-    if (!br->status())  continue;
+    if (!br->status)  continue;
 
     // Check whether impedance of the branch is tool low (<SCE_LOWZTHRESHOLD)
-    complex<double> branchZ( br->r(), br->x() + br->c_series_x() );
+    complex<double> branchZ( br->R, br->X );
     if ( ignoreLowZBrnahces )
       if ( std::abs(branchZ) < SCE_LOWZTHRESHOLD )
         continue;

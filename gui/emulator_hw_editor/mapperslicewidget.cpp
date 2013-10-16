@@ -142,7 +142,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
               Branch const* pBr;
               if (!_pws->getBranch( elementsMapped.at(k).second, pBr)){
                 label.append( "BR " );
-                label.append( QString::number( pBr->extId() ) );
+                label.append( QString::number( pBr->extId ) );
                 label.append( " " );
               }
             }
@@ -174,7 +174,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
             Branch const* pBr;
             if (!_pws->getBranch( elementsMapped.at(k).second, pBr)){
               label.append( "BR " );
-              label.append( QString::number( pBr->extId() ) );
+              label.append( QString::number(pBr->extId) );
               label.append( " " );
             }
           }
@@ -212,7 +212,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
               Branch const* pBr;
               if (!_pws->getBranch( elementsMapped.at(k).second, pBr)){
                 label.append( "BR " );
-                label.append( QString::number( pBr->extId() ) );
+                label.append( QString::number(pBr->extId) );
                 label.append( " " );
               }
             }
@@ -243,9 +243,9 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
             label.clear();
             for ( size_t k = 0 ; k != elementsMapped.size() ; ++k ){
               Branch const* pBr;
-              if (!_pws->getBranch( elementsMapped.at(k).second, pBr)){
+              if (!_pws->getBranch(elementsMapped.at(k).second, pBr)){
                 label.append( "BR " );
-                label.append( QString::number( pBr->extId() ) );
+                label.append( QString::number(pBr->extId) );
                 label.append( " " );
               }
             }
@@ -276,7 +276,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
             Branch const* pBr;
             if (!_pws->getBranch( elementsMapped.at(k).second, pBr)){
               label.append( "BR " );
-              label.append( QString::number( pBr->extId() ) );
+              label.append( QString::number(pBr->extId) );
               label.append( " " );
             }
           }
@@ -315,7 +315,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
               Branch const *pBr;
               if (!_pws->getBranch( elementsMapped.at(k).second, pBr)){
                 label.append( "BR " );
-                label.append( QString::number( pBr->extId() ) );
+                label.append( QString::number(pBr->extId) );
                 label.append( " " );
               }
             }
@@ -346,7 +346,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
             Branch const* pBr;
             if (!_pws->getBranch( elementsMapped.at(k).second, pBr)){
               label.append( "BR " );
-              label.append( QString::number( pBr->extId() ) );
+              label.append( QString::number(pBr->extId) );
               label.append( " " );
             }
           }
@@ -393,7 +393,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
               Branch const* pBr;
               if (!_pws->getBranch( elementsMapped.at(k).second, pBr)){
                 label.append( "BR " );
-                label.append( QString::number( pBr->extId() ) );
+                label.append( QString::number(pBr->extId) );
                 label.append( " " );
               }
             }
@@ -424,7 +424,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
             Branch const* pBr;
             if (!_pws->getBranch( elementsMapped.at(k).second, pBr)){
               label.append( "BR " );
-              label.append( QString::number( pBr->extId() ) );
+              label.append( QString::number(pBr->extId) );
               label.append( " " );
             }
           }
@@ -471,7 +471,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
               Branch const* pBr;
               if (!_pws->getBranch( elementsMapped.at(k).second, pBr)){
                 label.append( "BR " );
-                label.append( QString::number( pBr->extId() ) );
+                label.append( QString::number(pBr->extId) );
                 label.append( " " );
               }
             }
@@ -502,13 +502,12 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
             Branch const* pBr;
             if (!_pws->getBranch( elementsMapped.at(k).second, pBr)){
               label.append( "BR " );
-              label.append( QString::number( pBr->extId() ) );
+              label.append( QString::number(pBr->extId) );
               label.append( " " );
             }
           }
 
-          _drawMapperBranch( painter, embrP, embrQ,
-                             hints[brm_tab][brm_row][brm_col], label );
+          _drawMapperBranch( painter, embrP, embrQ, hints[brm_tab][brm_row][brm_col], label );
         }
       }
 

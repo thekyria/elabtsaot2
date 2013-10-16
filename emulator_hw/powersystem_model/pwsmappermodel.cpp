@@ -253,8 +253,8 @@ int PwsMapperModel::validate(){
       return 40;
     }
     // Retrive end bus components
-    cdBusF = element( PWSMODELELEMENTTYPE_BUS, pBr->fromBusExtId() );
-    cdBusT = element( PWSMODELELEMENTTYPE_BUS, pBr->toBusExtId() );
+    cdBusF = element( PWSMODELELEMENTTYPE_BUS, pBr->fromBusExtId );
+    cdBusT = element( PWSMODELELEMENTTYPE_BUS, pBr->toBusExtId );
 
     // Assert that the branch is mapped
     if ( !cdBr->mapped )
@@ -904,8 +904,7 @@ int PwsMapperModel::addBranchElement( Branch br, bool overwrite, int* mdlId ){
 
   // Add branch to model
   int tempMdlId;
-  int ans = addElement( PWSMODELELEMENTTYPE_BR, br.extId(),
-                        overwrite, &tempMdlId );
+  int ans = addElement( PWSMODELELEMENTTYPE_BR, br.extId, overwrite, &tempMdlId );
   if ( ans ){
 //    cout << "Error adding branch component (" << br.extId << ")!" << endl;
     return 1;
@@ -1713,9 +1712,9 @@ void PwsMapperModel::_hintBranch( int mdlId ){
 
   // Retrieve from bus and to bus component elements
   PwsMapperModelElement const* cdBusF;
-  cdBusF = element(PWSMODELELEMENTTYPE_BUS, pBr->fromBusExtId() );
+  cdBusF = element(PWSMODELELEMENTTYPE_BUS, pBr->fromBusExtId );
   PwsMapperModelElement const* cdBusT;
-  cdBusT = element(PWSMODELELEMENTTYPE_BUS, pBr->toBusExtId() );
+  cdBusT = element(PWSMODELELEMENTTYPE_BUS, pBr->toBusExtId );
 
   // Check whether component is already mapped
   if ( cd->mapped ){

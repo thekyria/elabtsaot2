@@ -246,28 +246,28 @@ int Powersystem::log_loadflow_results(ostream& ostr) const{
   ostr << "I_t";
   ostr << endl;
   for ( k = 0 ; k != _brSet.size() ; ++k ){
-    if ( _brSet[k].status() )
+    if ( _brSet[k].status )
       ostr << "*";
     else
       ostr << " ";
     ostr.width(4);
-    ostr << _brSet[k].extId();        // branch ext id
+    ostr << _brSet[k].extId;        // branch ext id
     ostr.width(5);
-    ostr << _brSet[k].fromBusExtId(); // branch from bus ext id
+    ostr << _brSet[k].fromBusExtId; // branch from bus ext id
     ostr.width(5);
-    ostr << _brSet[k].toBusExtId();   // branch to bus ext id
+    ostr << _brSet[k].toBusExtId;   // branch to bus ext id
     ostr.width(9);
-    ostr << _brSet[k].sfrom().real(); // active power flow at from side
+    ostr << _brSet[k].Sfrom.real(); // active power flow at from side
     ostr.width(9);
-    ostr << _brSet[k].sfrom().imag(); // reactive power flow at from side
+    ostr << _brSet[k].Sfrom.imag(); // reactive power flow at from side
     ostr.width(9);
-    ostr << _brSet[k].sto().real();   // active power flow at to side
+    ostr << _brSet[k].Sto.real();   // active power flow at to side
     ostr.width(9);
-    ostr << _brSet[k].sto().imag();   // reactive power flow at to side
+    ostr << _brSet[k].Sto.imag();   // reactive power flow at to side
     ostr.width(9);
-    ostr << _brSet[k].ifrom();        // current flow at from side
+    ostr << _brSet[k].Ifrom;        // current flow at from side
     ostr.width(9);
-    ostr << _brSet[k].ito();          // current flow at to side
+    ostr << _brSet[k].Ito;          // current flow at to side
     ostr << endl;
   }
   ostr << endl;
@@ -345,8 +345,8 @@ double Powersystem::getMaxX() const{
 
   // Check branch set
   for ( size_t k = 0 ; k != _brSet.size() ; ++k )
-    if ( _brSet[k].x() > maxX )
-      maxX = _brSet[k].x();
+    if ( _brSet[k].X > maxX )
+      maxX = _brSet[k].X;
 
   // Check generator set
   for ( size_t k = 0 ; k != _genSet.size(); ++k )
@@ -405,21 +405,21 @@ int Powersystem::addBus(Bus const& newBus){
 int Powersystem::addBranch(Branch const& newBranch){
 
   // Check whether extId of newBranch exists in _brSet
-  if(_brIdBimap.left.find(newBranch.extId()) != _brIdBimap.left.end()){
+  if(_brIdBimap.left.find(newBranch.extId) != _brIdBimap.left.end()){
     // extId of newBranch already exists in Powersystem
     return 1;
   }
 
   // Check whether newBranch fromBusExtId and toBusExtId exist in busSet
-  if(_busIdBimap.left.find(newBranch.fromBusExtId())==_busIdBimap.left.end() ||
-     _busIdBimap.left.find(newBranch.toBusExtId())==_busIdBimap.left.end() ){
+  if(_busIdBimap.left.find(newBranch.fromBusExtId)==_busIdBimap.left.end() ||
+     _busIdBimap.left.find(newBranch.toBusExtId)==_busIdBimap.left.end() ){
     // from/to-BusExtId's not found in busSet, so addBranch fails as newBranch
     // would be floating
     return 2;
   }
 
   // Assert that newBranch fromBusExtId <> toBusExtId
-  if(newBranch.fromBusExtId()==newBranch.toBusExtId()){
+  if(newBranch.fromBusExtId==newBranch.toBusExtId){
     return 3;
   }  
 
@@ -513,8 +513,8 @@ int Powersystem::deleteBus(unsigned int busExtId, bool recursive){
     // If flag recursive is set, then the bus is deleted alongside all elements
     // (branches, loads, gens) that are connected to it
     for(vector<Branch>::iterator i = _brSet.begin(); i != _brSet.end(); ++i)
-      if ( (i->fromBusExtId() == busExtId) || (i->toBusExtId() == busExtId) ){
-        deleteBranch(i->extId());
+      if ( (i->fromBusExtId == busExtId) || (i->toBusExtId == busExtId) ){
+        deleteBranch(i->extId);
         --i;
       }
     for(vector<Generator>::iterator i = _genSet.begin(); i != _genSet.end(); ++i)
@@ -531,7 +531,7 @@ int Powersystem::deleteBus(unsigned int busExtId, bool recursive){
     // If the flag is not set, and network elements (branches, loads, gens) are
     // connected to the bus to be deleted, then deleteBus fails
     for(vector<Branch>::iterator i = _brSet.begin(); i != _brSet.end(); ++i)
-      if ( (i->fromBusExtId() == busExtId) || (i->toBusExtId() == busExtId) )
+      if ( (i->fromBusExtId == busExtId) || (i->toBusExtId == busExtId) )
         return 2;
     for(vector<Generator>::iterator i = _genSet.begin(); i != _genSet.end(); ++i)
       if ( i->busExtId() == busExtId )
@@ -663,18 +663,18 @@ int Powersystem::validate(){
   // Validate that all branch extIds are unique
   set<unsigned int> brExtIds;
   for ( k = 0 ; k != _brSet.size() ; ++k ){
-    if ( brExtIds.find(_brSet[k].extId()) != brExtIds.end() ){
+    if ( brExtIds.find(_brSet[k].extId) != brExtIds.end() ){
       return 3;
     } else {
-      brExtIds.insert( _brSet[k].extId() );
+      brExtIds.insert( _brSet[k].extId );
     }
     // Validate that all branches point to existing buses
-    if ( ( busExtIds.find(_brSet[k].fromBusExtId()) == busExtIds.end() ) ||
-         ( busExtIds.find(_brSet[k].toBusExtId()) == busExtIds.end() ) ){
+    if ( ( busExtIds.find(_brSet[k].fromBusExtId) == busExtIds.end() ) ||
+         ( busExtIds.find(_brSet[k].toBusExtId) == busExtIds.end() ) ){
       return 4;
     }
     // Assert that for every branch fromBusExtId <> toBusExtId
-    if ( _brSet[k].fromBusExtId() == _brSet[k].toBusExtId() ){
+    if ( _brSet[k].fromBusExtId == _brSet[k].toBusExtId ){
       return 5;
     }
   }
@@ -801,7 +801,7 @@ int Powersystem::getBr_extId(size_t intId) const{
     return -1;
   } else{
     // Element found; return its external index
-    return _brSet[intId].extId();
+    return _brSet[intId].extId;
   }
 }
 int Powersystem::getGen_extId(size_t intId) const{
@@ -1092,7 +1092,7 @@ void Powersystem::_rebuildBrIdBimap(){
   // Rebuild _brIdBimap bimap; first: extId - second: intId
   _brIdBimap.clear();
   for(vector<Branch>::iterator i = _brSet.begin(); i != _brSet.end(); ++i){
-    _brIdBimap.insert(UintPair(i->extId(),_brIdBimap.size()));
+    _brIdBimap.insert(UintPair(i->extId,_brIdBimap.size()));
   }
 }
 
@@ -1119,11 +1119,11 @@ void Powersystem::_rebuildBusBrMap(){
   size_t fromBusIntId, toBusIntId;
   for ( size_t k = 0 ; k != _brSet.size() ; ++k ){
     // Add branch to _busBrMap for fromBus
-    fromBusIntId = _busIdBimap.left.at( _brSet[k].fromBusExtId() );
+    fromBusIntId = _busIdBimap.left.at( _brSet[k].fromBusExtId );
     _busBrMap[fromBusIntId].insert(k);
 
     // Add branch to _busBrMap for toBus
-    toBusIntId = _busIdBimap.left.at( _brSet[k].toBusExtId() );
+    toBusIntId = _busIdBimap.left.at( _brSet[k].toBusExtId );
     _busBrMap[toBusIntId].insert(k);
   }
 
