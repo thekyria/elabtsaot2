@@ -112,79 +112,43 @@ class Node{
     Setters of private members of the class
   */
   //@{
-  //! setter for _real_adc_offset_corr
-  void set_real_adc_offset_corr( double val );
-  //! setter for _real_adc_gain_corr
-  void set_real_adc_gain_corr( double val );
-  //! setter for _real_sw_voltage
-  void set_real_sw_voltage(bool val);
-  //! setter for _real_sw_current
-  void set_real_sw_current(bool val);
-  //! setter for _real_sw_current_shunt
-  void set_real_sw_current_shunt(bool val);
-  //! setter for _real_sw_resistance
-  void set_real_sw_resistance(bool val);
-  //! setter for _real_pot_current._rab
-  int set_real_pot_current_rab(double val, bool updateTap);
-  //! setter for _real_pot_current._rw
-  int set_real_pot_current_rw(double val, bool updateTap);
-  //! setter for _real_pot_current._r
-  int set_real_pot_current_r(double val);
-  //! setter for _real_pot_current._tap
-  int set_real_pot_current_tap(unsigned int val);
-  //! setter for _real_pot_current._sw
-  void set_real_pot_current_sw(bool val);
-  //! setter for _real_pot_current._swA
-  int set_real_pot_current_swA(bool val, bool updateTap);
-  //! setter for _real_pot_resistance._rab
-  int set_real_pot_resistance_rab(double val, bool updateTap);
-  //! setter for _real_pot_resistance._rw
-  int set_real_pot_resistance_rw(double val, bool updateTap);
-  //! setter for _real_pot_resistance._r
-  int set_real_pot_resistance_r(double val);
-  //! setter for _real_pot_resistance._tap
-  int set_real_pot_resistance_tap(unsigned int val);
-  //! setter for _real_pot_resistance._sw
-  void set_real_pot_resistance_sw(bool val);
-  //! setter for _real_pot_resistance._swA
-  int set_real_pot_resistance_swA(bool val, bool updateTap);
+  void set_real_adc_offset_corr( double val ); //!< setter for _real_adc_offset_corr
+  void set_real_adc_gain_corr( double val ); //!< setter for _real_adc_gain_corr
+  void set_real_sw_voltage(bool val); //!< setter for _real_sw_voltage
+  void set_real_sw_current(bool val); //!< setter for _real_sw_current
+  void set_real_sw_current_shunt(bool val); //!< setter for _real_sw_current_shunt
+  void set_real_sw_resistance(bool val); //!< setter for _real_sw_resistance
+  int set_real_pot_current_rab(double val, bool updateTap); //!< setter for _real_pot_current._rab
+  int set_real_pot_current_rw(double val, bool updateTap); //!< setter for _real_pot_current._rw
+  int set_real_pot_current_r(double val); //!< setter for _real_pot_current._r
+  int set_real_pot_current_tap(unsigned int val); //!< setter for _real_pot_current._tap
+  void set_real_pot_current_sw(bool val); //!< setter for _real_pot_current._sw
+  int set_real_pot_current_swA(bool val, bool updateTap); //!< setter for _real_pot_current._swA
+  int set_real_pot_resistance_rab(double val, bool updateTap); //!< setter for _real_pot_resistance._rab
+  int set_real_pot_resistance_rw(double val, bool updateTap); //!< setter for _real_pot_resistance._rw
+  int set_real_pot_resistance_r(double val); //!< setter for _real_pot_resistance._r
+  int set_real_pot_resistance_tap(unsigned int val); //!< setter for _real_pot_resistance._tap
+  void set_real_pot_resistance_sw(bool val); //!< setter for _real_pot_resistance._sw
+  int set_real_pot_resistance_swA(bool val, bool updateTap); //!< setter for _real_pot_resistance._swA
 
-  //! setter for _imag_adc_offset_corr
-  void set_imag_adc_offset_corr( double val );
-  //! setter for _imag_adc_gain_corr
-  void set_imag_adc_gain_corr( double val );
-  //! setter for _imag_sw_voltage
-  void set_imag_sw_voltage(bool val);
-  //! setter for _imag_sw_current
-  void set_imag_sw_current(bool val);
-  //! setter for _imag_sw_current_shunt
-  void set_imag_sw_current_shunt(bool val);
-  //! setter for _imag_sw_resistance
-  void set_imag_sw_resistance(bool val);
-  //! setter for _imag_pot_current._rab
-  int set_imag_pot_current_rab(double val, bool updateTap);
-  //! setter for _imag_pot_current._rw
-  int set_imag_pot_current_rw(double val, bool updateTap);
-  //! setter for _imag_pot_current._r
-  int set_imag_pot_current_r(double val);
-  //! setter for _imag_pot_current._tap
-  int set_imag_pot_current_tap(unsigned int val);
-  //! setter for _imag_pot_current._sw
-  void set_imag_pot_current_sw(bool val);
-  //! setter for _imag_pot_current._swA
-  int set_imag_pot_current_swA(bool val, bool updateTap);
-  //! setter for _imag_pot_resistance._rab
-  int set_imag_pot_resistance_rab(double val, bool updateTap);
-  //! setter for _imag_pot_resistance._rw
-  int set_imag_pot_resistance_rw(double val, bool updateTap);
-  //! setter for _imag_pot_resistance._r
-  int set_imag_pot_resistance_r(double val);
-  //! setter for _imag_pot_resistance._tap
-  int set_imag_pot_resistance_tap(unsigned int val);
-  //! setter for _imag_pot_resistance._sw
-  void set_imag_pot_resistance_sw(bool val);
-  //! setter for _imag_pot_resistance._swA
-  int set_imag_pot_resistance_swA(bool val, bool updateTap);
+  void set_imag_adc_offset_corr( double val ); //!< setter for _imag_adc_offset_corr
+  void set_imag_adc_gain_corr( double val ); //!< setter for _imag_adc_gain_corr
+  void set_imag_sw_voltage(bool val); //!< setter for _imag_sw_voltage
+  void set_imag_sw_current(bool val); //!< setter for _imag_sw_current
+  void set_imag_sw_current_shunt(bool val); //!< setter for _imag_sw_current_shunt
+  void set_imag_sw_resistance(bool val); //!< setter for _imag_sw_resistance
+  int set_imag_pot_current_rab(double val, bool updateTap); //!< setter for _imag_pot_current._rab
+  int set_imag_pot_current_rw(double val, bool updateTap); //!< setter for _imag_pot_current._rw
+  int set_imag_pot_current_r(double val); //!< setter for _imag_pot_current._r
+  int set_imag_pot_current_tap(unsigned int val); //!< setter for _imag_pot_current._tap
+  void set_imag_pot_current_sw(bool val); //!< setter for _imag_pot_current._sw
+  int set_imag_pot_current_swA(bool val, bool updateTap); //!< setter for _imag_pot_current._swA
+  int set_imag_pot_resistance_rab(double val, bool updateTap); //!< setter for _imag_pot_resistance._rab
+  int set_imag_pot_resistance_rw(double val, bool updateTap); //!< setter for _imag_pot_resistance._rw
+  int set_imag_pot_resistance_r(double val); //!< setter for _imag_pot_resistance._r
+  int set_imag_pot_resistance_tap(unsigned int val); //!< setter for _imag_pot_resistance._tap
+  void set_imag_pot_resistance_sw(bool val); //!< setter for _imag_pot_resistance._sw
+  int set_imag_pot_resistance_swA(bool val, bool updateTap); //!< setter for _imag_pot_resistance._swA
   //@}
 
  private:

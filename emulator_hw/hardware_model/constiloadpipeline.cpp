@@ -15,8 +15,7 @@ using std::vector;
 ConstILoadPipeline::ConstILoadPipeline(size_t element_capacity,
                                        size_t ver_dim, size_t hor_dim) :
     Pipeline(element_capacity, ver_dim, hor_dim),
-    _real_I( _element_count_max, 0 ),
-    _imag_I( _element_count_max, 0 ) {}
+    Iconst(_element_count_max, 0) {}
 
 int ConstILoadPipeline::reset(){
   // Invoke reset of parent class
@@ -24,20 +23,14 @@ int ConstILoadPipeline::reset(){
   if ( ans ) return 1;
   // element_count_max, ver_id_max, hor_id_max remain unchanged
 
-  _real_I.clear();
-  _imag_I.clear();
-
-  _real_I.resize( _element_count_max, 0 );
-  _imag_I.resize( _element_count_max, 0 );
+  Iconst.resize(_element_count_max, 0);
 
   return 0;
 }
 
 // High level functions
-int ConstILoadPipeline::insert_element( size_t ver_pos,
-                                        size_t hor_pos,
-                                        Load const& el,
-                                        bool overwrite){
+int ConstILoadPipeline::insert_element( size_t ver_pos, size_t hor_pos,
+                                        Load const& el, bool overwrite){
 
   if ( _element_count == _element_count_max )
     // pipeline is full!
@@ -93,25 +86,21 @@ int ConstILoadPipeline::insert_element( size_t ver_pos,
     // Make space for new element
     for ( m = _element_count ; m != k ; --m ){
       _position[m] = _position[m-1];
-      _real_I[m] = _real_I[m-1];
-      _imag_I[m] = _imag_I[m-1];
+      Iconst[m] = Iconst[m-1];
     }
 
   // Insert new element at pipeline position k
   _position[k] = make_pair((int) ver_pos, (int) hor_pos);
   complex<double> S(el.pdemand(), el.qdemand());
   complex<double> I = conj(S) / conj(el.Uss());
-  _real_I[k] = real(I);
-  _imag_I[k] = imag(I);
+  Iconst[k] = I;
 
-  if ( !pos_already_taken )
-    ++_element_count;
+  if (!pos_already_taken) ++_element_count;
 
   return 0;
 }
 
-int ConstILoadPipeline::remove_element(size_t ver_pos,
-                                       size_t hor_pos){
+int ConstILoadPipeline::remove_element(size_t ver_pos, size_t hor_pos){
   // Why should the following return non-zero?
 //  if ( _element_count == 0 )
 //    // No elements to delete!
@@ -138,8 +127,7 @@ int ConstILoadPipeline::remove_element(size_t ver_pos,
 
       // reset pipeline line to default values
       _position[k] = make_pair(-1,-1);
-      _real_I[k] = 0;
-      _imag_I[k] = 0;
+      Iconst[k] = 0;
 
       continue;
     }
@@ -150,8 +138,7 @@ int ConstILoadPipeline::remove_element(size_t ver_pos,
       // the k line, for all k lines after line n where the to-be-deleted
       // element was found
       _position[k-1] = _position[k];
-      _real_I[k-1] = _real_I[k];
-      _imag_I[k-1] = _imag_I[k];
+      Iconst[k-1] = Iconst[k];
     }
 
   }
@@ -162,22 +149,3 @@ int ConstILoadPipeline::remove_element(size_t ver_pos,
 
   return 0;
 }
-
-int ConstILoadPipeline::set_real_I(size_t pos, double val){
-  if ( pos >= _element_count_max )
-    // Position out of bounds!
-    return 1;
-  _real_I[pos] = val;
-  return 0;
-}
-
-int ConstILoadPipeline::set_imag_I(size_t pos, double val){
-  if ( pos >= _element_count_max )
-    // Position out of bounds!
-    return 1;
-  _imag_I[pos] = val;
-  return 0;
-}
-
-vector<double> ConstILoadPipeline::real_I() const{ return _real_I; }
-vector<double> ConstILoadPipeline::imag_I() const{ return _imag_I; }

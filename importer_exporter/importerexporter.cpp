@@ -260,11 +260,11 @@ int io::importTDResults( string filename_, TDResults* res ){
   string footer;
 
   // ----- File beginning -----
-  bool sha1DigestDelimeterRead = false;
+//  bool sha1DigestDelimeterRead = false;
   temp = fin.readLine();
   if ( !temp.startsWith("$$") )
     return 2;
-  sha1DigestDelimeterRead = true;
+//  sha1DigestDelimeterRead = true;
 
   // ----- sha1digest section -----
   bool titleDelimeterRead = false;

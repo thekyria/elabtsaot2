@@ -89,6 +89,10 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
   defaultRatiosBut = new QPushButton("Default Ratios");
   globalParamsLay->addRow(defaultRatiosLabel, defaultRatiosBut);
 
+  QLabel* getMaxRLabel = new QLabel("Get max R");
+  getMaxRBut = new QPushButton("Get max R");
+  globalParamsLay->addRow(getMaxRLabel, getMaxRBut);
+
   // ----------------- Connect signals -----------------
   connect( ratioZForm, SIGNAL(valueChanged(double)),
            this, SLOT(ratioZSlot(double)) );
@@ -100,6 +104,8 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
            this, SLOT(autoRatioZSlot()) );
   connect( defaultRatiosBut, SIGNAL(clicked()),
            this, SLOT(defaultRatiosSlot()) );
+  connect( getMaxRBut, SIGNAL(clicked()),
+           this, SLOT(getMinMaxResistorSlot()) );
 
 
   // ---------------------------------------------------------------------------
@@ -240,6 +246,9 @@ void AuxiliaryEditor::autoRatioZSlot(){
 void AuxiliaryEditor::defaultRatiosSlot(){
   _emu->defaultRatios();
   _updtGlobals();
+}
+void AuxiliaryEditor::getMinMaxResistorSlot() const{
+  cout << "Maximum achievable R: " << _emu->getMaxR() << endl;
 }
 
 void AuxiliaryEditor::hardResetPressedSlot(){

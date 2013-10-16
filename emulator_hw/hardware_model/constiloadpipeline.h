@@ -12,6 +12,8 @@ EPFL
 #ifndef CONSTILOADPIPELINE_H
 #define CONSTILOADPIPELINE_H
 
+#include <complex>
+
 #include "pipeline.h" // includes <string>, <vector>, <utility>
 
 namespace elabtsaot{
@@ -52,23 +54,7 @@ class ConstILoadPipeline : public Pipeline {
   //! An element is removed from the pipeline
   int remove_element(size_t ver_pos, size_t hor_pos);
 
-  /*! \name Getters */
-  //@{
-  std::vector<double> real_I() const;  //!< getter for _real_I
-  std::vector<double> imag_I() const;  //!< getter for _imag_I
-  //@}
-
-  /*! \name Setters */
-  //@{
-  int set_real_I(size_t pos, double val);
-  int set_imag_I(size_t pos, double val);
-  //@}
-
- private:
-
-  std::vector<double> _real_I; //!< Real part of the ss. current (const) in [pu]
-  std::vector<double> _imag_I; //!< Imag part of the ss. current (const) in [pu]
-
+  std::vector<std::complex<double> > Iconst; //!< Initial current flow [p.u.]
 };
 
 } // end of namespace elabtsaot

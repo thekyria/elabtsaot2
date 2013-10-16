@@ -99,10 +99,6 @@ int Branch::Xparams_validate() const{
     return 10;
   if ( _Xratio_tap_step <= 0 )
     return 11;
-  if ( _Xratio_tap_min > 0 )
-    return 12;
-  if ( _Xratio_tap_max < 0 )
-    return 13;
   if ( (_Xratio_base+_Xratio_tap_min*_Xratio_tap_step) <= 0 )
     // Minimum reachable _Xratio value cannot be non-positive
     return 14;
@@ -110,10 +106,6 @@ int Branch::Xparams_validate() const{
   // Validate Xshift parameters
   if ( _Xshift_tap_step <= 0 )
     return 20;
-  if ( _Xshift_tap_min > 0 )
-    return 21;
-  if ( _Xshift_tap_max < 0 )
-    return 22;
 
   return 0;
 }
@@ -144,10 +136,6 @@ int Branch::Xratio_tap_change(bool up){
     return 20;
   if ( _Xratio_tap_step <= 0 )
     return 21;
-  if ( _Xratio_tap_min > 0 )
-    return 22;
-  if ( _Xratio_tap_max < 0 )
-    return 23;
   if ( (_Xratio_base+_Xratio_tap_min*_Xratio_tap_step) <= 0 )
     // Minimum reachable _Xratio value cannot be non-positive
     return 24;
@@ -182,10 +170,6 @@ int Branch::Xratio_tap_change(int val){
     return 20;
   if ( _Xratio_tap_step <= 0 )
     return 21;
-  if ( _Xratio_tap_min > 0 )
-    return 22;
-  if ( _Xratio_tap_max < 0 )
-    return 23;
   if ( (_Xratio_base+_Xratio_tap_min*_Xratio_tap_step) <= 0 )
     // Minimum reachable _Xratio value cannot be non-positive
     return 24;
@@ -218,10 +202,6 @@ int Branch::Xshift_tap_change(bool up){
   // Check that transformer shift tap related variables are properly initialized
   if ( _Xshift_tap_step <= 0 )
     return 21;
-  if ( _Xshift_tap_min > 0 )
-    return 22;
-  if ( _Xshift_tap_max < 0 )
-    return 23;
 
   if ( up ){
     // Step up change requested
@@ -251,10 +231,6 @@ int Branch::Xshift_tap_change(int val){
   // Check that transformer shift tap related variables are properly initialized
   if ( _Xshift_tap_step <= 0 )
     return 21;
-  if ( _Xshift_tap_min > 0 )
-    return 22;
-  if ( _Xshift_tap_max < 0 )
-    return 23;
 
   if ( val >= 0 ){
     // Step up change requested
@@ -292,16 +268,16 @@ double Branch::g_to() const{ return _g_to; }
 double Branch::c_series_x() const{ return _c_series_x; }
 
 double Branch::Xratio() const{ return _Xratio; }
-unsigned int Branch::Xratio_tap() const{ return _Xratio_tap; }
+int Branch::Xratio_tap() const{ return _Xratio_tap; }
 double Branch::Xratio_base() const{ return _Xratio_base; }
-unsigned int Branch::Xratio_tap_min() const{ return _Xratio_tap_min; }
-unsigned int Branch::Xratio_tap_max() const{ return _Xratio_tap_max; }
+int Branch::Xratio_tap_min() const{ return _Xratio_tap_min; }
+int Branch::Xratio_tap_max() const{ return _Xratio_tap_max; }
 double Branch::Xratio_tap_step() const{ return _Xratio_tap_step; }
 double Branch::Xshift() const{ return _Xshift; }
-unsigned int Branch::Xshift_tap() const{ return _Xshift_tap; }
+int Branch::Xshift_tap() const{ return _Xshift_tap; }
 double Branch::Xshift_base() const{ return _Xshift_base; }
-unsigned int Branch::Xshift_tap_min() const{ return _Xshift_tap_min; }
-unsigned int Branch::Xshift_tap_max() const{ return _Xshift_tap_max; }
+int Branch::Xshift_tap_min() const{ return _Xshift_tap_min; }
+int Branch::Xshift_tap_max() const{ return _Xshift_tap_max; }
 double Branch::Xshift_tap_step() const{ return _Xshift_tap_step; }
 
 bool Branch::status() const{ return _status; }
@@ -327,7 +303,7 @@ void Branch::set_g_to(double val){ _g_to = val; }
 void Branch::set_c_series_x(double val){ _c_series_x = val; }
 
 void Branch::set_Xratio(double val){ _Xratio = val; }
-int Branch::set_Xratio_tap(unsigned int val){
+int Branch::set_Xratio_tap(int val){
   if ( val < _Xratio_tap_min )
     return 1;
   if ( val > _Xratio_tap_max )
@@ -341,18 +317,8 @@ int Branch::set_Xratio_base(double val){
   _Xratio_base = val;
   return 0;
 }
-int Branch::set_Xratio_tap_min(unsigned int val){
-  if ( val > 0 )
-    return 1;
-  _Xratio_tap_min = val;
-  return 0;
-}
-int Branch::set_Xratio_tap_max(unsigned int val){
-  if ( val < 0 )
-    return 1;
-  _Xratio_tap_max = val;
-  return 0;
-}
+void Branch::set_Xratio_tap_min(int val){ _Xratio_tap_min = val; }
+void Branch::set_Xratio_tap_max(int val){ _Xratio_tap_max = val; }
 int Branch::set_Xratio_tap_step(double val){
   if ( val <= 0 )
     return 1;
@@ -360,7 +326,7 @@ int Branch::set_Xratio_tap_step(double val){
   return 0;
 }
 void Branch::set_Xshift(double val){ _Xshift = val; }
-int Branch::set_Xshift_tap(unsigned int val){
+int Branch::set_Xshift_tap(int val){
   if ( val < _Xshift_tap_min )
     return 1;
   if ( val > _Xshift_tap_max )
@@ -372,18 +338,8 @@ int Branch::set_Xshift_base(double val){
   _Xshift_base = val;
   return 0;
 }
-int Branch::set_Xshift_tap_min(unsigned int val){
-  if ( val > 0 )
-    return 1;
-  _Xshift_tap_min = val;
-  return 0;
-}
-int Branch::set_Xshift_tap_max(unsigned int val){
-  if ( val < 0 )
-    return 1;
-  _Xshift_tap_max = val;
-  return 0;
-}
+void Branch::set_Xshift_tap_min(int val){ _Xshift_tap_min = val; }
+void Branch::set_Xshift_tap_max(int val){ _Xshift_tap_max = val; }
 int Branch::set_Xshift_tap_step(double val){
   if ( val <= 0 )
     return 1;

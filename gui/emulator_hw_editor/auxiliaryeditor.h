@@ -37,6 +37,7 @@ class AuxiliaryEditor : public QSplitter{
   void maxIpuSlot(double val);
   void autoRatioZSlot();
   void defaultRatiosSlot();
+  void getMinMaxResistorSlot() const;
 
   void hardResetPressedSlot();
   void endCalibrationSlot();
@@ -72,6 +73,7 @@ class AuxiliaryEditor : public QSplitter{
   QDoubleSpinBox* maxIpuForm;
   QPushButton* autoRatioZBut;
   QPushButton* defaultRatiosBut;
+  QPushButton* getMaxRBut;
 
 };
 

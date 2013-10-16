@@ -134,16 +134,16 @@ class Branch {
   double c_series_x() const;                //!< getter for _c_series_x
 
   double Xratio() const;                    //!< getter for _Xratio
-  unsigned int Xratio_tap() const;          //!< getter for _Xratio_tap
+  int Xratio_tap() const;          //!< getter for _Xratio_tap
   double Xratio_base() const;               //!< getter for _Xratio_base
-  unsigned int Xratio_tap_min() const;      //!< getter for _Xratio_tap_min
-  unsigned int Xratio_tap_max() const;      //!< getter for _Xratio_tap_max
+  int Xratio_tap_min() const;               //!< getter for _Xratio_tap_min
+  int Xratio_tap_max() const;               //!< getter for _Xratio_tap_max
   double Xratio_tap_step() const;           //!< getter for _Xratio_tap_step
   double Xshift() const;                    //!< getter for _Xshift
-  unsigned int Xshift_tap() const;          //!< getter for _Xshift_tap
+  int Xshift_tap() const;                   //!< getter for _Xshift_tap
   double Xshift_base() const;               //!< getter for _Xshift_base
-  unsigned int Xshift_tap_min() const;      //!< getter for _Xshift_tap_min
-  unsigned int Xshift_tap_max() const;      //!< getter for _Xshift_tap_max
+  int Xshift_tap_min() const;               //!< getter for _Xshift_tap_min
+  int Xshift_tap_max() const;               //!< getter for _Xshift_tap_max
   double Xshift_tap_step() const;           //!< getter for _Xshift_tap_step
 
   bool status() const;                      //!< getter for _status
@@ -173,16 +173,16 @@ class Branch {
   void set_c_series_x(double val);          //!< setter for _c_series_x
 
   void set_Xratio(double val);              //!< setter for _Xratio
-  int set_Xratio_tap(unsigned int val);     //!< setter for _Xratio_tap
+  int set_Xratio_tap(int val);              //!< setter for _Xratio_tap
   int set_Xratio_base(double val);          //!< setter for _Xratio_base
-  int set_Xratio_tap_min(unsigned int val); //!< setter for _Xratio_tap_min
-  int set_Xratio_tap_max(unsigned int val); //!< setter for _Xratio_tap_max
+  void set_Xratio_tap_min(int val);         //!< setter for _Xratio_tap_min
+  void set_Xratio_tap_max(int val);         //!< setter for _Xratio_tap_max
   int set_Xratio_tap_step(double val);      //!< setter for _Xratio_tap_step
   void set_Xshift(double val);              //!< setter for _Xshift
-  int set_Xshift_tap(unsigned int val);     //!< setter for _Xshift_tap
+  int set_Xshift_tap(int val);              //!< setter for _Xshift_tap
   int set_Xshift_base(double val);          //!< setter for _Xshift_base
-  int set_Xshift_tap_min(unsigned int val); //!< setter for _Xshift_tap_min
-  int set_Xshift_tap_max(unsigned int val); //!< setter for _Xshift_tap_max
+  void set_Xshift_tap_min(int val);         //!< setter for _Xshift_tap_min
+  void set_Xshift_tap_max(int val);         //!< setter for _Xshift_tap_max
   int set_Xshift_tap_step(double val);      //!< setter for _Xshift_tap_step
 
   void set_status(bool val);                //!< setter for _status
@@ -326,13 +326,13 @@ class Branch {
     Discrete value;
     eg. -5
   */
-  unsigned int _Xshift_tap_min; // transformer phase shift min tap setting
+  int _Xshift_tap_min; // transformer phase shift min tap setting
   //! Maximum value of the phase shift setting of the transformer of the branch
   /*!
     Discrete value;
     eg. +5
   */
-  unsigned int _Xshift_tap_max; // transformer phase shift max tap setting
+  int _Xshift_tap_max; // transformer phase shift max tap setting
   //! Phase shift value corresponding to one tap setting step
   /*!
     Change to the transformer phase shift when tap setting changes by one;

@@ -12,6 +12,8 @@ EPFL
 #ifndef CONSTZLOADPIPELINE_H
 #define CONSTZLOADPIPELINE_H
 
+#include <complex>
+
 #include "pipeline.h" // includes <string>, <vector>, <utility>
 
 namespace elabtsaot{
@@ -53,28 +55,8 @@ class ConstZLoadPipeline : public Pipeline {
   //! An element is removed from the pipeline
   int remove_element(size_t ver_pos, size_t hor_pos);
 
-  /*! \name Setters */
-  //@{
-  int set_real_Y(size_t pos, double val);
-  int set_imag_Y(size_t pos, double val);
-  int set_real_I(size_t pos, double val);
-  int set_imag_I(size_t pos, double val);
-  //@}
-
-  /*! \name Getters */
-  //@{
-  std::vector<double> real_Y() const;  //!< getter for _real_Y
-  std::vector<double> imag_Y() const;  //!< getter for _imag_Y
-  std::vector<double> real_I() const;  //!< getter for _real_I
-  std::vector<double> imag_I() const;  //!< getter for _imag_I
-  //@}
-
- private:
-
-  std::vector<double> _real_Y; //!< Real part of the load admittance [p.u.]
-  std::vector<double> _imag_Y; //!< Imag part of the load admittance [p.u.]
-  std::vector<double> _real_I; //!< Real part of the ss. current (const) in [pu]
-  std::vector<double> _imag_I; //!< Imag part of the ss. current (const) in [pu]
+  std::vector<std::complex<double> > Yconst; //!< constant complex impedance power of the load [pu]
+  std::vector<std::complex<double> > I0; //!< Initial current flow [p.u.]
 
 };
 

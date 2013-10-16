@@ -1219,7 +1219,7 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   // Inverse of the impedance Q9.7
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.xd_1_inverse()[k], 16, 7, false, &temp );
+    detail::form_word( sl.dig.pipe_gen.xd1inverse[k], 16, 7, false, &temp );
     gen_conf1.push_back( static_cast<uint32_t>(temp) );
   }
 
@@ -1230,8 +1230,8 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   // [           temp            ]
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.i_ss()[k].imag(), 16, 11, true, &tempMSB );
-    detail::form_word( sl.dig.pipe_gen.i_ss()[k].real(), 16, 11, true, &tempLSB );
+    detail::form_word( sl.dig.pipe_gen.I0[k].imag(), 16, 11, true, &tempMSB );
+    detail::form_word( sl.dig.pipe_gen.I0[k].real(), 16, 11, true, &tempLSB );
     temp = (tempMSB << 16) | (tempLSB);
     gen_conf1.push_back( static_cast<uint32_t>(temp) );
   }
@@ -1239,7 +1239,7 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   // Mechanical power Q5.13
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.p_mechanical()[k], 18, 13, true, &temp );
+    detail::form_word( sl.dig.pipe_gen.pMechanical[k], 18, 13, true, &temp );
     gen_conf1.push_back( static_cast<uint32_t>(temp) );
   }
 
@@ -1248,42 +1248,42 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   // Gain 1 Q8.10
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.gain_1()[k], 18, 10, true, &temp );
+    detail::form_word( sl.dig.pipe_gen.gain1[k], 18, 10, true, &temp );
     gen_conf2.push_back( static_cast<uint32_t>(temp) );
   }
 
   // Gain 2 Q6.8
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.gain_2()[k], 14, 8, true, &temp );
+    detail::form_word( sl.dig.pipe_gen.gain2[k], 14, 8, true, &temp );
     gen_conf2.push_back( static_cast<uint32_t>(temp) );
   }
 
   // Gain 3 Q6.8
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.gain_3()[k], 14, 8, true, &temp );
+    detail::form_word( sl.dig.pipe_gen.gain3[k], 14, 8, true, &temp );
     gen_conf2.push_back( static_cast<uint32_t>(temp) );
   }
 
   // Gain 4 Q5.11
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.gain_4()[k], 16, 11, true, &temp );
+    detail::form_word( sl.dig.pipe_gen.gain4[k], 16, 11, true, &temp );
     gen_conf2.push_back( static_cast<uint32_t>(temp) );
   }
 
   // Gain 5 Q5.11
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.gain_5()[k], 16, 11, true, &temp );
+    detail::form_word( sl.dig.pipe_gen.gain5[k], 16, 11, true, &temp );
     gen_conf2.push_back( static_cast<uint32_t>(temp) );
   }
 
   // Gain 6 Q5.13
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.gain_6()[k], 18, 13, true, &temp );
+    detail::form_word( sl.dig.pipe_gen.gain6[k], 18, 13, true, &temp );
     gen_conf2.push_back( static_cast<uint32_t>(temp) );
   }
 
@@ -1296,7 +1296,7 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
 //    cout << "******** Gen no " << k+1 << endl;
     temp64 = 0;
-    detail::form_word( sl.dig.pipe_gen.pa_0()[k], 36, 23, true, &temp64 );
+    detail::form_word( sl.dig.pipe_gen.pa0[k], 36, 23, true, &temp64 );
     tempLSB = static_cast<int32_t>( temp64 & mask32 );
     tempMSB = static_cast<int32_t>( (temp64 >> 32) & mask32 );
 //    cout << "tempLSB = " << tempLSB << endl;
@@ -1309,7 +1309,7 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   // IG1 Past output values for generators: Omega
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
     temp64 = 0LL;
-    detail::form_word( sl.dig.pipe_gen.omega_0()[k], 46, 44, true, &temp64 );
+    detail::form_word( sl.dig.pipe_gen.omega0[k], 46, 44, true, &temp64 );
     tempLSB = static_cast<int32_t>( temp64 & mask32 );
     tempMSB = static_cast<int32_t>( (temp64 >> 32) & mask32 );
     gen_conf3.push_back( static_cast<uint32_t>(tempLSB) );
@@ -1319,7 +1319,7 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   // IG2 Past input values for generators: Omega
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
     temp64 = 0LL;
-    detail::form_word( sl.dig.pipe_gen.omega_0()[k], 46, 44, true, &temp64 );
+    detail::form_word( sl.dig.pipe_gen.omega0[k], 46, 44, true, &temp64 );
     tempLSB = static_cast<int32_t>( temp64 & mask32 );
     tempMSB = static_cast<int32_t>( (temp64 >> 32) & mask32 );
     gen_conf3.push_back( static_cast<uint32_t>(tempLSB) );
@@ -1329,7 +1329,7 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   // IG2 Past output values for generators: Delta
   for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
     temp64 = 0LL;
-    detail::form_word( sl.dig.pipe_gen.delta_0()[k]*2/M_PI, 54, 52, true, &temp64 );
+    detail::form_word( sl.dig.pipe_gen.delta0[k]*2/M_PI, 54, 52, true, &temp64 );
     tempLSB = static_cast<int32_t>( temp64 & mask32 );
     tempMSB = static_cast<int32_t>( (temp64 >> 32) & mask32 );
     gen_conf3.push_back( static_cast<uint32_t>(tempLSB) );
@@ -1412,8 +1412,8 @@ int encoder::detail::encode_TDzloads( Slice const& sl,
   // [  tempMBS   ] [  tempLSB   ]
   // [           temp            ]
   for ( k = 0 ; k != sl.dig.pipe_zload.element_count() ; ++k ){
-    detail::form_word( sl.dig.pipe_zload.real_Y()[k], 16, 13, true, &tempLSB );
-    detail::form_word( sl.dig.pipe_zload.imag_Y()[k], 16, 13, true, &tempMSB );
+    detail::form_word( sl.dig.pipe_zload.Yconst[k].real(), 16, 13, true, &tempLSB );
+    detail::form_word( sl.dig.pipe_zload.Yconst[k].imag(), 16, 13, true, &tempMSB );
     temp = (tempMSB << 16) | (tempLSB);
     zloads_conf.push_back( static_cast<uint32_t>(temp) );
 #ifdef VERBOSE_ENC
@@ -1525,8 +1525,8 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
     pseudo_id = static_cast<size_t>(sl.dig.pipe_gen.position()[k].first) *
                 sl.dig.pipe_gen.hor_id_max() +
                 static_cast<size_t>(sl.dig.pipe_gen.position()[k].second);
-    detail::form_word(   sl.dig.pipe_gen.i_ss()[k].real()  , 12, 7, true, &tempLSB );
-    detail::form_word(  -sl.dig.pipe_gen.i_ss()[k].imag()  , 12, 7, true, &tempMSB );
+    detail::form_word(   sl.dig.pipe_gen.I0[k].real()  , 12, 7, true, &tempLSB );
+    detail::form_word(  -sl.dig.pipe_gen.I0[k].imag()  , 12, 7, true, &tempMSB );
     temp = (tempMSB << 12) | (tempLSB);
     iloads_conf[pseudo_id] = static_cast<uint32_t>(temp);
   }
@@ -1536,8 +1536,8 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
     pseudo_id = static_cast<size_t>(sl.dig.pipe_iload.position()[k].first) *
                 sl.dig.pipe_iload.hor_id_max() +
                 static_cast<size_t>(sl.dig.pipe_iload.position()[k].second);
-    detail::form_word(    -sl.dig.pipe_iload.real_I()[k]   , 12, 7, true, &tempLSB );
-    detail::form_word(  -(-sl.dig.pipe_iload.imag_I()[k])  , 12, 7, true, &tempMSB );
+    detail::form_word(    -sl.dig.pipe_iload.Iconst[k].real()   , 12, 7, true, &tempLSB );
+    detail::form_word(  -(-sl.dig.pipe_iload.Iconst[k].imag())  , 12, 7, true, &tempMSB );
     temp = (tempMSB << 12) | (tempLSB);
     iloads_conf[pseudo_id] = static_cast<uint32_t>(temp);
   }
@@ -1547,8 +1547,8 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
     pseudo_id = static_cast<size_t>(sl.dig.pipe_zload.position()[k].first) *
                 sl.dig.pipe_zload.hor_id_max() +
                 static_cast<size_t>(sl.dig.pipe_zload.position()[k].second);
-    detail::form_word(    -sl.dig.pipe_zload.real_I()[k]   , 12, 7, true, &tempLSB );
-    detail::form_word(  -(-sl.dig.pipe_zload.imag_I()[k])  , 12, 7, true, &tempMSB );
+    detail::form_word(    -sl.dig.pipe_zload.I0[k].real()   , 12, 7, true, &tempLSB );
+    detail::form_word(  -(-sl.dig.pipe_zload.I0[k].imag())  , 12, 7, true, &tempMSB );
     temp = (tempMSB << 12) | (tempLSB);
     iloads_conf[pseudo_id] = static_cast<uint32_t>(temp);
   }
@@ -1557,8 +1557,8 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
     pseudo_id = static_cast<size_t>(sl.dig.pipe_pload.position()[k].first) *
                 sl.dig.pipe_pload.hor_id_max() +
                 static_cast<size_t>(sl.dig.pipe_pload.position()[k].second);
-    detail::form_word(    -sl.dig.pipe_pload.real_I()[k]   , 12, 7, true, &tempLSB );
-    detail::form_word(  -(-sl.dig.pipe_pload.imag_I()[k])  , 12, 7, true, &tempMSB );
+    detail::form_word(    -sl.dig.pipe_pload.I0[k].real()   , 12, 7, true, &tempLSB );
+    detail::form_word(  -(-sl.dig.pipe_pload.I0[k].imag())  , 12, 7, true, &tempMSB );
     temp = (tempMSB << 12) | (tempLSB);
     iloads_conf[pseudo_id] = static_cast<uint32_t>(temp);
   }
@@ -1569,8 +1569,7 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
   return 0;
 }
 
-int encoder::detail::encode_TDploads( Slice const& sl,
-                                    vector<uint32_t>& ploads_conf ){
+int encoder::detail::encode_TDploads( Slice const& sl, vector<uint32_t>& ploads_conf ){
 
   ploads_conf.clear();
 
@@ -1583,8 +1582,8 @@ int encoder::detail::encode_TDploads( Slice const& sl,
   // [  tempMBS   ] [  tempLSB   ]
   // [           temp            ]
   for ( k = 0 ; k != sl.dig.pipe_pload.element_count() ; ++k ){
-    detail::form_word( sl.dig.pipe_pload.P()[k], 16, 14, true, &tempLSB );
-    detail::form_word( sl.dig.pipe_pload.Q()[k], 16, 14, true, &tempMSB );
+    detail::form_word( sl.dig.pipe_pload.Sconst[k].real(), 16, 14, true, &tempLSB );
+    detail::form_word( sl.dig.pipe_pload.Sconst[k].imag(), 16, 14, true, &tempMSB );
     temp = (tempMSB << 16) | (tempLSB);
     ploads_conf.push_back( static_cast<uint32_t>(temp) );
 #ifdef VERBOSE_ENC

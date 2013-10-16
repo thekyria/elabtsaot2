@@ -44,7 +44,7 @@ int Potentiometer::display() const{
 }
 
 int Potentiometer::reset( bool complete ){
-  _sw = true;
+  _sw = false;
   if ( complete ){
     _rab = POTENTIOMETER_RAB;
     _rw = POTENTIOMETER_RW;

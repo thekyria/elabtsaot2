@@ -108,6 +108,7 @@ class Emulator {
   int autoMapping();
   int validateMapping();
   void autoRatioZ();
+  double getMaxR() const;
   void defaultRatios();
   int autoFitting(std::vector<std::string>* outputMsg = 0);
   int validateFitting();

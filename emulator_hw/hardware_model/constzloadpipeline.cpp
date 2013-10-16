@@ -15,10 +15,8 @@ using std::vector;
 ConstZLoadPipeline::ConstZLoadPipeline(size_t element_capacity,
                                        size_t ver_dim, size_t hor_dim) :
     Pipeline(element_capacity, ver_dim, hor_dim),
-    _real_Y(_element_count_max, 0),
-    _imag_Y(_element_count_max, 0),
-    _real_I(_element_count_max, 0),
-    _imag_I(_element_count_max, 0) {}
+    Yconst(_element_count_max, 0),
+    I0(_element_count_max, 0) {}
 
 int ConstZLoadPipeline::reset(){
   // Invoke reset of parent class
@@ -26,15 +24,8 @@ int ConstZLoadPipeline::reset(){
   if ( ans ) return 1;
   // element_count_max, ver_id_max, hor_id_max remain unchanged
 
-  _real_Y.clear();
-  _imag_Y.clear();
-  _real_I.clear();
-  _imag_I.clear();
-
-  _real_Y.resize( _element_count_max, 0 );
-  _imag_Y.resize( _element_count_max, 0 );
-  _real_I.resize( _element_count_max, 0 );
-  _imag_I.resize( _element_count_max, 0 );
+  Yconst.resize(_element_count_max, 0);
+  I0.resize(_element_count_max, 0);
 
   return 0;
 }
@@ -96,22 +87,18 @@ int ConstZLoadPipeline::insert_element( size_t ver_pos, size_t hor_pos,
     // Make space for new element
     for ( m = _element_count ; m != k ; --m ){
       _position[m] = _position[m-1];
-      _real_Y[m] = _real_Y[m-1];
-      _imag_Y[m] = _imag_Y[m-1];
-      _real_I[m] = _real_I[m-1];
-      _imag_I[m] = _imag_I[m-1];
+      Yconst[m]  = Yconst[m-1];
+      I0[m] = I0[m-1];
     }
 
   // Insert new element at pipeline position k
   _position[k] = make_pair((int) ver_pos, (int) hor_pos);
   complex<double> S(el.pdemand(), el.qdemand());
   complex<double> U(el.Uss());
-  complex<double> Y = conj(S) / (U*conj(U));
+  complex<double> Y_ = conj(S) / (U*conj(U));
   complex<double> I = conj(S) / conj(U);
-  _real_Y[k] = real(Y);
-  _imag_Y[k] = imag(Y);
-  _real_I[k] = real(I);
-  _imag_I[k] = imag(I);
+  Yconst[k] = Y_;
+  I0[k] = I;
 
   if ( !pos_already_taken )
     ++_element_count;
@@ -146,10 +133,8 @@ int ConstZLoadPipeline::remove_element( size_t ver_pos, size_t hor_pos){
 
       // reset pipeline line to default values
       _position[k] = make_pair(-1,-1);
-      _real_Y[k] = 0;
-      _imag_Y[k] = 0;
-      _real_I[k] = 0;
-      _imag_I[k] = 0;
+      Yconst[k] = 0;
+      I0[k] = 0;
 
       continue;
     }
@@ -160,10 +145,8 @@ int ConstZLoadPipeline::remove_element( size_t ver_pos, size_t hor_pos){
       // the k line, for all k lines after line n where the to-be-deleted
       // element was found
       _position[k-1] = _position[k];
-      _real_Y[k-1] = _real_Y[k];
-      _imag_Y[k-1] = _imag_Y[k];
-      _real_I[k-1] = _real_I[k];
-      _imag_I[k-1] = _imag_I[k];
+      Yconst[k-1] = Yconst[k];
+      I0[k-1] = I0[k];
     }
 
   }
@@ -174,37 +157,3 @@ int ConstZLoadPipeline::remove_element( size_t ver_pos, size_t hor_pos){
 
   return 0;
 }
-
-int ConstZLoadPipeline::set_real_Y(size_t pos, double val){
-  if ( pos >= _element_count_max )
-    // Position out of bounds!
-    return 1;
-  _real_Y[pos] = val;
-  return 0;
-}
-int ConstZLoadPipeline::set_imag_Y(size_t pos, double val){
-  if ( pos >= _element_count_max )
-    // Position out of bounds!
-    return 1;
-  _imag_Y[pos] = val;
-  return 0;
-}
-int ConstZLoadPipeline::set_real_I(size_t pos, double val){
-  if ( pos >= _element_count_max )
-    // Position out of bounds!
-    return 1;
-  _real_I[pos] = val;
-  return 0;
-}
-int ConstZLoadPipeline::set_imag_I(size_t pos, double val){
-  if ( pos >= _element_count_max )
-    // Position out of bounds!
-    return 1;
-  _imag_I[pos] = val;
-  return 0;
-}
-
-vector<double> ConstZLoadPipeline::real_Y() const{ return _real_Y; }
-vector<double> ConstZLoadPipeline::imag_Y() const{ return _imag_Y; }
-vector<double> ConstZLoadPipeline::real_I() const{ return _real_I; }
-vector<double> ConstZLoadPipeline::imag_I() const{ return _imag_I; }

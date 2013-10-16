@@ -182,9 +182,12 @@ int SliceAnalog::nodeCurrentSource(size_t id_ver, size_t id_hor, double seriesR,
   // Connect current source
   _atomSet[id_ver][id_hor].set_node_real_sw_current(true);
   _atomSet[id_ver][id_hor].set_node_imag_sw_current(true);
-  // Set series resistance
+  // Set series resistance and close internal potentiometer switch
   ans |= _atomSet[id_ver][id_hor].set_node_real_pot_current_r( seriesR );
   ans |= _atomSet[id_ver][id_hor].set_node_imag_pot_current_r( seriesR );
+  _atomSet[id_ver][id_hor].set_node_real_pot_current_sw(true);
+  _atomSet[id_ver][id_hor].set_node_imag_pot_current_sw(true);
+
 
   // Disconnect currenct voltage source, and shunt resistor
   _atomSet[id_ver][id_hor].set_node_real_sw_voltage(false);
@@ -194,13 +197,21 @@ int SliceAnalog::nodeCurrentSource(size_t id_ver, size_t id_hor, double seriesR,
 
   // Connect resistance to ground - if needed
   if (shuntR > 0){
+    // Close the resistance to ground switch
     _atomSet[id_ver][id_hor].set_node_real_sw_resistance(true);
     _atomSet[id_ver][id_hor].set_node_imag_sw_resistance(true);
+    // Set resistance to ground and close internal potentiometer switch
     ans |= _atomSet[id_ver][id_hor].set_node_real_pot_resistance_r( shuntR );
     ans |= _atomSet[id_ver][id_hor].set_node_imag_pot_resistance_r( shuntR );
+    _atomSet[id_ver][id_hor].set_node_real_pot_resistance_sw(true);
+    _atomSet[id_ver][id_hor].set_node_imag_pot_resistance_sw(true);
   } else {
+    // Open the resistance to ground switch
     _atomSet[id_ver][id_hor].set_node_real_sw_resistance(false);
     _atomSet[id_ver][id_hor].set_node_imag_sw_resistance(false);
+    // Open the internal potentiometer switch
+    _atomSet[id_ver][id_hor].set_node_real_pot_resistance_sw(false);
+    _atomSet[id_ver][id_hor].set_node_imag_pot_resistance_sw(false);
   }
   return ans;
 }
@@ -211,21 +222,33 @@ int SliceAnalog::nodeVoltageSource(size_t id_ver, size_t id_hor, double shuntR){
   _atomSet[id_ver][id_hor].set_node_real_sw_voltage(true);
   _atomSet[id_ver][id_hor].set_node_imag_sw_voltage(true);
 
-  // Disconnect current source and current shunt resistor
+  // Disconnect current source and open internal potentiometer switch
   _atomSet[id_ver][id_hor].set_node_real_sw_current(false);
   _atomSet[id_ver][id_hor].set_node_imag_sw_current(false);
+  _atomSet[id_ver][id_hor].set_node_real_pot_current_sw(false);
+  _atomSet[id_ver][id_hor].set_node_imag_pot_current_sw(false);
+
+  // Disconnect current shunt resistor
   _atomSet[id_ver][id_hor].set_node_real_sw_current_shunt(false);
   _atomSet[id_ver][id_hor].set_node_imag_sw_current_shunt(false);
 
   // Connect resistance to ground - if needed
   if (shuntR > 0){
+    // Close the resistance to ground switch
     _atomSet[id_ver][id_hor].set_node_real_sw_resistance(true);
     _atomSet[id_ver][id_hor].set_node_imag_sw_resistance(true);
+    // Set resistance to ground and close internal potentiometer switch
     ans |= _atomSet[id_ver][id_hor].set_node_real_pot_resistance_r( shuntR );
     ans |= _atomSet[id_ver][id_hor].set_node_imag_pot_resistance_r( shuntR );
+    _atomSet[id_ver][id_hor].set_node_real_pot_resistance_sw(true);
+    _atomSet[id_ver][id_hor].set_node_imag_pot_resistance_sw(true);
   } else {
+    // Open the resistance to ground switch
     _atomSet[id_ver][id_hor].set_node_real_sw_resistance(false);
     _atomSet[id_ver][id_hor].set_node_imag_sw_resistance(false);
+    // Open the internal potentiometer switch
+    _atomSet[id_ver][id_hor].set_node_real_pot_resistance_sw(false);
+    _atomSet[id_ver][id_hor].set_node_imag_pot_resistance_sw(false);
   }
   return ans;
 }
@@ -240,6 +263,13 @@ int SliceAnalog::nodeDisconnect(size_t id_ver, size_t id_hor){
   _atomSet[id_ver][id_hor].set_node_imag_sw_voltage(false);
   _atomSet[id_ver][id_hor].set_node_real_sw_resistance(false);
   _atomSet[id_ver][id_hor].set_node_imag_sw_resistance(false);
+
+  // Open all internal potentiometer switches
+  _atomSet[id_ver][id_hor].set_node_real_pot_resistance_sw(false);
+  _atomSet[id_ver][id_hor].set_node_imag_pot_resistance_sw(false);
+  _atomSet[id_ver][id_hor].set_node_real_pot_current_sw(false);
+  _atomSet[id_ver][id_hor].set_node_imag_pot_current_sw(false);
+
   return 0;
 }
 
@@ -251,20 +281,23 @@ int SliceAnalog::embrConnect(size_t id_ver, size_t id_hor, size_t pos,
   if (id_hor >= _atomSet[id_ver].size())         return 21;
   if (!_atomSet[id_ver][id_hor].embr_exist(pos)) return 22;
 
-  int exitCode = 0;
-  // Close end connection switches
-  _atomSet[id_ver][id_hor].set_embr_real_pot_near_sw(pos, true);
-  _atomSet[id_ver][id_hor].set_embr_imag_pot_near_sw(pos, true);
-  _atomSet[id_ver][id_hor].set_embr_real_pot_far_sw(pos, true);
-  _atomSet[id_ver][id_hor].set_embr_imag_pot_far_sw(pos, true);
+  int ans = 0;
   // Open mid gnd switches
   _atomSet[id_ver][id_hor].set_embr_real_sw_mid(pos, false);
   _atomSet[id_ver][id_hor].set_embr_imag_sw_mid(pos, false);
-  // Set near/far resistors
-  exitCode |= _atomSet[id_ver][id_hor].set_embr_real_pot_near_r(pos, r_near)   !=0?(1<<4):0 ;
-  exitCode |= _atomSet[id_ver][id_hor].set_embr_imag_pot_near_r(pos, r_near)   !=0?(1<<5):0 ;
-  exitCode |= _atomSet[id_ver][id_hor].set_embr_real_pot_far_r(pos, r_far)     !=0?(1<<6):0 ;
-  exitCode |= _atomSet[id_ver][id_hor].set_embr_imag_pot_far_r(pos, r_far)     !=0?(1<<7):0 ;
+
+  // Set near-end potentiometer value and close internal switch
+  _atomSet[id_ver][id_hor].set_embr_real_pot_near_sw(pos, true);
+  _atomSet[id_ver][id_hor].set_embr_imag_pot_near_sw(pos, true);
+  ans |= _atomSet[id_ver][id_hor].set_embr_real_pot_near_r(pos, r_near)   !=0?(1<<4):0;
+  ans |= _atomSet[id_ver][id_hor].set_embr_imag_pot_near_r(pos, r_near)   !=0?(1<<5):0;
+
+  // Set far-end potentiometer value and close internal switch
+  _atomSet[id_ver][id_hor].set_embr_real_pot_far_sw(pos, true);
+  _atomSet[id_ver][id_hor].set_embr_imag_pot_far_sw(pos, true);
+  ans |= _atomSet[id_ver][id_hor].set_embr_real_pot_far_r(pos, r_far)     !=0?(1<<6):0;
+  ans |= _atomSet[id_ver][id_hor].set_embr_imag_pot_far_r(pos, r_far)     !=0?(1<<7):0;
+
   // Provision for too small values
   if ( (r_near + r_far) <= static_cast<double> (2*POTENTIOMETER_RW) ){
     // branch corresponding to a short circuit ( r_near ~== r_far ~== 0 )
@@ -275,7 +308,7 @@ int SliceAnalog::embrConnect(size_t id_ver, size_t id_hor, size_t pos,
     _atomSet[id_ver][id_hor].set_embr_real_sw_sc(pos, false);
     _atomSet[id_ver][id_hor].set_embr_imag_sw_sc(pos, false);
   }
-  return exitCode;
+  return ans;
 }
 
 int SliceAnalog::embrDisconnect(size_t id_ver, size_t id_hor, size_t pos){
@@ -286,17 +319,20 @@ int SliceAnalog::embrDisconnect(size_t id_ver, size_t id_hor, size_t pos){
   // Cannot modify an emulator hw branch that does not exist!
   if (!_atomSet[id_ver][id_hor].embr_exist(pos))      return 22;
 
-  int exitCode = 0;
-  // Open all corresponding switches
+  int ans = 0;
+  // Open short-circuiting switch
   _atomSet[id_ver][id_hor].set_embr_real_sw_sc(pos, false);
   _atomSet[id_ver][id_hor].set_embr_imag_sw_sc(pos, false);
+  // Open mid-grounding switch
   _atomSet[id_ver][id_hor].set_embr_real_sw_mid(pos, false);
   _atomSet[id_ver][id_hor].set_embr_imag_sw_mid(pos, false);
+  // Open near-end potentiometer internal switches
   _atomSet[id_ver][id_hor].set_embr_real_pot_near_sw(pos, false);
   _atomSet[id_ver][id_hor].set_embr_imag_pot_near_sw(pos, false);
+  // Open far-end potentiometer internal switches
   _atomSet[id_ver][id_hor].set_embr_real_pot_far_sw(pos, false);
   _atomSet[id_ver][id_hor].set_embr_imag_pot_far_sw(pos, false);
-  return exitCode;
+  return ans;
 }
 
 void SliceAnalog::set_got_gain(double val){ _got_gain = val; }

@@ -55,52 +55,18 @@ class GeneratorPipeline : public Pipeline{
   //! An element is removed from the pipeline
   int remove_element(size_t ver_pos, size_t hor_pos);
 
-  /*! \name Getters */
-  //@{
-  std::vector<double> xd_1_inverse() const;  //!< getter for _xd_1_inverse
-  std::vector<std::complex<double> > i_ss() const;    //!< getter for _i_ss
-  std::vector<double> p_mechanical() const;  //!< getter for _p_mechanical
-  std::vector<double> gain_1() const;        //!< getter for _gain_1
-  std::vector<double> gain_2() const;        //!< getter for _gain_2
-  std::vector<double> gain_3() const;        //!< getter for _gain_3
-  std::vector<double> gain_4() const;        //!< getter for _gain_4
-  std::vector<double> gain_5() const;        //!< getter for _gain_5
-  std::vector<double> gain_6() const;        //!< getter for _gain_6
-  std::vector<double> pa_0() const;          //!< getter for _pa_0
-  std::vector<double> omega_0() const;       //!< getter for _omega_0
-  std::vector<double> delta_0() const;       //!< getter for _delta_0
-  //@}
-
-  /*! \name Setters  members of the class. */
-  //@{
-  int set_xd_1_inverse(size_t pos, double val);
-  int set_i_0(size_t pos, std::complex<double> val);
-  int set_p_mechanical(size_t pos, double val);
-  int set_gain_1(size_t pos, double val);
-  int set_gain_2(size_t pos, double val);
-  int set_gain_3(size_t pos, double val);
-  int set_gain_4(size_t pos, double val);
-  int set_gain_5(size_t pos, double val);
-  int set_gain_6(size_t pos, double val);
-  int set_pa_0(size_t pos, double val);
-  int set_omega_0(size_t pos, double  val);
-  int set_delta_0(size_t pos, double val);
-  //@}
-
- private:
-
-  std::vector<double> _xd_1_inverse; //!< Inverse of the transient reactance [p.u.]
-  std::vector<std::complex<double> > _i_ss; //!< Initial current flow [p.u.]
-  std::vector<double> _p_mechanical; //!< Mechanical power [p.u.]
-  std::vector<double> _gain_1;       //!< (freq [Hz])/(inertia const H [kW/kVA])
-  std::vector<double> _gain_2;       //!< (internal voltage E [p.u.])/(xd' [p.u.])
-  std::vector<double> _gain_3;       //!< by default = -gain_2
-  std::vector<double> _gain_4;       //!< by default = 1
-  std::vector<double> _gain_5;       //!< by default = -gain_4
-  std::vector<double> _gain_6;       //!< by default = 2
-  std::vector<double> _pa_0;         //! S.s. P accelerating [p.u.]; default 0
-  std::vector<double> _omega_0;      //! S.s. relative omega [rad/s]; default 0
-  std::vector<double> _delta_0;      //! S.s. delta [rad]; from loadflow
+  std::vector<double> xd1inverse; //!< Inverse of the transient reactance [p.u.]
+  std::vector<std::complex<double> > I0; //!< Initial current flow [p.u.]
+  std::vector<double> pMechanical; //!< Mechanical power [p.u.]
+  std::vector<double> gain1;       //!< (freq [Hz])/(inertia const H [kW/kVA])
+  std::vector<double> gain2;       //!< (internal voltage E [p.u.])/(xd' [p.u.])
+  std::vector<double> gain3;       //!< by default = -gain_2
+  std::vector<double> gain4;       //!< by default = 1
+  std::vector<double> gain5;       //!< by default = -gain_4
+  std::vector<double> gain6;       //!< by default = 2
+  std::vector<double> pa0;         //! S.s. P accelerating [p.u.]; default 0
+  std::vector<double> omega0;      //! S.s. relative omega [rad/s]; default 0
+  std::vector<double> delta0;      //! S.s. delta [rad]; from loadflow
 
 };
 

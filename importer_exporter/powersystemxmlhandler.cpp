@@ -191,9 +191,9 @@ bool PowersystemXMLHandler::characters(QString const& ch){
 }
 
 bool PowersystemXMLHandler::startElement(QString const& namespaceURI,
-                                   QString const& localName,
-                                   QString const& qName,
-                                   QXmlAttributes const& atts){
+                                         QString const& localName,
+                                         QString const& qName,
+                                         QXmlAttributes const& atts){
   _tags.append(qName);
   // Parse whether a new net component is instantiated
   if( qName=="bus" ){
@@ -214,8 +214,8 @@ bool PowersystemXMLHandler::startElement(QString const& namespaceURI,
 }
 
 bool PowersystemXMLHandler::endElement(QString const& namespaceURI,
-                                 QString const& localName,
-                                 QString const& qName){
+                                       QString const& localName,
+                                       QString const& qName){
   _tags.remove(_tags.size()-1);
   int ans;
 

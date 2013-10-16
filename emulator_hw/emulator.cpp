@@ -743,6 +743,8 @@ void Emulator::defaultRatios(){
   _maxIpu = static_cast<double>(DEFMAXIPU);
 }
 
+double Emulator::getMaxR() const{ return _emuhw->getMinMaxAchievableR(); }
+
 int Emulator::autoFitting(vector<string>* outputMsg){
 
   // Calling autoFitting() downsets the state of the Emulator to
