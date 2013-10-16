@@ -43,23 +43,19 @@ bool PowersystemXMLHandler::characters(QString const& ch){
   // --------------- Bus ---------------
   if ( _p_bus ){
     if( _tags.last()=="id" )
-      _p_bus->set_extId( value.toInt() );
+      _p_bus->extId = value.toInt();
     if( _tags.last()=="name" )
-      _p_bus->set_name( value.toStdString() );
+      _p_bus->name = value.toStdString();
     if( _tags.last()=="shconductance" )
-      _p_bus->set_gsh( value.toDouble() );
+      _p_bus->gsh = value.toDouble();
     if( _tags.last()=="shsusceptance" )
-      _p_bus->set_bsh( value.toDouble() );
+      _p_bus->bsh = value.toDouble();
     if( _tags.last()=="baseKV" )
-      _p_bus->set_baseKV( value.toDouble() );
-    if( _tags.last()=="vmax" )
-      _p_bus->set_Vmax( value.toDouble() );
-    if( _tags.last()=="vmin" )
-      _p_bus->set_Vmin( value.toDouble() );
+      _p_bus->baseKV = value.toDouble();
     if( _tags.last()=="v_steadystate" )
-      _p_bus->set_Vss( value.toDouble() );
+      _p_bus->V = value.toDouble();
     if( _tags.last()=="th_steadystate" )
-      _p_bus->set_thss( value.toDouble() );
+      _p_bus->theta = value.toDouble();
 
   // --------------- Branch ---------------
   } else if( _p_br ){

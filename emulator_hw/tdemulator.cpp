@@ -2029,13 +2029,13 @@ int TDEmulator::_encodeScenarioBase( Scenario const& sce_,
     bool nodeFound = false;
     for ( k = 0 ; k != nodeElements.size() ; ++k ){
       if ( nodeElements[k].first == PWSMODELELEMENTTYPE_BUS
-           && nodeElements[k].second == pFromBus->extId() ){
+           && nodeElements[k].second == pFromBus->extId ){
         embr_loc = fault_loc;
         nodeFound = true;
         break;
       }
       if ( nodeElements[k].first == PWSMODELELEMENTTYPE_BUS
-           && nodeElements[k].second == pToBus->extId() ){
+           && nodeElements[k].second == pToBus->extId ){
         embr_loc = 1 - fault_loc;
         nodeFound = true;
         break;

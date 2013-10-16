@@ -99,7 +99,7 @@ int PwsSchematicModel::validate(){
   bool found;
   // ----- Ensure that each powersystem element has a respective element -----
   for ( k = 0; k != _pws->getBusSet_size() ; ++k ){
-    cur_extId = _pws->getBusSet().at(k).extId();
+    cur_extId = _pws->getBusSet().at(k).extId;
     found = false;
     for ( m = 0 ; m != _busElements.size() ; ++m ){
       if ( _busElements[k].extId == cur_extId ){
@@ -336,7 +336,7 @@ int PwsSchematicModel::addElement( int type, unsigned int extId,
 
 int PwsSchematicModel::addBusElement( Bus bus, bool overwrite, int* mdlId ){
 
-  int ans = addElement(PWSMODELELEMENTTYPE_BUS, bus.extId(), overwrite, mdlId);
+  int ans = addElement(PWSMODELELEMENTTYPE_BUS, bus.extId, overwrite, mdlId);
   if ( ans ){
 //    cout << "Error adding bus component (" << bus.extId() << ")!" << endl;
     return 1;

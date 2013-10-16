@@ -161,8 +161,8 @@ int MoteurRenard::do_solveLoadflow( Powersystem const& pws,
       x(k) = 0;                                   // flat start angle = 0 rad
       x(n+k) = 1;                                 // flat start voltage = 1 pu
     } else {                                      // not flat start
-      x(k) = pws.getBus(k)->thss();               // load steady state values -
-      x(n+k) = pws.getBus(k)->Vss();              // estimates from buses
+      x(k) = pws.getBus(k)->theta;                // load steady state values -
+      x(n+k) = pws.getBus(k)->V;                  // estimates from buses
     }
   }
   ublas::vector<double> Fsp(2*n); Fsp.clear();    // (0:n-1) Psp, (n:2n-1) Qsp

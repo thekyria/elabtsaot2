@@ -185,8 +185,8 @@ TDResults::TDResults( Powersystem const* pws, Scenario const* sce ){
 
   // Algebraic variables of buses
   for ( size_t k = 0 ; k != pws->getBusSet_size() ; ++k ){
-    Bus const* p_bus = pws->getBus( k );
-    unsigned int bus_extId = p_bus->extId();
+    Bus const* p_bus = pws->getBus(k);
+    unsigned int bus_extId = p_bus->extId;
     tdri.elementType = TDRESULTS_BUS;
     tdri.extId = bus_extId;
 

@@ -421,24 +421,13 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
 
     // Write its parameters to the xml file
     fprintf(f, "\t<bus>\n");
-    fprintf(f, "\t\t<id> %d </id>\n",
-            bus->extId());
-    fprintf(f, "\t\t<name> %s </name>\n",
-            bus->name().c_str());
-    fprintf(f, "\t\t<shconductance> %.12f </shconductance>\n",
-            bus->bsh());
-    fprintf(f, "\t\t<shsusceptance> %.12f </shsusceptance>\n",
-            bus->gsh());
-    fprintf(f, "\t\t<baseKV> %.12f </baseKV>\n",
-            bus->baseKV());
-    fprintf(f, "\t\t<vmax> %.12f </vmax>\n",
-            bus->Vmax());
-    fprintf(f, "\t\t<vmin> %.12f </vmin>\n",
-            bus->Vmin());
-    fprintf(f, "\t\t<v_steadystate> %.12f </v_steadystate>\n",
-            bus->Vss());
-    fprintf(f, "\t\t<th_steadystate> %.12f </th_steadystate>\n",
-            bus->thss());
+    fprintf(f, "\t\t<id> %d </id>\n", bus->extId);
+    fprintf(f, "\t\t<name> %s </name>\n", bus->name.c_str());
+    fprintf(f, "\t\t<shconductance> %.12f </shconductance>\n", bus->bsh);
+    fprintf(f, "\t\t<shsusceptance> %.12f </shsusceptance>\n", bus->gsh);
+    fprintf(f, "\t\t<baseKV> %.12f </baseKV>\n", bus->baseKV);
+    fprintf(f, "\t\t<v_steadystate> %.12f </v_steadystate>\n", bus->V);
+    fprintf(f, "\t\t<th_steadystate> %.12f </th_steadystate>\n", bus->theta);
     fprintf(f, "\t</bus>\n");
     fflush(f);
   }

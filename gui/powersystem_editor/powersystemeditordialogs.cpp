@@ -80,7 +80,7 @@ int pwsEditorDialogs::busDialog(Bus *bus){
   QLabel labelExtId("Id:");
   QSpinBox formExtId;
   formExtId.setMaximum( RAND_MAX );
-  formExtId.setValue( bus->extId() );
+  formExtId.setValue( bus->extId );
   layoutExtId.addWidget( &labelExtId );
   layoutExtId.addWidget( &formExtId );
   layoutMain.addLayout( &layoutExtId );
@@ -88,7 +88,7 @@ int pwsEditorDialogs::busDialog(Bus *bus){
   QHBoxLayout layoutName;
   QLabel labelName("Name:");
   QLineEdit formName;
-  formName.setText( bus->name().c_str() );
+  formName.setText( bus->name.c_str() );
   layoutName.addWidget( &labelName );
   layoutName.addWidget( &formName );
   layoutMain.addLayout( &layoutName );
@@ -96,7 +96,7 @@ int pwsEditorDialogs::busDialog(Bus *bus){
   QHBoxLayout layoutGsh;
   QLabel labelGsh("Shunt conductance [pu]:");
   QDoubleSpinBox formGsh;
-  formGsh.setValue( bus->gsh() );
+  formGsh.setValue( bus->gsh );
   layoutGsh.addWidget( &labelGsh );
   layoutGsh.addWidget( &formGsh );
   layoutMain.addLayout( &layoutGsh );
@@ -104,7 +104,7 @@ int pwsEditorDialogs::busDialog(Bus *bus){
   QHBoxLayout layoutBsh;
   QLabel labelBsh("Shunt susceptance [pu]:");
   QDoubleSpinBox formBsh;
-  formBsh.setValue( bus->bsh() );
+  formBsh.setValue( bus->bsh );
   layoutBsh.addWidget( &labelBsh );
   layoutBsh.addWidget( &formBsh );
   layoutMain.addLayout( &layoutBsh );
@@ -112,20 +112,10 @@ int pwsEditorDialogs::busDialog(Bus *bus){
   QHBoxLayout layoutBaseKV;
   QLabel labelBaseKV("Base voltage [KV]:");
   QDoubleSpinBox formBaseKV;
-  formBaseKV.setValue( bus->baseKV() );
+  formBaseKV.setValue( bus->baseKV );
   layoutBaseKV.addWidget( &labelBaseKV );
   layoutBaseKV.addWidget( &formBaseKV );
   layoutMain.addLayout( &layoutBaseKV );
-  // vmin & vmax
-  QHBoxLayout layoutVLimit;
-  QLabel labelVLimit("Min/max voltage [pu]:");
-  QDoubleSpinBox formVMin, formVMax;
-  formVMin.setValue( bus->Vmin() );
-  formVMax.setValue( bus->Vmax() );
-  layoutVLimit.addWidget( &labelVLimit );
-  layoutVLimit.addWidget( &formVMin );
-  layoutVLimit.addWidget( &formVMax );
-  layoutMain.addLayout( &layoutVLimit );
 
   // Buttons
   QHBoxLayout layoutButtons;
@@ -140,13 +130,11 @@ int pwsEditorDialogs::busDialog(Bus *bus){
   if( dialog.exec() ){
     // Dialog executed properly
     // Store values back
-    bus->set_extId( formExtId.value() );
-    bus->set_name( formName.text().toStdString() );
-    bus->set_gsh( formGsh.value() );
-    bus->set_bsh( formBsh.value() );
-    bus->set_baseKV( formBaseKV.value() );
-    bus->set_Vmin( formVMin.value() );
-    bus->set_Vmax( formVMax.value() );
+    bus->extId = formExtId.value();
+    bus->name = formName.text().toStdString();
+    bus->gsh = formGsh.value();
+    bus->bsh = formBsh.value();
+    bus->baseKV = formBaseKV.value();
 
     return 0;
 

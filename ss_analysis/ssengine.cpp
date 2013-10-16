@@ -56,8 +56,8 @@ void SSEngine::do_getInitialConditions( Powersystem const& pws,
   F.resize(2*n); F.clear();
 
   for ( size_t k = 0 ; k != n ; ++k ){
-    x(k) = pws.getBus(k)->thss();               // load steady state values -
-    x(n+k) = pws.getBus(k)->Vss();              // estimates from buses
+    x(k) = pws.getBus(k)->theta;               // load steady state values -
+    x(n+k) = pws.getBus(k)->V;              // estimates from buses
 
     // Add all gen production
     set<size_t> busGenMap = pws.getBusGenMap().at(k);
@@ -137,7 +137,7 @@ int SSEngine::do_buildY( Powersystem const& pws,
 
   // Include bus shunt admittances
   for ( size_t k = 0 ; k != pws.getBusSet_size() ; ++k )
-    Y(k,k) += complex<double>( pws.getBus(k)->gsh(), pws.getBus(k)->bsh() );
+    Y(k,k) += complex<double>( pws.getBus(k)->gsh, pws.getBus(k)->bsh );
 
   return 0;
 }
@@ -159,10 +159,10 @@ int SSEngine::do_updatePowersystem( Powersystem& pws,
   // Store theta-U, P-Q results in the _busSet of the pws
   for ( size_t k = 0 ; k != n ; ++k ){
     Bus* bus = pws.getBus(k);
-    bus->set_thss( x(  k) );
-    bus->set_Vss ( x(n+k) );
-    bus->set_Pss ( F(  k) );
-    bus->set_Qss ( F(n+k) );
+    bus->theta = x(  k);
+    bus->V     = x(n+k);
+    bus->P     = F(  k);
+    bus->Q     = F(n+k);
   }
 
   // Calculate branch flows
@@ -295,7 +295,7 @@ int SSEngine::do_updatePowersystem( Powersystem& pws,
     if ( gen->model() == GENMODEL_0p0 ){
       S = complex<double> ( gen->pgen(), gen->qgen() );
       int busIntId = pws.getBus_intId(gen->busExtId());
-      U = polar( pws.getBus(busIntId)->Vss() , pws.getBus(busIntId)->thss() );
+      U = polar( pws.getBus(busIntId)->V , pws.getBus(busIntId)->theta );
       I = conj(S) / conj(U);
       Z = complex<double> ( gen->ra() , gen->xd_1() );
       E = U + I*Z;
@@ -310,7 +310,7 @@ int SSEngine::do_updatePowersystem( Powersystem& pws,
       // voltage source behind transient reactance _xd_1
       S = complex<double> ( gen->pgen(), gen->qgen() );
       int busIntId = pws.getBus_intId( gen->busExtId() );
-      U = polar( pws.getBus(busIntId)->Vss() , pws.getBus(busIntId)->thss() );
+      U = polar( pws.getBus(busIntId)->V , pws.getBus(busIntId)->theta );
       I = conj(S) / conj(U);
       Z = complex<double> ( gen->ra() , gen->xd_1() );
       E = U + I*Z;
@@ -326,7 +326,7 @@ int SSEngine::do_updatePowersystem( Powersystem& pws,
   for ( size_t k = 0 ; k != pws.getLoadSet_size() ; ++k ){
     Load* load = pws.getLoad(k);
     int busIntId = pws.getBus_intId( load->busExtId() );
-    Uload = polar( pws.getBus(busIntId)->Vss() , pws.getBus(busIntId)->thss() );
+    Uload = polar( pws.getBus(busIntId)->V , pws.getBus(busIntId)->theta );
     load->set_Uss(Uload);
   }
   pws.set_status( PWSSTATUS_LF );

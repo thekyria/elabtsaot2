@@ -74,9 +74,9 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
 
         case PWSMODELELEMENTTYPE_BUS:{
           Bus const* pBus;
-          if (!_pws->getBus( elementsMapped.at(n).second, pBus )){
+          if (!_pws->getBus(elementsMapped.at(n).second, pBus)){
             label.append( "BUS " );
-            label.append( QString::number( pBus->extId() ) );
+            label.append( QString::number( pBus->extId ) );
             label.append( " " );
           }
           break; }

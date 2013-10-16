@@ -203,15 +203,15 @@ int Powersystem::log_loadflow_results(ostream& ostr) const{
   ostr << "Q" << endl;
   for ( k = 0 ; k != _busSet.size() ; ++k ){
     ostr.width(5);
-    ostr << _busSet[k].extId();          // bus ext id
+    ostr << _busSet[k].extId;          // bus ext id
     ostr.width(9);
-    ostr << _busSet[k].Vss();            // bus voltage magnitude
+    ostr << _busSet[k].V;            // bus voltage magnitude
     ostr.width(9);
-    ostr << _busSet[k].thss();           // bus voltage angle
+    ostr << _busSet[k].theta;           // bus voltage angle
     ostr.width(9);
-    ostr << _busSet[k].Pss();            // P at bus
+    ostr << _busSet[k].P;            // P at bus
     ostr.width(9);
-    ostr << _busSet[k].Qss();            // Q at bus
+    ostr << _busSet[k].Q;            // Q at bus
     ostr << endl;
   }
   ostr << endl;
@@ -383,7 +383,7 @@ int Powersystem::clear(){
 int Powersystem::addBus(Bus const& newBus){
 
   // Check whether extId of newBus exists in _busSet
-  if(_busIdBimap.left.find(newBus.extId()) != _busIdBimap.left.end()){
+  if(_busIdBimap.left.find(newBus.extId) != _busIdBimap.left.end()){
     // extId of newBus already exists in Powersystem
     return 1;
   }
@@ -635,10 +635,10 @@ int Powersystem::validate(){
   // Validate that all bus extIds are unique
   set<unsigned int> busExtIds;
   for ( k = 0 ; k != _busSet.size() ; ++k ){
-    if ( busExtIds.find(_busSet[k].extId()) != busExtIds.end() ){
+    if ( busExtIds.find(_busSet[k].extId) != busExtIds.end() ){
       return 1;
     } else {
-      busExtIds.insert( _busSet[k].extId() );
+      busExtIds.insert( _busSet[k].extId );
     }
   }
 
@@ -792,7 +792,7 @@ int Powersystem::getBus_extId(size_t intId) const{
     return -1;
   } else{
     // Element found; return its external index
-    return _busSet[intId].extId();
+    return _busSet[intId].extId;
   }
 }
 int Powersystem::getBr_extId(size_t intId) const{
@@ -1084,7 +1084,7 @@ void Powersystem::_rebuildBusIdBimap(){
   // Rebuild _busIdBimap bimap; first: extId - second: intId
   _busIdBimap.clear();
   for(vector<Bus>::iterator i = _busSet.begin(); i != _busSet.end(); ++i){
-    _busIdBimap.insert(UintPair(i->extId(),_busIdBimap.size()));
+    _busIdBimap.insert(UintPair(i->extId,_busIdBimap.size()));
   }
 }
 

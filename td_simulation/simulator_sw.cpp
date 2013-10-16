@@ -167,7 +167,7 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
   vector<complex<double> > Ubus0(_busCount);
   for ( size_t k = 0 ; k != _busCount ; ++k ){
     Bus const* bus(_pwsLocal.getBus(k));
-    Ubus0[k] = bus->Vss() * complex<double>(cos(bus->thss()), sin(bus->thss()));
+    Ubus0[k] = bus->V * complex<double>(cos(bus->theta), sin(bus->theta));
   }
   vector<complex<double> > Ubus(Ubus0);
 
@@ -869,22 +869,22 @@ int Simulator_sw::_parseBusFault(Event &event){
     if (event.bool_arg()){
       //Storing the old
       _busintid.push_back(intid);
-      _oldgsh.push_back(busofevent->gsh());
-      _oldbsh.push_back(busofevent->bsh());
+      _oldgsh.push_back(busofevent->gsh);
+      _oldbsh.push_back(busofevent->bsh);
       double gsh;
       double bsh;
       gsh=1/event.double_arg_1();
       bsh=-1/event.double_arg_2();
-      busofevent->set_gsh(gsh);
-      busofevent->set_bsh(bsh);
+      busofevent->gsh = gsh;
+      busofevent->bsh = bsh;
     }
 
     //Restore the saved data
     else{
       for (size_t i=0;i<_busintid.size();++i){
         if (intid==_busintid[i]){
-          busofevent->set_gsh(_oldgsh[i]);
-          busofevent->set_bsh(_oldbsh[i]);
+          busofevent->gsh = _oldgsh[i];
+          busofevent->bsh = _oldbsh[i];
           _busintid.erase(_busintid.begin()+i);
           _oldgsh.erase(_oldgsh.begin()+i);
           _oldbsh.erase(_oldbsh.begin()+i);
@@ -915,14 +915,14 @@ int Simulator_sw::_parseBrFault(Event &event){
         if (ans) return 2;
 
         _br_frombus_intid.push_back(_pwsLocal.getBus_intId(branchofevent->fromBusExtId()));
-        _br_frombus_oldgsh.push_back(busofevent->gsh());
-        _br_frombus_oldbsh.push_back(busofevent->bsh());
+        _br_frombus_oldgsh.push_back(busofevent->gsh);
+        _br_frombus_oldbsh.push_back(busofevent->bsh);
         double gsh;
         double bsh;
         gsh=1/event.double_arg_1();
         bsh=-1/event.double_arg_2();
-        busofevent->set_gsh(gsh);
-        busofevent->set_bsh(bsh);
+        busofevent->gsh = gsh;
+        busofevent->bsh = bsh;
       }
 
       // - on the to bus of line
@@ -932,12 +932,12 @@ int Simulator_sw::_parseBrFault(Event &event){
         if (ans) return 3;
 
         _br_tobus_intid.push_back(_pwsLocal.getBus_intId(branchofevent->toBusExtId()));
-        _br_tobus_oldgsh.push_back(busofevent->gsh());
-        _br_tobus_oldbsh.push_back(busofevent->bsh());
+        _br_tobus_oldgsh.push_back(busofevent->gsh);
+        _br_tobus_oldbsh.push_back(busofevent->bsh);
         double gsh = 1/event.double_arg_1();
         double bsh = -1/event.double_arg_2();
-        busofevent->set_gsh(gsh);
-        busofevent->set_bsh(bsh);
+        busofevent->gsh = gsh;
+        busofevent->bsh = bsh;
       }
 
       // - at an other location of line between two buses
@@ -955,14 +955,14 @@ int Simulator_sw::_parseBrFault(Event &event){
 //        for ( maxextid = 0 ; maxextid != 0 ; ++maxextid )
 //        if ( _pws.getBus_intId( maxextid ) == -1 )
 //        break;
-        busofevent->set_extId( maxextid+1);
+        busofevent->extId = maxextid+1;
         double gsh = 1/event.double_arg_1();
         double bsh = -1/event.double_arg_2();
-        busofevent->set_gsh(gsh);
-        busofevent->set_bsh(bsh);
+        busofevent->gsh = gsh;
+        busofevent->bsh = bsh;
         std::string busname="Fbus of F";
         busname.append(branchofevent->name());
-        busofevent->set_name(busname);
+        busofevent->name = busname;
         branchofevent->set_status(false);//trip the old line
         // Create a new branch  frombus the new faulty bus
         int ans = _pwsLocal.addBus(*busofevent);
@@ -1030,8 +1030,8 @@ int Simulator_sw::_parseBrFault(Event &event){
 
         for(size_t i=0;i< _br_frombus_intid.size();++i){
           if(_pwsLocal.getBus_intId(branchofevent->fromBusExtId())==_br_frombus_intid[i]){
-            busofevent->set_gsh(_br_frombus_oldgsh[i]);
-            busofevent->set_bsh(_br_frombus_oldbsh[i]);
+            busofevent->gsh = _br_frombus_oldgsh[i];
+            busofevent->bsh = _br_frombus_oldbsh[i];
             _br_frombus_intid.erase(_br_frombus_intid.begin()+i);
             _br_frombus_oldgsh.erase(_br_frombus_oldgsh.begin()+i);
             _br_frombus_oldbsh.erase(_br_frombus_oldbsh.begin()+i);
@@ -1047,8 +1047,8 @@ int Simulator_sw::_parseBrFault(Event &event){
 
         for(size_t i=0;i< _br_tobus_intid.size();++i){
           if(_pwsLocal.getBus_intId(branchofevent->toBusExtId())==_br_tobus_intid[i]){
-            busofevent->set_gsh(_br_tobus_oldgsh[i]);
-            busofevent->set_bsh(_br_tobus_oldbsh[i]);
+            busofevent->gsh = _br_tobus_oldgsh[i];
+            busofevent->bsh = _br_tobus_oldbsh[i];
             _br_tobus_intid.erase(_br_tobus_intid.begin()+i);
             _br_tobus_oldgsh.erase(_br_tobus_oldgsh.begin()+i);
             _br_tobus_oldbsh.erase(_br_tobus_oldbsh.begin()+i);
@@ -1069,7 +1069,7 @@ int Simulator_sw::_parseBrFault(Event &event){
             if (ans) return 9;
 
             // Removes the faulty bus, and also the two connected branches
-            ans=_pwsLocal.deleteBus(busofevent->extId(),true);
+            ans=_pwsLocal.deleteBus(busofevent->extId,true);
             if (ans) return 10;
 
             // Remove the fault entry
@@ -1097,7 +1097,7 @@ int Simulator_sw::_parseBrFault(Event &event){
           if (ans) return 11;
 
           // Removes the faulty bus, and also the two connected branches
-          ans = _pwsLocal.deleteBus(busofevent->extId(),true);
+          ans = _pwsLocal.deleteBus(busofevent->extId,true);
           if(ans) return 12;
 
           // Remove the fault entry

@@ -557,7 +557,7 @@ void SchematicViewer::_drawBus( QPainter& painter,
   painter.drawRect( busCd.x1, busCd.y1, busCd.x2-busCd.x1, busCd.y2-busCd.y1 );
   float xmax = max(busCd.x1, busCd.x2);
   float ymid = (busCd.y1 + busCd.y2)/2;
-  painter.drawText( QPoint( xmax+15, ymid ), pBus->name().c_str() );
+  painter.drawText( QPoint( xmax+15, ymid ), pBus->name.c_str() );
 
   // Restore painter's old brush
   painter.setBrush( oldBrush );

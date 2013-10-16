@@ -891,9 +891,9 @@ int PwsMapperModel::addElement( int type, unsigned int extId,
 
 int PwsMapperModel::addBusElement( Bus bus, bool overwrite, int* mdlId ){
 
-  int ans = addElement(PWSMODELELEMENTTYPE_BUS, bus.extId(), overwrite, mdlId);
+  int ans = addElement(PWSMODELELEMENTTYPE_BUS, bus.extId, overwrite, mdlId);
   if ( ans ){
-//    cout << "Error adding bus component (" << bus.extId() << ")!" << endl;
+//    cout << "Error adding bus component (" << bus.extId << ")!" << endl;
     return 1;
   }
 
@@ -907,7 +907,7 @@ int PwsMapperModel::addBranchElement( Branch br, bool overwrite, int* mdlId ){
   int ans = addElement( PWSMODELELEMENTTYPE_BR, br.extId(),
                         overwrite, &tempMdlId );
   if ( ans ){
-//    cout << "Error adding branch component (" << br.extId() << ")!" << endl;
+//    cout << "Error adding branch component (" << br.extId << ")!" << endl;
     return 1;
   }
   if (mdlId)
