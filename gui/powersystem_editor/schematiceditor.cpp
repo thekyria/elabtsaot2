@@ -104,8 +104,8 @@ void SchematicEditor::mousePressEvent(QMouseEvent* event){
 
       // Create load object
       Load load;
-      load.set_extId( rand()%1000 );
-      load.set_busExtId( pBus->extId );
+      load.extId = rand()%1000;
+      load.busExtId = pBus->extId;
       int ans = _pws->addLoad(load);
       if( ans )
         cout << "Load creation failed with code " << ans << "." << endl;
@@ -186,12 +186,12 @@ void SchematicEditor::mouseMoveEvent(QMouseEvent* event){
         if ( cdEl == NULL )
           cout << "Branch update failed! extId=" << elExtId << endl;
         // Displace branch
-        if ( pBr->fromBusExtId == cdBus->extId ){
+        if ( pBr->fromBusExtId == static_cast<int>(cdBus->extId) ){
           // Bus moved is at the from end of the branch
           cdEl->x1 += dx;
           cdEl->y1 += dy;
         }
-        if ( pBr->toBusExtId == cdBus->extId ){
+        if ( pBr->toBusExtId == static_cast<int>(cdBus->extId) ){
           // Bus moved is at the to end of the branch
           cdEl->x2 += dx;
           cdEl->y2 += dy;

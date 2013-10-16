@@ -7,6 +7,8 @@ using std::string;
 #include <sstream>
 using std::stringstream;
 
+Bus::Bus() : extId(0), name("defbus"), Gsh(0), Bsh(0), baseKV(1), V(1), theta(0), P(0), Q(0) {}
+
 string Bus::serialize() const{
   stringstream ss;
   ss << extId << " ";

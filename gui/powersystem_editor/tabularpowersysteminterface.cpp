@@ -35,7 +35,7 @@ int TabularPowersystemInterface::columnCount(QModelIndex const& index) const{
   case PWSMODELELEMENTTYPE_GEN: // Generators
     return 31;
   case PWSMODELELEMENTTYPE_LOAD: // Loads
-    return 12;
+    return 10;
   }
 
   return 0;
@@ -85,7 +85,6 @@ QVariant TabularPowersystemInterface::data(QModelIndex const& index, int role) c
     case  9: return _pws->getBranch(index.row())->Gto;
     case 10: return _pws->getBranch(index.row())->Xratio;
     case 11: return _pws->getBranch(index.row())->Xshift;
-
 
     // Data resulting from the loadflow
     case 12: return _pws->getBranch(index.row())->Ifrom.real();
@@ -143,20 +142,18 @@ QVariant TabularPowersystemInterface::data(QModelIndex const& index, int role) c
 
   case PWSMODELELEMENTTYPE_LOAD:{ // Loads
     switch(index.column()){
-    case  0: return _pws->getLoad(index.row())->extId();
-    case  1: return _pws->getLoad(index.row())->name().c_str();
-    case  2: return _pws->getLoad(index.row())->busExtId();
-    case  3: return _pws->getLoad(index.row())->pdemand();
-    case  4: return _pws->getLoad(index.row())->qdemand();
-    case  5: return _pws->getLoad(index.row())->status();
-    case  6: return _pws->getLoad(index.row())->v_exp_a();
-    case  7: return _pws->getLoad(index.row())->v_exp_b();
-    case  8: return _pws->getLoad(index.row())->k_p_f();
-    case  9: return _pws->getLoad(index.row())->k_q_f();
+    case 0: return _pws->getLoad(index.row())->extId;
+    case 1: return _pws->getLoad(index.row())->busExtId;
+    case 2: return _pws->getLoad(index.row())->Pdemand;
+    case 3: return _pws->getLoad(index.row())->Qdemand;
+    case 4: return _pws->getLoad(index.row())->Vexpa;
+    case 5: return _pws->getLoad(index.row())->Vexpb;
+    case 6: return _pws->getLoad(index.row())->kpf;
+    case 7: return _pws->getLoad(index.row())->kqf;
 
     // Data resulting from the loadflow
-    case 10: return _pws->getLoad(index.row())->Uss().real();
-    case 11: return _pws->getLoad(index.row())->Uss().imag();
+    case 8: return _pws->getLoad(index.row())->Vss.real();
+    case 9: return _pws->getLoad(index.row())->Vss.imag();
     }
     break;
   }
@@ -306,31 +303,27 @@ bool TabularPowersystemInterface::setData(QModelIndex const& index,
 
   case PWSMODELELEMENTTYPE_LOAD:{ // Loads
     Load* load = NULL;
-    _pws->getLoad( _pws->getLoad(index.row())->extId(), load );
+    _pws->getLoad( _pws->getLoad(index.row())->extId, load );
     if ( load == NULL )
       return false;
 
     switch(index.column()){
-    case  0: if(v.convert(QVariant::Int))
-        load->set_extId( v.toInt() ); break;
-    case  1: if(v.convert(QVariant::String))
-        load->set_name( v.toString().toStdString() ); break;
-    case  2: if(v.convert(QVariant::Int))
-        load->set_busExtId( v.toInt() ); break;
-    case  3: if(v.convert(QVariant::Double))
-        load->set_pdemand( v.toFloat() ); break;
-    case  4: if(v.convert(QVariant::Double))
-        load->set_qdemand( v.toFloat() ); break;
-    case  5: if(v.convert(QVariant::Int))
-        load->set_status( v.toInt() ); break;
-    case  6: if(v.convert(QVariant::Double))
-        load->set_v_exp_a( v.toFloat() ); break;
-    case  7: if(v.convert(QVariant::Double))
-        load->set_v_exp_b( v.toFloat() ); break;
-    case  8: if(v.convert(QVariant::Double))
-        load->set_k_p_f( v.toFloat() ); break;
-    case  9: if(v.convert(QVariant::Double))
-        load->set_k_q_f( v.toFloat() ); break;
+    case 0: if(v.convert(QVariant::Int))
+        load->extId = v.toInt(); break;
+    case 1: if(v.convert(QVariant::Int))
+        load->busExtId = v.toInt(); break;
+    case 2: if(v.convert(QVariant::Double))
+        load->Pdemand = v.toFloat(); break;
+    case 3: if(v.convert(QVariant::Double))
+        load->Qdemand = v.toFloat(); break;
+    case 4: if(v.convert(QVariant::Double))
+        load->Vexpa = v.toFloat(); break;
+    case 5: if(v.convert(QVariant::Double))
+        load->Vexpb = v.toFloat(); break;
+    case 6: if(v.convert(QVariant::Double))
+        load->kpf = v.toFloat(); break;
+    case 7: if(v.convert(QVariant::Double))
+        load->kqf = v.toFloat(); break;
     }
     break;
   }
@@ -359,11 +352,11 @@ QVariant TabularPowersystemInterface::headerData(int section,
 
   case PWSMODELELEMENTTYPE_BUS:{ // Buses
     switch(section){
-    case 0: return "ID";
-    case 1: return "Name";
-    case 2: return "Shunt Cond.";
-    case 3: return "Shunt Susc.";
-    case 4: return "BasekV";
+    case 0: return "extId";
+    case 1: return "name";
+    case 2: return "Gsh";
+    case 3: return "Bsh";
+    case 4: return "baseKV";
 
     case 5: return "V";
     case 6: return "theta";
@@ -388,14 +381,14 @@ QVariant TabularPowersystemInterface::headerData(int section,
     case 10: return "Xratio";
     case 11: return "Xshift";
 
-    case 12: return "re(If)";
-    case 13: return "im(If)";
-    case 14: return "re(It)";
-    case 15: return "im(It)";
-    case 16: return "re(Sf)";
-    case 17: return "im(Sf)";
-    case 18: return "re(St)";
-    case 19: return "im(St)";
+    case 12: return "re(Ifrom)";
+    case 13: return "im(Ifrom)";
+    case 14: return "re(Ito)";
+    case 15: return "im(Ito)";
+    case 16: return "re(Sfrom)";
+    case 17: return "im(Sfrom)";
+    case 18: return "re(Sto)";
+    case 19: return "im(Sto)";
     }
     break;
   }
@@ -442,19 +435,17 @@ QVariant TabularPowersystemInterface::headerData(int section,
 
   case PWSMODELELEMENTTYPE_LOAD:{ // Loads
     switch(section){
-    case  0: return "ID";
-    case  1: return "Name";
-    case  2: return "At Bus";
-    case  3: return "Pdemand";
-    case  4: return "Qdemand";
-    case  5: return "Status";
-    case  6: return "Vexp a";
-    case  7: return "Vexp b";
-    case  8: return "Kpf";
-    case  9: return "Kqf";
+    case 0: return "extId";
+    case 1: return "busExtId";
+    case 2: return "Pdemand";
+    case 3: return "Qdemand";
+    case 4: return "Vexpa";
+    case 5: return "Vexpb";
+    case 6: return "kpf";
+    case 7: return "kqf";
 
-    case 10: return "re(Uss)";
-    case 11: return "im(Uss)";
+    case 8: return "re(Vss)";
+    case 9: return "im(Vss)";
     }
     break;
   }

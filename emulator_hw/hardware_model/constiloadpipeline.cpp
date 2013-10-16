@@ -91,8 +91,8 @@ int ConstILoadPipeline::insert_element( size_t ver_pos, size_t hor_pos,
 
   // Insert new element at pipeline position k
   _position[k] = make_pair((int) ver_pos, (int) hor_pos);
-  complex<double> S(el.pdemand(), el.qdemand());
-  complex<double> I = conj(S) / conj(el.Uss());
+  complex<double> S(el.Pdemand, el.Qdemand);
+  complex<double> I = conj(S) / conj(el.Vss);
   Iconst[k] = I;
 
   if (!pos_already_taken) ++_element_count;

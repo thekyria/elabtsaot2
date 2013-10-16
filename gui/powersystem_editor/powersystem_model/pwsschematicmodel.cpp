@@ -138,7 +138,7 @@ int PwsSchematicModel::validate(){
       return 11;
   }
   for ( k = 0; k != _pws->getLoadSet_size() ; ++k ){
-    cur_extId = _pws->getLoadSet().at(k).extId();
+    cur_extId = _pws->getLoadSet().at(k).extId;
     found = false;
     for ( m = 0 ; m != _loadElements.size() ; ++m ){
       if ( _loadElements[k].extId == cur_extId ){
@@ -422,8 +422,7 @@ int PwsSchematicModel::addLoadElement( Load load,
 
   // Add load to model
   int tempMdlId;
-  int ans = addElement( PWSMODELELEMENTTYPE_LOAD, load.extId(),
-                         overwrite, &tempMdlId );
+  int ans = addElement( PWSMODELELEMENTTYPE_LOAD, load.extId, overwrite, &tempMdlId );
   if ( ans ){
 //    cout << "Error adding load component (" << load.extId() << ")!" << endl;
     return 1;
@@ -436,7 +435,7 @@ int PwsSchematicModel::addLoadElement( Load load,
 
   // Retrive the model element of the bus of the load
   PwsSchematicModelElement const* cdBus;
-  cdBus = element(PWSMODELELEMENTTYPE_BUS, load.busExtId() );
+  cdBus = element(PWSMODELELEMENTTYPE_BUS, load.busExtId );
   if( cdBus == NULL )
     return 1;
 

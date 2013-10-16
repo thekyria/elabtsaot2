@@ -208,7 +208,7 @@ TDResults::TDResults( Powersystem const* pws, Scenario const* sce ){
   // Algebraic variables for loads
   for ( size_t k = 0 ; k != pws->getLoadSet_size() ; ++k ){
     Load const* p_load = pws->getLoad( k );
-    unsigned int load_extId = p_load->extId();
+    unsigned int load_extId = p_load->extId;
     tdri.elementType = TDRESULTS_LOAD;
     tdri.extId = load_extId;
 

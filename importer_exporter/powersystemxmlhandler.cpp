@@ -143,26 +143,22 @@ bool PowersystemXMLHandler::characters(QString const& ch){
 
   // --------------- Load ---------------
   } else if( _p_load ){
-    if( _tags.last()=="id" )
-      _p_load->set_extId( value.toInt() );
-    if( _tags.last()=="name" )
-      _p_load->set_name( value.toStdString() );
-    if( _tags.last()=="atbus" )
-      _p_load->set_busExtId( value.toInt() );
-    if( _tags.last()=="pdemand" )
-      _p_load->set_pdemand( value.toDouble() );
-    if( _tags.last()=="qdemand" )
-      _p_load->set_qdemand( value.toDouble() );
-    if( _tags.last()=="status" )
-      _p_load->set_status( static_cast<bool>( value.toInt() ) );
-    if( _tags.last()=="v_exp_a" )
-      _p_load->set_v_exp_a( value.toDouble() );
-    if( _tags.last()=="v_exp_b" )
-      _p_load->set_v_exp_b( value.toDouble() );
-    if( _tags.last()=="k_p_f" )
-      _p_load->set_k_p_f( value.toDouble() );
-    if( _tags.last()=="k_q_f" )
-      _p_load->set_k_q_f( value.toDouble() );
+    if( _tags.last()=="extId" )
+      _p_load->extId = value.toInt();
+    if( _tags.last()=="busExtId" )
+      _p_load->busExtId = value.toInt();
+    if( _tags.last()=="Pdemand" )
+      _p_load->Pdemand = value.toDouble();
+    if( _tags.last()=="Qdemand" )
+      _p_load->Qdemand = value.toDouble();
+    if( _tags.last()=="Vexpa" )
+      _p_load->Vexpa = value.toDouble();
+    if( _tags.last()=="Vexpb" )
+      _p_load->Vexpb = value.toDouble();
+    if( _tags.last()=="kpf" )
+      _p_load->kpf = value.toDouble();
+    if( _tags.last()=="kqf" )
+      _p_load->kqf = value.toDouble();
   }
 
   return true;

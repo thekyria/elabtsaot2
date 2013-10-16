@@ -93,13 +93,13 @@ int ConstPLoadPipeline::insert_element( size_t ver_pos, size_t hor_pos,
 
   // Insert new element at pipeline position k
   _position[k] = make_pair((int) ver_pos, (int) hor_pos);
-  complex<double> S(el.pdemand(), el.qdemand());
-  complex<double> U(el.Uss());
+  complex<double> S(el.Pdemand, el.Qdemand);
+  complex<double> U(el.Vss);
   complex<double> I = conj(S)/conj(U);
   Sconst[k] = S;
   I0[k] = I;
 
-  if ( !pos_already_taken )
+  if (!pos_already_taken)
     ++_element_count;
 
   return 0;

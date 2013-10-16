@@ -702,7 +702,7 @@ void SchematicViewer::_drawLoad( QPainter& painter,
   painter.drawLine(P2,P3);
   float xmax = max(loadCd.x1, loadCd.x2);
   float ymid = (loadCd.y1 + loadCd.y2)/2;
-  painter.drawText( QPoint(xmax + 15, ymid), pLoad->name().c_str() );
+  painter.drawText( QPoint(xmax + 15, ymid), QString("LD%1").arg(pLoad->extId) );
 
   return;
 }

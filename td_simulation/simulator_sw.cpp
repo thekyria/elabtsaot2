@@ -115,9 +115,8 @@ bool Simulator_sw::do_isEngineCompatible(Scenario const& sce) const{
             sce.getEvent(i).event_type()==EVENT_EVENTTYPE_GENVCHANGE))
         compatibility=false;
     if (sce.getEvent(i).element_type()==EVENT_ELEMENT_TYPE_LOAD)
-      if (!(sce.getEvent(i).event_type()==EVENT_EVENTTYPE_LOADTRIP||
-            sce.getEvent(i).event_type()==EVENT_EVENTTYPE_LOADPCHANGE||
-            sce.getEvent(i).event_type()==EVENT_EVENTTYPE_LOADQCHANGE))
+      if (!( sce.getEvent(i).event_type()==EVENT_EVENTTYPE_LOADPCHANGE||
+             sce.getEvent(i).event_type()==EVENT_EVENTTYPE_LOADQCHANGE))
         compatibility=false;
   }
   return compatibility;
@@ -156,9 +155,8 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
   bool pwsHasNonZLoads = false;
   for ( size_t k = 0 ; k != _loadCount ; ++k ){
     Load const* load = _pwsLocal.getLoad(k);
-    if ( !load->status() ) continue;
 
-    _loadBusIntId.push_back( _pwsLocal.getBus_intId(load->busExtId()) );
+    _loadBusIntId.push_back( _pwsLocal.getBus_intId(load->busExtId) );
     if ( load->type() != LOADTYPE_CONSTZ )
       pwsHasNonZLoads = true;
   }
@@ -470,7 +468,7 @@ _calculateAugmentedYMatrix( vector<complex<double> > const& Ubus,
   ublas::vector<complex<double> > loadS(_loadCount);
   for (size_t l=0;l<_loadCount;++l){
     Load const* load = _pwsLocal.getLoad(l);
-    loadS.insert_element(l, complex<double>(load->pdemand(),-load->qdemand()));
+    loadS.insert_element(l, complex<double>(load->Pdemand,-load->Qdemand));
   }
 
   // Equivvalent load admittance
@@ -479,7 +477,7 @@ _calculateAugmentedYMatrix( vector<complex<double> > const& Ubus,
   for (size_t l=0;l<busCount;++l){
     yload.insert_element(l,0);
     for (size_t i=0;i<_loadCount;++i){
-      busofld=_pwsLocal.getBus_intId(_pwsLocal.getLoad(i)->busExtId());
+      busofld=_pwsLocal.getBus_intId(_pwsLocal.getLoad(i)->busExtId);
       if (busofld==l){
         switch ( _pwsLocal.getLoad(i)->type() ){
         case LOADTYPE_CONSTP:
@@ -1172,33 +1170,11 @@ int Simulator_sw::_parseLoadFault(Event &event){
   int ans = _pwsLocal.getLoad(event.element_extId(),loadofevent);
   if ( ans ) return 1;
 
-  if (event.event_type()==EVENT_EVENTTYPE_LOADTRIP){//0: trip
-    if (event.bool_arg()){
-      loadofevent->set_status(false);//status == false meaning tripped
-      _loadBusIntId.clear();
-      for (size_t i=0;i<_loadCount;++i){
-        if (_pwsLocal.getLoad(i)->status()==true){
-          _loadBusIntId.push_back(_pwsLocal.getBus_intId(_pwsLocal.getLoad(i)->busExtId()));
-        }
-      }
-      --_loadCount;
-    }
-    else{
-      loadofevent->set_status(true);
-      ++_loadCount;
-      _loadBusIntId.clear();
-      for (size_t i=0;i<_loadCount;++i){
-        if (_pwsLocal.getLoad(i)->status()==true){
-          _loadBusIntId.push_back(_pwsLocal.getBus_intId(_pwsLocal.getLoad(i)->busExtId()));
-        }
-      }
-    }
-  }
-  else if (event.event_type()==EVENT_EVENTTYPE_LOADPCHANGE){//1: p change
-    loadofevent->set_pdemand(event.double_arg());
+  if (event.event_type()==EVENT_EVENTTYPE_LOADPCHANGE){//1: p change
+    loadofevent->Pdemand = event.double_arg();
   }
   else if (event.event_type()==EVENT_EVENTTYPE_LOADQCHANGE){//2: q change
-    loadofevent->set_qdemand(event.double_arg());
+    loadofevent->Qdemand = event.double_arg();
   }
   return 0;
 }

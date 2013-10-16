@@ -549,18 +549,10 @@ int pwsEditorDialogs::loadDialog(Load *load){
   QLabel labelExtId("Id:");
   QSpinBox formExtId;
   formExtId.setMaximum( RAND_MAX );
-  formExtId.setValue( load->extId() );
+  formExtId.setValue( load->extId );
   layoutExtId.addWidget( &labelExtId );
   layoutExtId.addWidget( &formExtId );
   layoutMain.addLayout( &layoutExtId );
-  // name
-  QHBoxLayout layoutName;
-  QLabel labelName("Name:");
-  QLineEdit formName;
-  formName.setText( load->name().c_str() );
-  layoutName.addWidget( &labelName );
-  layoutName.addWidget( &formName );
-  layoutMain.addLayout( &layoutName );
   // type
   QHBoxLayout layoutType;
   QLabel labelType("Type:");
@@ -589,7 +581,7 @@ int pwsEditorDialogs::loadDialog(Load *load){
   QLabel labelBus("At bus:");
   QSpinBox formBus;
   formBus.setMaximum( RAND_MAX );
-  formBus.setValue( load->busExtId() );
+  formBus.setValue( load->busExtId );
   layoutBus.addWidget( &labelBus );
   layoutBus.addWidget( &formBus );
   layoutMain.addLayout( &layoutBus );
@@ -599,7 +591,7 @@ int pwsEditorDialogs::loadDialog(Load *load){
   QLabel labelPPower("Active Power [pu]:");
   QDoubleSpinBox formPPower;
   formPPower.setMinimum(-10000);
-  formPPower.setValue( load->pdemand() );
+  formPPower.setValue( load->Pdemand );
   layoutPPower.addWidget( &labelPPower );
   layoutPPower.addWidget( &formPPower );
   // q power
@@ -608,44 +600,11 @@ int pwsEditorDialogs::loadDialog(Load *load){
   QLabel labelQPower("Reactive Power [pu]:");
   QDoubleSpinBox formQPower;
   formQPower.setMinimum(-10000);
-  formQPower.setValue( load->qdemand() );
+  formQPower.setValue( load->Qdemand );
   layoutQPower.addWidget( &labelQPower );
   layoutQPower.addWidget( &formQPower );
-//  // p parameters
-//  QHBoxLayout layoutPParam;
-//  layoutMain.addLayout( &layoutPParam );
-//  QLabel labelPParam("Active power parameters (k_pf, v_exp");
-//  layoutPParam.addWidget( &labelPParam );
-//  QDoubleSpinBox formPParamKPF;
-//  formPParamKPF.setValue( load->k_p_f() );
-//  layoutPParam.addWidget( &formPParamKPF );
-//  QDoubleSpinBox formPParamVExp;
-//  formPParamVExp.setValue( load->v_exp_a() );
-//  layoutPParam.addWidget( &formPParamVExp );
-//  // q parameters
-//  QHBoxLayout layoutQParam;
-//  layoutMain.addLayout( &layoutQParam );
-//  QLabel labelQParam("Reactive power parameters (k_pf, v_exp");
-//  layoutQParam.addWidget( &labelQParam );
-//  QDoubleSpinBox formQParamKQF;
-//  formQParamKQF.setValue( load->k_q_f() );
-//  layoutQParam.addWidget( &formQParamKQF );
-//  QDoubleSpinBox formQParamVExp;
-//  formQParamVExp.setValue( load->v_exp_b() );
-//  layoutQParam.addWidget( &formQParamVExp );
-  // status
-  QHBoxLayout layoutStatus;
-  QLabel labelStatus("Status:");
-  QRadioButton statusOn("On-line", &labelStatus);
-  if( load->status()==1 ) statusOn.setChecked(true);
-  QRadioButton statusOff("Off-line", &labelStatus);
-  if( load->status()==0 ) statusOff.setChecked(true);
-  QHBoxLayout layoutSubstatus;
-  layoutSubstatus.addWidget( &statusOn );
-  layoutSubstatus.addWidget( &statusOff );
-  layoutStatus.addWidget( &labelStatus );
-  layoutStatus.addLayout( &layoutSubstatus );
-  layoutMain.addLayout( &layoutStatus );
+  // dynamic parameters: Vexpa, Vexpb, kpf, kqf
+  // TODO
   // Buttons
   QHBoxLayout layoutButtons;
   QPushButton ok("Ok");
@@ -668,13 +627,11 @@ int pwsEditorDialogs::loadDialog(Load *load){
       type = LOADTYPE_CONSTZ;
 
     // Store values back
-    load->set_extId( formExtId.value() );
-    load->set_name( formName.text().toStdString() );
+    load->extId = formExtId.value();
+    load->busExtId = formBus.value();
+    load->Pdemand = formPPower.value();
+    load->Qdemand = formQPower.value();
     load->set_type( type );
-    load->set_busExtId( formBus.value() );
-    load->set_pdemand( formPPower.value() );
-    load->set_qdemand( formQPower.value() );
-    load->set_status( statusOn.isChecked() );
 //    // TODO: Dependent variables on load type
 //    load->set_k_p_f( formPParamKPF.value() );
 //    load->set_v_exp_a( formPParamVExp.value() );

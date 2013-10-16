@@ -539,16 +539,14 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
     // And write its parameters to the xml file
     fprintf(f, "\t<load>\n");
 
-    fprintf(f, "\t\t<id> %d </id>\n", load->extId());
-    fprintf(f, "\t\t<name> %s </name>\n", load->name().c_str());
-    fprintf(f, "\t\t<atbus> %d </atbus>\n", load->busExtId() );
-    fprintf(f, "\t\t<pdemand> %.12f </pdemand>\n", load->pdemand());
-    fprintf(f, "\t\t<qdemand> %.12f </qdemand>\n", load->qdemand());
-    fprintf(f, "\t\t<status> %d </status>\n", static_cast<int>( load->status() ) );
-    fprintf(f, "\t\t<v_exp_a> %.12f </v_exp_a>\n", load->v_exp_a());
-    fprintf(f, "\t\t<v_exp_b> %.12f </v_exp_b>\n", load->v_exp_b());
-    fprintf(f, "\t\t<k_p_f> %.12f </k_p_f>\n", load->k_p_f());
-    fprintf(f, "\t\t<k_q_f> %.12f </k_q_f>\n", load->k_q_f());
+    fprintf(f, "\t\t<extId> %d </extId>\n", load->extId);
+    fprintf(f, "\t\t<busExtId> %d </busExtId>\n", load->busExtId);
+    fprintf(f, "\t\t<Pdemand> %.12f </Pdemand>\n", load->Pdemand);
+    fprintf(f, "\t\t<Qdemand> %.12f </Qdemand>\n", load->Qdemand);
+    fprintf(f, "\t\t<Vexpa> %.12f </Vexpa>\n", load->Vexpa);
+    fprintf(f, "\t\t<Vexpb> %.12f </Vexpb>\n", load->Vexpb);
+    fprintf(f, "\t\t<kpf> %.12f </kpf>\n", load->kpf);
+    fprintf(f, "\t\t<kqf> %.12f </kqf>\n", load->kqf);
 
     fprintf(f, "\t</load>\n");
     fflush(f);

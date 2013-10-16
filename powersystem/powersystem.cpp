@@ -158,10 +158,8 @@ int Powersystem::log_loadflow_results(ostream& ostr) const{
     qgen_actual_total += _genSet[k].qgen();
   }
   for ( k = 0 ; k != _loadSet.size() ; ++k ){
-    if ( _loadSet[k].status() ){
-      pload_actual_total += _loadSet[k].pdemand();
-      qload_actual_total += _loadSet[k].qdemand();
-    }
+    pload_actual_total += _loadSet[k].Qdemand;
+    qload_actual_total += _loadSet[k].Qdemand;
   }
   ostr << "Generation capacity total:\t";
   ostr << "P = " << pgen_capacity_total << "\t";
@@ -477,13 +475,13 @@ int Powersystem::addGen(Generator const& newGen){
 int Powersystem::addLoad(Load const& newLoad){
 
   // Check whether extId of newLoad exists in _loadSet
-  if(_loadIdBimap.left.find(newLoad.extId()) != _loadIdBimap.left.end()){
+  if(_loadIdBimap.left.find(newLoad.extId) != _loadIdBimap.left.end()){
     // extId of newLoad already exists in Powersystem
     return 1;
   }
   
   // Check whether newLoad busExtId exists in busSet
-  if(_busIdBimap.left.find(newLoad.busExtId())==_busIdBimap.left.end() ){
+  if(_busIdBimap.left.find(newLoad.busExtId)==_busIdBimap.left.end() ){
     // busExtId not found in busSet so addLoad fails as newLoad would be floatin
     return 2;
   }
@@ -513,31 +511,33 @@ int Powersystem::deleteBus(unsigned int busExtId, bool recursive){
     // If flag recursive is set, then the bus is deleted alongside all elements
     // (branches, loads, gens) that are connected to it
     for(vector<Branch>::iterator i = _brSet.begin(); i != _brSet.end(); ++i)
-      if ( (i->fromBusExtId == busExtId) || (i->toBusExtId == busExtId) ){
+      if (    (i->fromBusExtId == static_cast<int>(busExtId))
+           || (i->toBusExtId   == static_cast<int>(busExtId)) ){
         deleteBranch(i->extId);
         --i;
       }
     for(vector<Generator>::iterator i = _genSet.begin(); i != _genSet.end(); ++i)
-      if ( i->busExtId() == busExtId ){
+      if ( i->busExtId() == static_cast<int>(busExtId) ){
         deleteGen(i->extId());
         --i;
       }
     for(vector<Load>::iterator i = _loadSet.begin(); i != _loadSet.end(); ++i)
-      if ( i->busExtId() == busExtId ){
-        deleteLoad(i->extId());
+      if (i->busExtId == static_cast<int>(busExtId)){
+        deleteLoad(i->extId);
         --i;
       }
   } else{
     // If the flag is not set, and network elements (branches, loads, gens) are
     // connected to the bus to be deleted, then deleteBus fails
     for(vector<Branch>::iterator i = _brSet.begin(); i != _brSet.end(); ++i)
-      if ( (i->fromBusExtId == busExtId) || (i->toBusExtId == busExtId) )
+      if (    (i->fromBusExtId == static_cast<int>(busExtId))
+           || (i->toBusExtId   == static_cast<int>(busExtId)) )
         return 2;
     for(vector<Generator>::iterator i = _genSet.begin(); i != _genSet.end(); ++i)
-      if ( i->busExtId() == busExtId )
+      if ( i->busExtId() == static_cast<int>(busExtId) )
         return 3;
     for(vector<Load>::iterator i = _loadSet.begin(); i != _loadSet.end(); ++i)
-      if ( i->busExtId() == busExtId )
+      if ( i->busExtId == static_cast<int>(busExtId) )
         return 4;
   }
 
@@ -745,14 +745,14 @@ int Powersystem::validate(){
   set<unsigned int> loadExtIds;
   for ( k = 0 ; k != _loadSet.size() ; ++k ){
     // Validate that all load extIds are unique
-    if ( loadExtIds.find(_loadSet[k].extId()) != loadExtIds.end() ){
+    if ( loadExtIds.find(_loadSet[k].extId) != loadExtIds.end() ){
       return 10;
     } else {
-      loadExtIds.insert( _loadSet[k].extId() );
+      loadExtIds.insert( _loadSet[k].extId );
     }
 
     // Validate that all loads point to existing buses
-    if ( busExtIds.find( _loadSet[k].busExtId() ) == busExtIds.end() ){
+    if ( busExtIds.find( _loadSet[k].busExtId ) == busExtIds.end() ){
       return 11;
     }
   }
@@ -819,7 +819,7 @@ int Powersystem::getLoad_extId(size_t intId) const{
     return -1;
   } else{
     // Element found; return its external index
-    return _loadSet[intId].extId();
+    return _loadSet[intId].extId;
   }
 }
 
@@ -1108,7 +1108,7 @@ void Powersystem::_rebuildLoadIdBimap(){
   // Rebuild _loadIdBimap bimap; first: extId - second: intId
   _loadIdBimap.clear();
   for(vector<Load>::iterator i = _loadSet.begin(); i != _loadSet.end(); ++i){
-    _loadIdBimap.insert(UintPair(i->extId(),_loadIdBimap.size()));
+    _loadIdBimap.insert(UintPair(i->extId,_loadIdBimap.size()));
   }
 }
 
@@ -1149,7 +1149,7 @@ void Powersystem::_rebuildBusLoadMap(){
 
   size_t busIntId;
   for ( size_t k = 0 ; k != _loadSet.size() ; ++k ){
-    busIntId = _busIdBimap.left.at( _loadSet[k].busExtId() );
+    busIntId = _busIdBimap.left.at( _loadSet[k].busExtId );
     _busLoadMap[busIntId].insert(k);
   }
 

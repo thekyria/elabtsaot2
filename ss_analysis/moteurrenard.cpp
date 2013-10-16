@@ -244,20 +244,17 @@ int MoteurRenard::do_solveLoadflow( Powersystem const& pws,
   // Initialize Psp and Qsp at buses with loads
   for(k = 0; k != pws.getLoadSet_size(); ++k){
     const Load* load = pws.getLoad(k);
-    // Check whether load(k) is online
-    if ( !load->status() )
-      continue;
 
-    busIntId = pws.getBus_intId(load->busExtId());
+    busIntId = pws.getBus_intId(load->busExtId);
     if ( (busType(busIntId) != BUSTYPE_SLACK) ){          // if bus is not Slack
       // load at slack makes no sense as it gets absorbed by slack genereration
-      Fsp(busIntId) -= load->pdemand();
-      Fsp(n + busIntId) -= load->qdemand();
+      Fsp(busIntId) -= load->Pdemand;
+      Fsp(n + busIntId) -= load->Qdemand;
 
-      Fmin(busIntId) -= load->pdemand();      // P capability at busIntId
-      Fmax(busIntId) -= load->pdemand();      // shifted by load k demand
-      Fmin(n + busIntId) -= load->qdemand();  // Q capability at busIntId
-      Fmax(n + busIntId) -= load->qdemand();  // shifted by load k demand
+      Fmin(busIntId) -= load->Pdemand;      // P capability at busIntId
+      Fmax(busIntId) -= load->Pdemand;      // shifted by load k demand
+      Fmin(n + busIntId) -= load->Qdemand;  // Q capability at busIntId
+      Fmax(n + busIntId) -= load->Qdemand;  // shifted by load k demand
 
       if ( (busType(busIntId) != BUSTYPE_PV) ){     // if bus is not BUSTYPE_PV
         if ( busType(busIntId) != BUSTYPE_PQ ){     // if it's not flagged as

@@ -306,7 +306,9 @@ int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Generator c
     // results in the above currents in [pu]
     complex<double> I ( realI, imagI );
     complex<double> S = gen.Uss() * conj(I);
-    Load temp_iload = Load(0, " ", 0, real(S), imag(S), true);
+    Load temp_iload = Load();
+    temp_iload.Pdemand = real(S);
+    temp_iload.Qdemand = imag(S);
     temp_iload.set_type(LOADTYPE_CONSTI);
     // Configure dig.pipe_iload
     if ( slc->dig.pipe_iload.insert_element(id_ver,id_hor,temp_iload,true) )
@@ -332,25 +334,24 @@ int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Load const&
   ans |= slc->dig.remove(id_ver,id_hor);
   ans |= slc->ana.nodeDisconnect(id_ver,id_hor);
 
-  if ( (load.v_exp_a() == 2) && (load.v_exp_b() == 2) ){
+  if ( (load.Vexpa==2) && (load.Vexpb==2) ){
     // ------- Const Z load -------
     // Configure dig.pipe_zload
     if ( slc->dig.pipe_zload.insert_element(id_ver, id_hor, load, true) )
       return 24;
 
-  } else if ( (load.v_exp_a() == 1) && (load.v_exp_b() == 0) ){
+  } else if ( (load.Vexpa==1) && (load.Vexpb==0) ){
     // ------- Const P load -------
     // Configure dig.pipe_pload
     if ( slc->dig.pipe_pload.insert_element(id_ver, id_hor, load, true) )
       return 25;
 
-  } else { // ( (load.v_exp_a() == 1) && (load.v_exp_b() == 1) )
+  } else { // ( (load.Vexpa==1) && (load.Vexpb==1) )
     // ------- Const I load -------
     // ------- OR Unknown load type (assume const I load) -------
     // Configure dig.pipe_iload
     if ( slc->dig.pipe_iload.insert_element(id_ver, id_hor, load, true) )
       return 26;
-
   }
 
   // Configure atom as load

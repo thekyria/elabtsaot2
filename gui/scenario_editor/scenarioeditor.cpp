@@ -476,9 +476,9 @@ void ScenarioEditor::itemChanged( QTreeWidgetItem* item, int column ){
 
     case EVENT_ELEMENT_TYPE_LOAD:
       switch ( item->data(9,Qt::DisplayRole).toInt() ){
-      case EVENT_EVENTTYPE_LOADTRIP:
-        eventTypeLabel = "0: trip";
-        break;
+//      case EVENT_EVENTTYPE_LOADTRIP:
+//        eventTypeLabel = "0: trip";
+//        break;
       case EVENT_EVENTTYPE_LOADPCHANGE:
         eventTypeLabel = "1: P change";
         break;

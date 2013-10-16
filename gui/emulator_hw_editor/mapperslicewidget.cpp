@@ -105,7 +105,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
           Load const* pLoad;
           if (!_pws->getLoad( elementsMapped.at(n).second, pLoad)){
             label.append( "LOAD " );
-            label.append( QString::number( pLoad->extId() ) );
+            label.append( QString::number(pLoad->extId) );
             label.append( " " );
           }
           break; }

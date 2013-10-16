@@ -70,8 +70,8 @@ void SSEngine::do_getInitialConditions( Powersystem const& pws,
     set<size_t> busLoadMap = pws.getBusLoadMap().at(k);
     for( set<size_t>::const_iterator i = busLoadMap.begin() ;
          i != busLoadMap.end() ; ++i ){
-      F(  k) -= pws.getLoad(*i)->pdemand();
-      F(n+k) -= pws.getLoad(*i)->qdemand();
+      F(  k) -= pws.getLoad(*i)->Pdemand;
+      F(n+k) -= pws.getLoad(*i)->Qdemand;
     }
   }
 }
@@ -234,8 +234,8 @@ int SSEngine::do_updatePowersystem( Powersystem& pws,
 
     // Find net P & Q generation by generators at the bus by adding the loads
     for ( i = buskLoadMap.begin() ; i != buskLoadMap.end() ; ++i ){
-      Pgen += pws.getLoad(*i)->pdemand();
-      Qgen += pws.getLoad(*i)->qdemand();
+      Pgen += pws.getLoad(*i)->Pdemand;
+      Qgen += pws.getLoad(*i)->Qdemand;
     }
     undistributedPgen = Pgen;
     undistributedQgen = Qgen;
@@ -320,12 +320,12 @@ int SSEngine::do_updatePowersystem( Powersystem& pws,
   }
 
   // Calculate load steady state variables
-  complex<double> Uload;  // complex voltage at the load terminals
+  complex<double> Vload;  // complex voltage at the load terminals
   for ( size_t k = 0 ; k != pws.getLoadSet_size() ; ++k ){
     Load* load = pws.getLoad(k);
-    int busIntId = pws.getBus_intId( load->busExtId() );
-    Uload = polar( pws.getBus(busIntId)->V , pws.getBus(busIntId)->theta );
-    load->set_Uss(Uload);
+    int busIntId = pws.getBus_intId( load->busExtId );
+    Vload = polar( pws.getBus(busIntId)->V , pws.getBus(busIntId)->theta );
+    load->Vss = Vload;
   }
   pws.set_status( PWSSTATUS_LF );
 

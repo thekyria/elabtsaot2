@@ -17,23 +17,23 @@ EPFL
 
 namespace elabtsaot{
 
-//!  Branch class
 class Branch {
 
  public:
 
+  Branch();
   std::string serialize() const;
 
-  unsigned int extId; //! External id of the branch
-  bool status; //! Enable status of the branch
-  unsigned int fromBusExtId; //! External id of the bus at the from side of the branch
-  unsigned int toBusExtId; //! External id of the bus at the to side of the branch
-  double R; //! Resistance of the pi-model of the branch [pu]
-  double X; //! Reactance of the pi-model of the branch [pu]
-  double Bfrom; //! Susceptance to ground at the from end of the pi-model of the branch [pu]
-  double Bto; //! Susceptance to ground at the to end of the pi-model of the branch [pu]
-  double Gfrom; //! Conductance to ground at the from end of the pi-model of the branch [pu]
-  double Gto; //! Conductance to ground at the to end of the pi-model of the branch [pu]
+  unsigned int extId; //!< External id of the branch
+  bool status; //!< Enable status of the branch
+  int fromBusExtId; //!< External id of the bus at the from side of the branch
+  int toBusExtId; //!< External id of the bus at the to side of the branch
+  double R; //!< Resistance of the pi-model of the branch [pu]
+  double X; //!< Reactance of the pi-model of the branch [pu]
+  double Bfrom; //!< Susceptance to ground at the from end of the pi-model of the branch [pu]
+  double Bto; //!< Susceptance to ground at the to end of the pi-model of the branch [pu]
+  double Gfrom; //!< Conductance to ground at the from end of the pi-model of the branch [pu]
+  double Gto; //!< Conductance to ground at the to end of the pi-model of the branch [pu]
   /*! Ratio of the transformer of the branch
     The transformer is considered at the from end of the branch.
     If Xratio == 0 then the branch is not a transformer */
@@ -44,10 +44,10 @@ class Branch {
     V_to (voltage at the to end of the branch). */
   double Xshift;
 
-  std::complex<double> Ifrom; //! Steady state current flow at the from end of the branch
-  std::complex<double> Ito; //! Steady state current flow at the to end of the branch
-  std::complex<double> Sfrom; //! Steady state apparent power (S) flow at the from end of the branch
-  std::complex<double> Sto; //! Steady state apparent power (S) flow at the to end of the branch
+  std::complex<double> Ifrom; //!< Steady state current flow at the from end of the branch
+  std::complex<double> Ito; //!< Steady state current flow at the to end of the branch
+  std::complex<double> Sfrom; //!< Steady state apparent power (S) flow at the from end of the branch
+  std::complex<double> Sto; //!< Steady state apparent power (S) flow at the to end of the branch
 
 };
 
