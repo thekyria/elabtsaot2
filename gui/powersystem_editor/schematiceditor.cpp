@@ -82,15 +82,11 @@ void SchematicEditor::mousePressEvent(QMouseEvent* event){
 
       // Create generator object
       Generator gen;
-      gen.set_extId( rand()%1000 );
-      gen.set_busExtId( pBus->extId );
-      int ans = _pws->addGen(gen);
-      if( ans )
-        cout << "Generator creation failed with code " << ans << "." << endl;
-      else{
-        cout << "Generator created." << endl;
-        _smd->addGenElement( gen );
-      }
+      gen.extId = rand()%1000;
+      gen.busExtId = pBus->extId;
+      _pws->addGen(gen);
+      cout << "Generator created." << endl;
+      _smd->addGenElement( gen );
     }
     _state = SCHEDIT_STATE_IDLE; }
     break;
@@ -106,13 +102,9 @@ void SchematicEditor::mousePressEvent(QMouseEvent* event){
       Load load;
       load.extId = rand()%1000;
       load.busExtId = pBus->extId;
-      int ans = _pws->addLoad(load);
-      if( ans )
-        cout << "Load creation failed with code " << ans << "." << endl;
-      else{
-        cout << "Load created." << endl;
-        _smd->addLoadElement( load );
-      }
+      _pws->addLoad(load);
+      cout << "Load created." << endl;
+      _smd->addLoadElement( load );
     }
     _state = SCHEDIT_STATE_IDLE; }
     break;

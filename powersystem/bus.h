@@ -16,24 +16,33 @@ EPFL
 
 namespace elabtsaot{
 
-class Bus {
+//! Bus type enumeration
+enum BusType{
+  BUSTYPE_SLACK = 0,   //!< Slack bus
+  BUSTYPE_PV = 1,      //!< PV bus: P known, V magnitude known
+  BUSTYPE_PQ = 2       //!< PQ bus: P known, Q known
+};
+
+class Bus{
 
  public:
 
   Bus();
   std::string serialize() const; //!< Serializes the contents of the powersystem bus into an std::string
 
+  // ----- Static parameters -----
   unsigned int extId; //!< External id of the bus
   std::string name; //!< Name of the bus
+  int type; //!< according to BusType
   double Gsh; //!< Shunt conductance to ground at bus [pu]
   double Bsh; //!< Shunt susceptance to ground at bus [pu]
   double baseKV; //!< Voltage base at the bus [kV]
 
-  // Variables that result from the loadflow
-  double V; //!< Steady state voltage magnitude at bus [pu]
-  double theta; //!< Steady state voltage angle at bus [rad]
+  // ----- Static variables -----
   double P; //!< Steady state active power (P) generated at bus [pu]
   double Q; //!< Steady state reactive power (Q) generated at bus [pu]
+  double V; //!< Steady state voltage magnitude at bus [pu]
+  double theta; //!< Steady state voltage angle at bus [rad]
 };
 
 } // end of namespace elabtsaot

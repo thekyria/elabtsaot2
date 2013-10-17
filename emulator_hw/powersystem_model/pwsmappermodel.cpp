@@ -197,7 +197,7 @@ int PwsMapperModel::validate(){
       return 21;
 
     // Retrieve generator bus component element
-    cdBus = element(PWSMODELELEMENTTYPE_BUS, pGen->busExtId() );
+    cdBus = element(PWSMODELELEMENTTYPE_BUS, pGen->busExtId);
 
     // Compare mapping
     if (    cdGen->tab != cdBus->tab
@@ -578,7 +578,7 @@ int PwsMapperModel::autoMapping(){
       return 20;
     }
     // Retrieve generator bus component element
-    cdBus = element(PWSMODELELEMENTTYPE_BUS, pGen->busExtId() );
+    cdBus = element(PWSMODELELEMENTTYPE_BUS, pGen->busExtId);
     // Map generator to the node of the bus
     mapComponent( PWSMODELELEMENTTYPE_GEN, cdGen->extId,
                   cdBus->tab, cdBus->row, cdBus->col );
@@ -919,8 +919,7 @@ int PwsMapperModel::addGenElement( Generator gen, bool overwrite, int* mdlId ){
 
   // Add gen to model
   int tempMdlId;
-  int ans = addElement( PWSMODELELEMENTTYPE_GEN, gen.extId(),
-                         overwrite, &tempMdlId );
+  int ans = addElement(PWSMODELELEMENTTYPE_GEN, gen.extId, overwrite, &tempMdlId);
   if ( ans ){
 //    cout << "Error adding gen component (" << gen.extId() << ")!" << endl;
     return 1;
@@ -1948,7 +1947,7 @@ void PwsMapperModel::_hintGenerator( int mdlId ){
 
   // Retrieve generator bus component element
   PwsMapperModelElement const* cdBus;
-  cdBus = element(PWSMODELELEMENTTYPE_BUS, pGen->busExtId() );
+  cdBus = element(PWSMODELELEMENTTYPE_BUS, pGen->busExtId);
 
   // Check if component is already mapped
   if( cd->mapped ){

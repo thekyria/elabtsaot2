@@ -125,7 +125,7 @@ int PwsSchematicModel::validate(){
       return 11;
   }
   for ( k = 0; k != _pws->getGenSet_size() ; ++k ){
-    cur_extId = _pws->getGenSet().at(k).extId();
+    cur_extId = _pws->getGenSet().at(k).extId;
     found = false;
     for ( m = 0 ; m != _genElements.size() ; ++m ){
       if ( _genElements[k].extId == cur_extId ){
@@ -378,26 +378,23 @@ int PwsSchematicModel::addBranchElement( Branch br, bool overwrite, int* mdlId )
   return 0;
 }
 
-int PwsSchematicModel::addGenElement( Generator gen,
-                                      bool overwrite, int* mdlId ){
+int PwsSchematicModel::addGenElement( Generator gen, bool overwrite, int* mdlId ){
 
   // Add gen to model
   int tempMdlId;
-  int ans = addElement( PWSMODELELEMENTTYPE_GEN, gen.extId(),
-                         overwrite, &tempMdlId );
+  int ans = addElement( PWSMODELELEMENTTYPE_GEN, gen.extId, overwrite, &tempMdlId );
   if ( ans ){
 //    cout << "Error adding gen component (" << gen.extId() << ")!" << endl;
     return 1;
   }
   PwsSchematicModelElement* cd;
-  cd = elementByIndex( PWSMODELELEMENTTYPE_GEN,
-                       static_cast<size_t>(tempMdlId));
+  cd = elementByIndex( PWSMODELELEMENTTYPE_GEN, static_cast<size_t>(tempMdlId));
   if (mdlId)
     *mdlId = tempMdlId;
 
   // Retrive the model element of the bus of the generator
   PwsSchematicModelElement const* cdBus;
-  cdBus = element(PWSMODELELEMENTTYPE_BUS, gen.busExtId() );
+  cdBus = element(PWSMODELELEMENTTYPE_BUS, gen.busExtId );
   if( cdBus == NULL )
     return 2;
 

@@ -465,9 +465,9 @@ void ScenarioEditor::itemChanged( QTreeWidgetItem* item, int column ){
       case EVENT_EVENTTYPE_GENQCHANGE:
         eventTypeLabel = "2: Q change";
         break;
-      case EVENT_EVENTTYPE_GENVCHANGE:
-        eventTypeLabel = "3: Vset change";
-        break;
+//      case EVENT_EVENTTYPE_GENVCHANGE:
+//        eventTypeLabel = "3: Vset change";
+//        break;
       default:
         eventTypeLabel = "Unknown event type";
         break;

@@ -5,6 +5,9 @@ using namespace elabtsaot;
 #include "powersystem.h"
 #include "pwsmappermodelelement.h"
 
+//#include <complex>
+using std::complex;
+
 // Implementation of methods of base class
 TabularPowersystemInterface::TabularPowersystemInterface(int type,
                                                          Powersystem* pws,
@@ -31,9 +34,9 @@ int TabularPowersystemInterface::columnCount(QModelIndex const& index) const{
   case PWSMODELELEMENTTYPE_BUS: // Buses
     return 9;
   case PWSMODELELEMENTTYPE_BR: // Branches
-    return 20;
+    return 12;
   case PWSMODELELEMENTTYPE_GEN: // Generators
-    return 31;
+    return 23;
   case PWSMODELELEMENTTYPE_LOAD: // Loads
     return 10;
   }
@@ -62,11 +65,10 @@ QVariant TabularPowersystemInterface::data(QModelIndex const& index, int role) c
     case 3: return _pws->getBus(index.row())->Bsh;
     case 4: return _pws->getBus(index.row())->baseKV;
 
-    // Data resulting from the loadflow
-    case 5: return _pws->getBus(index.row())->V;
-    case 6: return _pws->getBus(index.row())->theta;
-    case 7: return _pws->getBus(index.row())->P;
-    case 8: return _pws->getBus(index.row())->Q;
+    case 5: return _pws->getBus(index.row())->P;
+    case 6: return _pws->getBus(index.row())->Q;
+    case 7: return _pws->getBus(index.row())->V;
+    case 8: return _pws->getBus(index.row())->theta;
     }
     break;
   }
@@ -85,57 +87,37 @@ QVariant TabularPowersystemInterface::data(QModelIndex const& index, int role) c
     case  9: return _pws->getBranch(index.row())->Gto;
     case 10: return _pws->getBranch(index.row())->Xratio;
     case 11: return _pws->getBranch(index.row())->Xshift;
-
-    // Data resulting from the loadflow
-    case 12: return _pws->getBranch(index.row())->Ifrom.real();
-    case 13: return _pws->getBranch(index.row())->Ifrom.imag();
-    case 14: return _pws->getBranch(index.row())->Ito.real();
-    case 15: return _pws->getBranch(index.row())->Ito.imag();
-    case 16: return _pws->getBranch(index.row())->Sfrom.real();
-    case 17: return _pws->getBranch(index.row())->Sfrom.imag();
-    case 18: return _pws->getBranch(index.row())->Sto.real();
-    case 19: return _pws->getBranch(index.row())->Sto.imag();
     }
     break;
   }
 
   case PWSMODELELEMENTTYPE_GEN:{ // Generators
     switch(index.column()){
-    case  0: return _pws->getGenerator(index.row())->extId();
-    case  1: return _pws->getGenerator(index.row())->name().c_str();
-    case  2: return _pws->getGenerator(index.row())->busExtId();
-    case  3: return _pws->getGenerator(index.row())->avr();
-    case  4: return _pws->getGenerator(index.row())->voltageSetpoint();
-    case  5: return _pws->getGenerator(index.row())->status();
+    case  0: return _pws->getGenerator(index.row())->extId;
+    case  1: return _pws->getGenerator(index.row())->status;
+    case  2: return _pws->getGenerator(index.row())->name.c_str();
+    case  3: return _pws->getGenerator(index.row())->busExtId;
 
-    case  6: return _pws->getGenerator(index.row())->pgen();
-    case  7: return _pws->getGenerator(index.row())->qgen();
-    case  8: return _pws->getGenerator(index.row())->pmin();
-    case  9: return _pws->getGenerator(index.row())->pmax();
-    case 10: return _pws->getGenerator(index.row())->qmin();
-    case 11: return _pws->getGenerator(index.row())->qmax();
+    case  4: return _pws->getGenerator(index.row())->Pgen;
+    case  5: return _pws->getGenerator(index.row())->Qgen;
+    case  6: return _pws->getGenerator(index.row())->Vss.real();
+    case  7: return _pws->getGenerator(index.row())->Vss.imag();
 
-    case 12: return _pws->getGenerator(index.row())->model();
-    case 13: return _pws->getGenerator(index.row())->xl();
-    case 14: return _pws->getGenerator(index.row())->ra();
-    case 15: return _pws->getGenerator(index.row())->xd();
-    case 16: return _pws->getGenerator(index.row())->xd_1();
-    case 17: return _pws->getGenerator(index.row())->xd_2();
-    case 18: return _pws->getGenerator(index.row())->Td0_1();
-    case 19: return _pws->getGenerator(index.row())->Td0_2();
-    case 20: return _pws->getGenerator(index.row())->xq();
-    case 21: return _pws->getGenerator(index.row())->xq_1();
-    case 22: return _pws->getGenerator(index.row())->xq_2();
-    case 23: return _pws->getGenerator(index.row())->Tq0_1();
-    case 24: return _pws->getGenerator(index.row())->Tq0_2();
-    case 25: return _pws->getGenerator(index.row())->M();
-    case 26: return _pws->getGenerator(index.row())->D();
-
-    // Data resulting from the loadflow
-    case 27: return _pws->getGenerator(index.row())->Ess();
-    case 28: return _pws->getGenerator(index.row())->deltass();
-    case 29: return _pws->getGenerator(index.row())->Uss().real();
-    case 30: return _pws->getGenerator(index.row())->Uss().imag();
+    case  8: return _pws->getGenerator(index.row())->model;
+    case  9: return _pws->getGenerator(index.row())->xl;
+    case 10: return _pws->getGenerator(index.row())->ra;
+    case 11: return _pws->getGenerator(index.row())->xd;
+    case 12: return _pws->getGenerator(index.row())->xd_1;
+    case 13: return _pws->getGenerator(index.row())->xd_2;
+    case 14: return _pws->getGenerator(index.row())->Td0_1;
+    case 15: return _pws->getGenerator(index.row())->Td0_2;
+    case 16: return _pws->getGenerator(index.row())->xq;
+    case 17: return _pws->getGenerator(index.row())->xq_1;
+    case 18: return _pws->getGenerator(index.row())->xq_2;
+    case 19: return _pws->getGenerator(index.row())->Tq0_1;
+    case 20: return _pws->getGenerator(index.row())->Tq0_2;
+    case 21: return _pws->getGenerator(index.row())->M;
+    case 22: return _pws->getGenerator(index.row())->D;
     }
     break;
   }
@@ -144,23 +126,20 @@ QVariant TabularPowersystemInterface::data(QModelIndex const& index, int role) c
     switch(index.column()){
     case 0: return _pws->getLoad(index.row())->extId;
     case 1: return _pws->getLoad(index.row())->busExtId;
+
     case 2: return _pws->getLoad(index.row())->Pdemand;
     case 3: return _pws->getLoad(index.row())->Qdemand;
-    case 4: return _pws->getLoad(index.row())->Vexpa;
-    case 5: return _pws->getLoad(index.row())->Vexpb;
-    case 6: return _pws->getLoad(index.row())->kpf;
-    case 7: return _pws->getLoad(index.row())->kqf;
+    case 4: return _pws->getLoad(index.row())->Vss.real();
+    case 5: return _pws->getLoad(index.row())->Vss.imag();
 
-    // Data resulting from the loadflow
-    case 8: return _pws->getLoad(index.row())->Vss.real();
-    case 9: return _pws->getLoad(index.row())->Vss.imag();
+    case 6: return _pws->getLoad(index.row())->Vexpa;
+    case 7: return _pws->getLoad(index.row())->Vexpb;
+    case 8: return _pws->getLoad(index.row())->kpf;
+    case 9: return _pws->getLoad(index.row())->kqf;
     }
     break;
   }
-  default:{ // Any other
-    return "";
-    break;
-  }
+
   } // end of switch( _type )
 
   return "";
@@ -195,6 +174,15 @@ bool TabularPowersystemInterface::setData(QModelIndex const& index,
         bus->Bsh = v.toFloat(); break;
     case 4: if(v.convert(QVariant::Double))
         bus->baseKV = v.toFloat(); break;
+
+    case 5: if(v.convert(QVariant::Double))
+        bus->P = v.toFloat(); break;
+    case 6: if(v.convert(QVariant::Double))
+        bus->Q = v.toFloat(); break;
+    case 7: if(v.convert(QVariant::Double))
+        bus->V = v.toFloat(); break;
+    case 8: if(v.convert(QVariant::Double))
+        bus->theta = v.toFloat(); break;
     }
     break;
   }
@@ -236,67 +224,59 @@ bool TabularPowersystemInterface::setData(QModelIndex const& index,
 
   case PWSMODELELEMENTTYPE_GEN:{ // Generators
     Generator* gen = NULL;
-    _pws->getGenerator( _pws->getGenerator(index.row())->extId(), gen );
+    _pws->getGenerator(_pws->getGenerator(index.row())->extId, gen);
     if ( gen == NULL )
       return false;
 
     switch(index.column()){
     case  0: if(v.convert(QVariant::Int))
-        gen->set_extId( v.toInt() ); break;
-    case  1: if(v.convert(QVariant::String))
-        gen->set_name( v.toString().toStdString() ); break;
-    case  2: if(v.convert(QVariant::Int))
-        gen->set_busExtId( v.toInt() ); break;
-    case  3: if(v.convert(QVariant::Bool))
-        gen->set_avr( v.toBool() ); break;
-    case  4: if(v.convert(QVariant::Double))
-        gen->set_voltageSetpoint( v.toFloat() ); break;
-    case  5: if(v.convert(QVariant::Int))
-        gen->set_status( v.toBool() ); break;
+        gen->extId=v.toInt(); break;
+    case  1: if(v.convert(QVariant::Int))
+        gen->status=v.toBool(); break;
+    case  2: if(v.convert(QVariant::String))
+        gen->name=v.toString().toStdString(); break;
+    case  3: if(v.convert(QVariant::Int))
+        gen->busExtId=v.toInt(); break;
 
-    case  6: if(v.convert(QVariant::Double))
-        gen->set_pgen( v.toFloat() ); break;
-    case  7: if(v.convert(QVariant::Double))
-        gen->set_qgen( v.toFloat() ); break;
-    case  8: if(v.convert(QVariant::Double))
-        gen->set_pmin( v.toFloat() ); break;
+//    case  4: if(v.convert(QVariant::Double))
+//        gen->Pgen=v.toFloat(); break;
+//    case  5: if(v.convert(QVariant::Double))
+//        gen->Qgen=v.toFloat(); break;
+//    case  6: if(v.convert(QVariant::Double))
+//        gen->Vss=complex<double>(v.toFloat(),gen->Vss.imag()); break;
+//    case  7: if(v.convert(QVariant::Double))
+//        gen->Vss=complex<double>(gen->Vss.real(),v.toFloat()); break;
+
+    case  8: if(v.convert(QVariant::Int))
+        gen->model=v.toInt(); break;
     case  9: if(v.convert(QVariant::Double))
-        gen->set_pmax( v.toFloat() ); break;
+        gen->xl=v.toFloat(); break;
     case 10: if(v.convert(QVariant::Double))
-        gen->set_qmin( v.toFloat() ); break;
+        gen->ra=v.toFloat(); break;
     case 11: if(v.convert(QVariant::Double))
-        gen->set_qmax( v.toFloat() ); break;
-
-    case 12: if(v.convert(QVariant::Int))
-        gen->set_model( v.toInt() ); break;
+        gen->xd=v.toFloat(); break;
+    case 12: if(v.convert(QVariant::Double))
+        gen->xd_1=v.toFloat(); break;
     case 13: if(v.convert(QVariant::Double))
-        gen->set_xl( v.toFloat() ); break;
+        gen->xd_2=v.toFloat(); break;
     case 14: if(v.convert(QVariant::Double))
-        gen->set_ra( v.toFloat() ); break;
+        gen->Td0_1=v.toFloat(); break;
     case 15: if(v.convert(QVariant::Double))
-        gen->set_xd( v.toFloat() ); break;
+        gen->Td0_2=v.toFloat(); break;
     case 16: if(v.convert(QVariant::Double))
-        gen->set_xd_1( v.toFloat() ); break;
+        gen->xq=v.toFloat(); break;
     case 17: if(v.convert(QVariant::Double))
-        gen->set_xd_2( v.toFloat() ); break;
+        gen->xq_1=v.toFloat(); break;
     case 18: if(v.convert(QVariant::Double))
-        gen->set_Td0_1( v.toFloat() ); break;
+        gen->xq_2=v.toFloat(); break;
     case 19: if(v.convert(QVariant::Double))
-        gen->set_Td0_2( v.toFloat() ); break;
+        gen->Tq0_1=v.toFloat(); break;
     case 20: if(v.convert(QVariant::Double))
-        gen->set_xq( v.toFloat() ); break;
+        gen->Tq0_2=v.toFloat(); break;
     case 21: if(v.convert(QVariant::Double))
-        gen->set_xq_1( v.toFloat() ); break;
+        gen->M=v.toFloat(); break;
     case 22: if(v.convert(QVariant::Double))
-        gen->set_xq_2( v.toFloat() ); break;
-    case 23: if(v.convert(QVariant::Double))
-        gen->set_Tq0_1( v.toFloat() ); break;
-    case 24: if(v.convert(QVariant::Double))
-        gen->set_Tq0_2( v.toFloat() ); break;
-    case 25: if(v.convert(QVariant::Double))
-        gen->set_M( v.toFloat() ); break;
-    case 26: if(v.convert(QVariant::Double))
-        gen->set_D( v.toFloat() ); break;
+        gen->D=v.toFloat(); break;
     }
     break;
   }
@@ -312,25 +292,28 @@ bool TabularPowersystemInterface::setData(QModelIndex const& index,
         load->extId = v.toInt(); break;
     case 1: if(v.convert(QVariant::Int))
         load->busExtId = v.toInt(); break;
+
     case 2: if(v.convert(QVariant::Double))
         load->Pdemand = v.toFloat(); break;
     case 3: if(v.convert(QVariant::Double))
         load->Qdemand = v.toFloat(); break;
     case 4: if(v.convert(QVariant::Double))
-        load->Vexpa = v.toFloat(); break;
+        load->Vss=complex<double>(v.toFloat(),load->Vss.imag()); break;
     case 5: if(v.convert(QVariant::Double))
-        load->Vexpb = v.toFloat(); break;
+        load->Vss=complex<double>(load->Vss.real(),v.toFloat()); break;
+
     case 6: if(v.convert(QVariant::Double))
-        load->kpf = v.toFloat(); break;
+        load->Vexpa = v.toFloat(); break;
     case 7: if(v.convert(QVariant::Double))
+        load->Vexpb = v.toFloat(); break;
+    case 8: if(v.convert(QVariant::Double))
+        load->kpf = v.toFloat(); break;
+    case 9: if(v.convert(QVariant::Double))
         load->kqf = v.toFloat(); break;
     }
     break;
   }
 
-  default:{ // Any other
-    break;
-  }
   } // end of switch( _type )
 
   emit dataChanged(index,index);
@@ -358,10 +341,10 @@ QVariant TabularPowersystemInterface::headerData(int section,
     case 3: return "Bsh";
     case 4: return "baseKV";
 
-    case 5: return "V";
-    case 6: return "theta";
-    case 7: return "P";
-    case 8: return "Q";
+    case 5: return "P";
+    case 6: return "Q";
+    case 7: return "V";
+    case 8: return "theta";
     }
     break;
   }
@@ -380,55 +363,37 @@ QVariant TabularPowersystemInterface::headerData(int section,
     case  9: return "Gto";
     case 10: return "Xratio";
     case 11: return "Xshift";
-
-    case 12: return "re(Ifrom)";
-    case 13: return "im(Ifrom)";
-    case 14: return "re(Ito)";
-    case 15: return "im(Ito)";
-    case 16: return "re(Sfrom)";
-    case 17: return "im(Sfrom)";
-    case 18: return "re(Sto)";
-    case 19: return "im(Sto)";
     }
     break;
   }
 
   case PWSMODELELEMENTTYPE_GEN:{ // Generators
     switch(section){
-    case  0: return "ID";
-    case  1: return "Name";
-    case  2: return "Bus";
-    case  3: return "AVR";
-    case  4: return "Vset";
-    case  5: return "Status";
+    case  0: return "extId";
+    case  1: return "status";
+    case  2: return "name";
+    case  3: return "busExtId";
 
-    case  6: return "Pgen";
-    case  7: return "Qgen";
-    case  8: return "Pmin";
-    case  9: return "Pmax";
-    case 10: return "Qmin";
-    case 11: return "Qmax";
+    case  4: return "Pgen";
+    case  5: return "Qgen";
+    case  6: return "Vss_real";
+    case  7: return "Vss_imag";
 
-    case 12: return "Model";
-    case 13: return "x_l";
-    case 14: return "r_a";
-    case 15: return "x_d";
-    case 16: return "x_d_1";
-    case 17: return "x_d_2";
-    case 18: return "Td0_1";
-    case 19: return "Td0_2";
-    case 20: return "x_q";
-    case 21: return "x_q_1";
-    case 22: return "x_q_2";
-    case 23: return "Tq0_1";
-    case 24: return "Tq0_2";
-    case 25: return "M";
-    case 26: return "D";
-
-    case 27: return "Ess";
-    case 28: return "Delta ss";
-    case 29: return "re(Uss)";
-    case 30: return "im(Uss)";
+    case  8: return "model";
+    case  9: return "xl";
+    case 10: return "ra";
+    case 11: return "xd";
+    case 12: return "xd_1";
+    case 13: return "xd_2";
+    case 14: return "Td0_1";
+    case 15: return "Td0_2";
+    case 16: return "xq";
+    case 17: return "xq_1";
+    case 18: return "xq_2";
+    case 19: return "Tq0_1";
+    case 20: return "Tq0_2";
+    case 21: return "M";
+    case 22: return "D";
     }
     break;
   }
@@ -437,21 +402,17 @@ QVariant TabularPowersystemInterface::headerData(int section,
     switch(section){
     case 0: return "extId";
     case 1: return "busExtId";
+
     case 2: return "Pdemand";
     case 3: return "Qdemand";
-    case 4: return "Vexpa";
-    case 5: return "Vexpb";
-    case 6: return "kpf";
-    case 7: return "kqf";
+    case 4: return "Vss_real";
+    case 5: return "Vss_imag";
 
-    case 8: return "re(Vss)";
-    case 9: return "im(Vss)";
+    case 6: return "Vexpa";
+    case 7: return "Vexpb";
+    case 8: return "kpf";
+    case 9: return "kqf";
     }
-    break;
-  }
-
-  default:{ // Any other
-    return QVariant();
     break;
   }
 

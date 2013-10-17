@@ -69,8 +69,8 @@ TDResults::TDResults( Powersystem const* pws, Scenario const* sce ){
   // Dynamic variables of generators
   for ( size_t k = 0 ; k != pws->getGenSet_size() ; ++k ){
     Generator const* p_gen = pws->getGenerator( k );
-    unsigned int gen_extId = p_gen->extId();
-    int gen_model = p_gen->model();
+    unsigned int gen_extId = p_gen->extId;
+    int gen_model = p_gen->model;
     tdri.elementType = TDRESULTS_GENERATOR;
     tdri.extId = gen_extId;
 

@@ -33,21 +33,12 @@ namespace elabtsaot{
 
 //! Network status enumeration
 enum PowerSystemStatus {
-  PWSSTATUS_INIT = 0,    //!< Powersystem initialized (just created)
+  PWSSTATUS_INIT  = 0,   //!< Powersystem initialized (just created)
   PWSSTATUS_VALID = 1,   //!< Powersystem validated (checked for topological
                          //!< consistency)
-  PWSSTATUS_LF = 2       //!< Loadflow solved successfully for the powersystem
+  PWSSTATUS_LF    = 2    //!< Power flow solved successfully for the powersystem
 };
 
-/*! Powersystem class
-  \todo implement auto-slack generator picking (the 'biggest')
-  \todo implement multi-island loadflow
-  \todo implement probabilistic loadflow
-  \todo incorporate areas
-  \todo implement opf
-  \todo calculate electrical distance
-  \todo calculate PTDF, etc ...
-*/
 class Powersystem {
 
  public:
@@ -55,15 +46,15 @@ class Powersystem {
   Powersystem( std::string const& name, double baseS, double baseF );
 
   std::string serialize() const;
-  int log_loadflow_results(std::ostream& ostr = std::cout) const;
-  int log_loadflow_results(std::string const& filename) const;
+  int logPowerFlowResults(std::ostream& ostr = std::cout) const;
+  int logPowerFlowResults(std::string const& filename) const;
   double getMaxX() const;
 
-  int clear();
-  int addBus(Bus const& newBus);
-  int addBranch(Branch const& newBranch);
-  int addGen(Generator const& newGen);
-  int addLoad(Load const& newLoad);
+  void clear();
+  void addBus(Bus const& newBus);
+  void addBranch(Branch const& newBranch);
+  void addGen(Generator const& newGen);
+  void addLoad(Load const& newLoad);
 
   int deleteBus(unsigned int busExtId, bool recursive = false);
   int deleteBranch(unsigned int brExtId);

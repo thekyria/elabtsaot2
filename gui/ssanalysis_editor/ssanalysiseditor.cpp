@@ -3,7 +3,7 @@
 using namespace elabtsaot;
 
 #include "propertydialog.h"
-#include "loadfloweditor.h"
+#include "powerfloweditor.h"
 //#include "ssengine.h"
 #include "moteurrenard.h"
 #include "moteurfengtian.h"
@@ -54,8 +54,7 @@ SSAnalysisEditor::SSAnalysisEditor( Powersystem*& pws,
            this, SLOT(SSEngineSelectionSlot(int)) );
 
   // Set options
-  QAction* setOptionsAct = new QAction( QIcon(),
-                                        "Set options", sseToolbar );
+  QAction* setOptionsAct = new QAction( QIcon(), "Set options", sseToolbar );
   sseToolbar->addAction( setOptionsAct );
   connect( setOptionsAct, SIGNAL( triggered() ),
            this, SLOT( SSsetOptionsSlot() ) );
@@ -64,12 +63,12 @@ SSAnalysisEditor::SSAnalysisEditor( Powersystem*& pws,
   QTabWidget* TDAnalysisTabWidget(new QTabWidget(this));
   this->addWidget( TDAnalysisTabWidget );
 
-  // Loadflow editor tab
-  loadflowEditor = new LoadflowEditor( pws, sse, this);
-  TDAnalysisTabWidget->addTab( loadflowEditor, "Loadflow" );
+  // Power flow editor tab
+  powerFlowEditor = new PowerFlowEditor( pws, sse, this);
+  TDAnalysisTabWidget->addTab( powerFlowEditor, "Power Flow" );
 }
 
-void SSAnalysisEditor::updt(){ loadflowEditor->updt(); }
+void SSAnalysisEditor::updt(){ powerFlowEditor->updt(); }
 
 void SSAnalysisEditor::SSEngineSelectionSlot(int index){
   switch ( ssEngineSelectBox->itemData(index).toInt() ){

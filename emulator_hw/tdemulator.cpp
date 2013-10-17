@@ -930,7 +930,7 @@ int TDEmulator::do_simulate( Scenario const& sce, TDResults& res ){
 
       Generator const* pGen;
       ans = _pws->getGenerator( resultsIdentifiers[k].extId, pGen );
-      if ( pGen->M() < GEN_MECHSTARTTIME_THRESHOLD )
+      if ( pGen->M < GEN_MECHSTARTTIME_THRESHOLD )
         // Gen is a 'normal' gen, treated in the gen pipeline
         continue;
 
@@ -2095,9 +2095,9 @@ int TDEmulator::_encodeScenarioBase( Scenario const& sce_,
 
     // Determine embr loc
     double embr_loc;
-    if ( pBr->fromBusExtId == static_cast<unsigned int>(el_extId) )
+    if ( pBr->fromBusExtId == el_extId )
       embr_loc = 0; // set fault at from end of the embr
-    else if ( pBr->toBusExtId == static_cast<unsigned int>(el_extId) )
+    else if ( pBr->toBusExtId == el_extId )
       embr_loc = 1; // set fault at to end of the embr
     else
       return 18;
@@ -3174,7 +3174,7 @@ int TDEmulator::_getStartCode( TDResultIdentifier const& tdri,
     if ( ans ) return 10;
 
     // Determine pipelineId accordingly
-    if ( pGen->M() < GEN_MECHSTARTTIME_THRESHOLD ){
+    if ( pGen->M < GEN_MECHSTARTTIME_THRESHOLD ){
       pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_gen;
       isInGenPipeline = true;
     } else { // ( pGen->M() >= GEN_MECHSTARTTIME_THRESHOLD )
@@ -3388,7 +3388,7 @@ int TDEmulator::_getSpyCode( TDResultIdentifier const& tdri,
     // Determine pipelineId accordingly
     bool isInGenPipeline;
     Pipeline const* pipe;
-    if ( pGen->M() < GEN_MECHSTARTTIME_THRESHOLD ){
+    if ( pGen->M < GEN_MECHSTARTTIME_THRESHOLD ){
       pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_gen;
       isInGenPipeline = true;
     } else { // ( pGen->M() >= GEN_MECHSTARTTIME_THRESHOLD )

@@ -10,9 +10,10 @@ using std::complex;
 using std::stringstream;
 
 Load::Load() :
-    extId(0), busExtId(-1), Pdemand(0), Qdemand(0),
-    Vexpa(0), Vexpb(0), kpf(0), kqf(0), // Corresponding to pload
-    Vss(complex<double>(1,0)) {}
+    extId(0), busExtId(-1),
+    Pdemand(0), Qdemand(0),
+    Vss(complex<double>(1,0)),
+    Vexpa(0), Vexpb(0), kpf(0), kqf(0) {} // corresponding to Pload
 
 string Load::serialize() const{
   stringstream ss;
@@ -20,24 +21,15 @@ string Load::serialize() const{
   ss << busExtId << " ";
   ss << Pdemand << " ";
   ss << Qdemand << " ";
+  ss << Vss << " ";
   ss << Vexpa << " ";
   ss << Vexpb << " ";
   ss << kpf << " ";
   ss << kqf << " ";
-  ss << Vss << " ";
   return ss.str();
 }
 
-unsigned int Load::type() const{
-  if ( Vexpa == 0 && Vexpb == 0 )
-    return LOADTYPE_CONSTP;
-  if ( Vexpa == 1 && Vexpb == 1 )
-    return LOADTYPE_CONSTI;
-  if ( Vexpa == 2 && Vexpb == 2 )
-    return LOADTYPE_CONSTZ;
-  return LOADTYPE_OTHER;
-}
-void Load::set_type(unsigned int val){
+void Load::setType(unsigned int val){
   if (val == LOADTYPE_CONSTP){
     Vexpa = 0;
     Vexpb = 0;
@@ -48,4 +40,13 @@ void Load::set_type(unsigned int val){
     Vexpa = 2;
     Vexpb = 2;
   }
+}
+unsigned int Load::type() const{
+  if ( Vexpa == 0 && Vexpb == 0 )
+    return LOADTYPE_CONSTP;
+  if ( Vexpa == 1 && Vexpb == 1 )
+    return LOADTYPE_CONSTI;
+  if ( Vexpa == 2 && Vexpb == 2 )
+    return LOADTYPE_CONSTZ;
+  return LOADTYPE_OTHER;
 }

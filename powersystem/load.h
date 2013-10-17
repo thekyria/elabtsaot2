@@ -29,21 +29,26 @@ enum LoadType{
     considered a source of power demand from the power system.
 
     \todo Include dynamic data for the load (const P/I/Z), see Kundur p.272. Also
-          see Thesis: Chan - Power system load modelling
-    \todo What about frequency fss? */
+          see Thesis: Chan - Power system load modelling */
 class Load {
 
  public:
 
   Load();
-  std::string serialize() const; //! Serializes the contents of the powersystem branch into an std::string
-  unsigned int type() const; //! Pseudo-getter for "Load::_type" based on _v_exp_a, _v_exp_b
-  void set_type(unsigned int val); //! Pseudo-setter for "Load::_type"; sets _v_exp_a, _v_exp_b
+  std::string serialize() const;  //!< Serializes the contents of the powersystem branch into an std::string
+  void setType(unsigned int val); //!< Pseudo-setter for "Load::_type"; sets Vexpa, Vexpb
+  unsigned int type() const;      //!< Pseudo-getter for "Load::_type"; based on Vexpa, Vexpb
 
-  unsigned int extId; //! External index of the load
-  int busExtId; //! External id of the bus the load is connected to
-  double Pdemand; //! Active power (P) demanded by the load [pu]; >0 for power DEMANDED
-  double Qdemand; //! Reactive power (Q) demanded by the load [pu]; >0 for power DEMANDED
+  // ----- Static parameters -----
+  unsigned int extId; //!< External index of the load
+  int busExtId; //!< External id of the bus the load is connected to
+
+  // ----- Static variables -----
+  double Pdemand; //!< Active power (P) demanded by the load [pu]; >0 for power DEMANDED
+  double Qdemand; //!< Reactive power (Q) demanded by the load [pu]; >0 for power DEMANDED
+  std::complex<double> Vss; //!< Steady state voltage (complex) at the terminals of the load [pu]
+
+  // ----- Dynamic parameters -----
   /*! Enhanced static load model
     voltage dependency according to the exponential model and frequency
     dependency:
@@ -56,12 +61,10 @@ class Load {
       Vexpa, Vexpb = 2  => constant impedance load
     for composite loads, the values depend on the aggregate characteristics of
     load components */
-  double Vexpa; //! Exponent for the active power voltage dependency
-  double Vexpb; //! Exponent for the reactive power voltage dependency
-  double kpf;   //! Factor for the active power frequency dependency
-  double kqf;   //! Factor for the reactive power frequency dependency
-
-  std::complex<double> Vss; //! Steady state voltage (complex) at the terminals of the load [pu]
+  double Vexpa; //!< Exponent for the active power voltage dependency
+  double Vexpb; //!< Exponent for the reactive power voltage dependency
+  double kpf;   //!< Factor for the active power frequency dependency
+  double kqf;   //!< Factor for the reactive power frequency dependency
 };
 
 } // end of namespace elabtsaot

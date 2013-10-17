@@ -72,11 +72,11 @@ MoteurFengtian::MoteurFengtian(Emulator* emu, Logger* log) :
   _properties[tempPt] = tempPt.defaultValue;
 }
 
-int MoteurFengtian::do_solveLoadflow( Powersystem const& pws,
+int MoteurFengtian::do_solvePowerFlow( Powersystem const& pws,
                                       boost::numeric::ublas::vector<double>& x,
                                       boost::numeric::ublas::vector<double>& F ) const{
 
-  // Before entering into the loadflow main routine, check that the power system
+  // Before entering into the power flow main routine, check that the power system
   // has been validated
   if ( pws.status() != PWSSTATUS_VALID && pws.status() != PWSSTATUS_LF )
     return 1;
@@ -104,7 +104,7 @@ int MoteurFengtian::do_solveLoadflow( Powersystem const& pws,
   time ( &rawtime );
   string time_string = ctime( &rawtime );
 
-  // ----- Start loadflow computation -----
+  // ----- Start power flow computation -----
 
   /* Let be:
   x   = [th]                   the vector of unknown values
@@ -143,14 +143,14 @@ int MoteurFengtian::do_solveLoadflow( Powersystem const& pws,
 
   if (!converged){
     // Not convergence case
-    cout << "Load flow (Guillaume method) did not converge!" << endl;
+    cout << "Power flow (Guillaume method) did not converge!" << endl;
     return 2;
   }
 
   else {
-    cout << "Power Flow (Guillaume method) started at: ";
+    cout << "Power flow (Guillaume method) started at: ";
     cout << time_string << endl;
-    cout << "Power Flow converged in " << elapsed_time << " seconds " <<endl;
+    cout << "Power flow converged in " << elapsed_time << " seconds " <<endl;
     return 0;
   }
 

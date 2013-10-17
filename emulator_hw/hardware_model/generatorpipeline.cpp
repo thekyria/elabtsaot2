@@ -12,6 +12,8 @@ using std::make_pair;
 //#include <vector>
 using std::vector;
 
+#define SSFREQUENCY 50. //!< steady state frequency = 50 Hz
+
 GeneratorPipeline::GeneratorPipeline(size_t element_capacity,
                                      size_t ver_dim, size_t hor_dim) :
     Pipeline(element_capacity, ver_dim, hor_dim),
@@ -131,7 +133,7 @@ int GeneratorPipeline::insert_element(size_t ver_pos, size_t hor_pos,
 
   // Insert new element at pipeline position k
   _position[k] = make_pair((int) ver_pos, (int) hor_pos);
-  xd1inverse[k] = static_cast<double>(1) / el.xd_1();
+  xd1inverse[k] = static_cast<double>(1) / el.xd_1;
 
   /* Generator Norton equivalent
       ________>I  to the grid
@@ -144,15 +146,15 @@ int GeneratorPipeline::insert_element(size_t ver_pos, size_t hor_pos,
       -   -
     */
   // Current injection to the grid
-  complex<double> I  = conj ( complex<double>(el.pgen(),el.qgen()) / el.Uss() );
+  complex<double> I  = conj ( complex<double>(el.Pgen,el.Qgen) / el.Vss );
   // Current I'' flowing through the xd_1 Norton equivalent impedance to ground
-  complex<double> I_2 = el.Uss() / complex<double>(el.ra(), el.xd_1());
+  complex<double> I_2 = el.Vss / complex<double>(el.ra, el.xd_1);
   // Internal Norton equivalent current I'
   complex<double> I_1 = I + I_2;
   I0[k] = I_1;
-  pMechanical[k] = el.pgen();
-  gain1[k] = 2*el.fss()/el.M();     // f / H
-  gain2[k] = el.Ess()/el.xd_1();    // E' / x'_d
+  pMechanical[k] = el.Pgen;
+  gain1[k] = 2*SSFREQUENCY/el.M;     // f / H
+  gain2[k] = el.Ess()/el.xd_1;    // E' / x'_d
   gain3[k] = -gain2[k];           // -E' / x'_d
   gain4[k] = +1;                    // ASK GUILLAUME WHY
   gain5[k] = -gain4[k];           // ASK GUILLAUME WHY

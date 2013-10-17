@@ -96,7 +96,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
           Generator const* pGen;
           if (!_pws->getGenerator( elementsMapped.at(n).second, pGen)){
             label.append( "GEN " );
-            label.append( QString::number( pGen->extId() ) );
+            label.append( QString::number( pGen->extId ) );
             label.append( " " );
           }
           break; }

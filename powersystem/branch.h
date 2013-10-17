@@ -24,6 +24,7 @@ class Branch {
   Branch();
   std::string serialize() const;
 
+  // ----- Static parameters -----
   unsigned int extId; //!< External id of the branch
   bool status; //!< Enable status of the branch
   int fromBusExtId; //!< External id of the bus at the from side of the branch
@@ -43,11 +44,6 @@ class Branch {
     If _Xshift > 0 then V_from (voltage at the from end of the branch) leads
     V_to (voltage at the to end of the branch). */
   double Xshift;
-
-  std::complex<double> Ifrom; //!< Steady state current flow at the from end of the branch
-  std::complex<double> Ito; //!< Steady state current flow at the to end of the branch
-  std::complex<double> Sfrom; //!< Steady state apparent power (S) flow at the from end of the branch
-  std::complex<double> Sto; //!< Steady state apparent power (S) flow at the to end of the branch
 
 };
 

@@ -66,7 +66,7 @@ class GeneratorPipeline : public Pipeline{
   std::vector<double> gain6;       //!< by default = 2
   std::vector<double> pa0;         //! S.s. P accelerating [p.u.]; default 0
   std::vector<double> omega0;      //! S.s. relative omega [rad/s]; default 0
-  std::vector<double> delta0;      //! S.s. delta [rad]; from loadflow
+  std::vector<double> delta0;      //! S.s. delta [rad]; from power flow
 
 };
 

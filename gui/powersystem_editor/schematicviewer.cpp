@@ -639,7 +639,7 @@ void SchematicViewer::_drawGenerator( QPainter& painter,
   painter.drawEllipse( QPointF(P2) , 7.0, 7.0 );
   float xmax = max(genCd.x1, genCd.x2);
   float ymid = (genCd.y1 + genCd.y2) / 2;
-  painter.drawText( QPoint(xmax + 15, ymid ), pGen->name().c_str() );
+  painter.drawText( QPoint(xmax + 15, ymid ), pGen->name.c_str() );
 
   return;
 }

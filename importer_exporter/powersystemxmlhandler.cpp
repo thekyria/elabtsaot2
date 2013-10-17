@@ -6,9 +6,8 @@ using namespace elabtsaot;
 
 #include <QString>
 
-#include <iostream>
-using std::cout;
-using std::endl;
+//#include <complex>
+using std::complex;
 
 PowersystemXMLHandler::PowersystemXMLHandler( Powersystem* p_ps ) :
     _p_ps(p_ps), _p_bus(0), _p_br(0), _p_gen(0), _p_load(0){
@@ -42,24 +41,30 @@ bool PowersystemXMLHandler::characters(QString const& ch){
   // Find which attribute is set
   // --------------- Bus ---------------
   if (_p_bus){
-    if (_tags.last()=="id")
+    if (_tags.last()=="extId")
       _p_bus->extId = value.toInt();
     if (_tags.last()=="name")
       _p_bus->name = value.toStdString();
-    if (_tags.last()=="shconductance")
+    if (_tags.last()=="type")
+      _p_bus->type = value.toInt();
+    if (_tags.last()=="Gsh")
       _p_bus->Gsh = value.toDouble();
-    if (_tags.last()=="shsusceptance")
+    if (_tags.last()=="Bsh")
       _p_bus->Bsh = value.toDouble();
     if (_tags.last()=="baseKV")
       _p_bus->baseKV = value.toDouble();
-    if (_tags.last()=="v_steadystate")
+    if (_tags.last()=="P")
+      _p_bus->baseKV = value.toDouble();
+    if (_tags.last()=="Q")
+      _p_bus->baseKV = value.toDouble();
+    if (_tags.last()=="V")
       _p_bus->V = value.toDouble();
-    if (_tags.last()=="th_steadystate")
+    if (_tags.last()=="theta")
       _p_bus->theta = value.toDouble();
 
   // --------------- Branch ---------------
   } else if(_p_br){
-    if (_tags.last()=="id")
+    if (_tags.last()=="extId")
       _p_br->extId = value.toDouble();
     if (_tags.last()=="status")
       _p_br->status = static_cast<bool>(value.toInt());
@@ -86,60 +91,54 @@ bool PowersystemXMLHandler::characters(QString const& ch){
 
   // --------------- Generator ---------------
   } else if( _p_gen ){
-    if( _tags.last()=="id" )
-      _p_gen->set_extId( value.toInt() );
-    if( _tags.last()=="name" )
-      _p_gen->set_name( value.toStdString() );
-    if( _tags.last()=="atbus" )
-      _p_gen->set_busExtId( value.toInt() );
-    if ( _tags.last() == "avr" )
-      _p_gen->set_avr( static_cast<bool>( value.toInt() ) );
-    if( _tags.last()=="vsetpoint" )
-      _p_gen->set_voltageSetpoint( value.toDouble() );
+    if( _tags.last()=="extId" )
+      _p_gen->extId = value.toInt();
     if( _tags.last()=="status" )
-      _p_gen->set_status( static_cast<bool>( value.toInt() ) );
-    if( _tags.last()=="pgen" )
-      _p_gen->set_pgen( value.toDouble() );
-    if( _tags.last()=="qgen" )
-      _p_gen->set_qgen( value.toDouble() );
-    if( _tags.last()=="pmin" )
-      _p_gen->set_pmin( value.toDouble() );
-    if( _tags.last()=="qmin" )
-      _p_gen->set_qmin( value.toDouble() );
-    if( _tags.last()=="pmax" )
-      _p_gen->set_pmax( value.toDouble() );
-    if( _tags.last()=="qmax" )
-      _p_gen->set_qmax( value.toDouble() );
+      _p_gen->status = static_cast<bool>(value.toInt());
+    if( _tags.last()=="name" )
+      _p_gen->name = value.toStdString();
+    if( _tags.last()=="busExtId" )
+      _p_gen->busExtId = value.toInt();
+
+    if( _tags.last()=="Pgen" )
+      _p_gen->Pgen = value.toDouble();
+    if( _tags.last()=="Qgen" )
+      _p_gen->Qgen = value.toDouble();
+    if( _tags.last()=="Vss_real" )
+      _p_gen->Vss = complex<double>(value.toDouble(),_p_gen->Vss.imag());
+    if( _tags.last()=="Vss_imag" )
+      _p_gen->Vss = complex<double>(_p_gen->Vss.real(),value.toDouble());
+
     if( _tags.last()=="model" )
-      _p_gen->set_model( value.toInt() );
-    if( _tags.last()=="leakage_reactance" )
-      _p_gen->set_xl( value.toDouble() );
-    if( _tags.last()=="armature_resistance" )
-      _p_gen->set_ra( value.toDouble() );
-    if( _tags.last()=="synchronous_direct_reactance" )
-      _p_gen->set_xd( value.toDouble() );
-    if( _tags.last()=="transient_direct_reactance" )
-      _p_gen->set_xd_1( value.toDouble() );
-    if( _tags.last()=="subtransient_direct_reactance" )
-      _p_gen->set_xd_2( value.toDouble() );
-    if( _tags.last()=="transient_direct_time_const" )
-      _p_gen->set_Td0_1( value.toDouble() );
-    if( _tags.last()=="subtransient_direct_time_const" )
-      _p_gen->set_Td0_2( value.toDouble() );
-    if( _tags.last()=="synchronous_quadrature_reactance" )
-      _p_gen->set_xq( value.toDouble() );
-    if( _tags.last()=="transient_quadrature_reactance" )
-      _p_gen->set_xq_1( value.toDouble() );
-    if( _tags.last()=="subtransient_quadrature_reactance" )
-      _p_gen->set_xq_2( value.toDouble() );
-    if( _tags.last()=="transient_quadrature_time_const" )
-      _p_gen->set_Tq0_1( value.toDouble() );
-    if( _tags.last()=="subtransient_quadrature_time_const" )
-      _p_gen->set_Tq0_2( value.toDouble() );
-    if( _tags.last()=="mechanical_starting_time" )
-      _p_gen->set_M( value.toDouble() );
-    if( _tags.last()=="damping_coefficient" )
-      _p_gen->set_D( value.toDouble() );
+      _p_gen->model = value.toInt();
+    if( _tags.last()=="xl" )
+      _p_gen->xl = value.toDouble();
+    if( _tags.last()=="ra" )
+      _p_gen->ra = value.toDouble();
+    if( _tags.last()=="xd" )
+      _p_gen->xd = value.toDouble();
+    if( _tags.last()=="xd_1" )
+      _p_gen->xd_1 = value.toDouble();
+    if( _tags.last()=="xd_2" )
+      _p_gen->xd_2 = value.toDouble();
+    if( _tags.last()=="Td0_1" )
+      _p_gen->Td0_1 = value.toDouble();
+    if( _tags.last()=="Td0_2" )
+      _p_gen->Td0_2 = value.toDouble();
+    if( _tags.last()=="xq" )
+      _p_gen->xq = value.toDouble();
+    if( _tags.last()=="xq_1" )
+      _p_gen->xq_1 = value.toDouble();
+    if( _tags.last()=="xq_2" )
+      _p_gen->xq_2 = value.toDouble();
+    if( _tags.last()=="Tq0_1" )
+      _p_gen->Tq0_1 = value.toDouble();
+    if( _tags.last()=="Tq0_2" )
+      _p_gen->Tq0_2 = value.toDouble();
+    if( _tags.last()=="M" )
+      _p_gen->M = value.toDouble();
+    if( _tags.last()=="D" )
+      _p_gen->D = value.toDouble();
 
   // --------------- Load ---------------
   } else if( _p_load ){
@@ -151,6 +150,10 @@ bool PowersystemXMLHandler::characters(QString const& ch){
       _p_load->Pdemand = value.toDouble();
     if( _tags.last()=="Qdemand" )
       _p_load->Qdemand = value.toDouble();
+    if( _tags.last()=="Vss_real" )
+      _p_load->Vss = complex<double>(value.toDouble(),_p_load->Vss.imag());
+    if( _tags.last()=="Vss_imag" )
+      _p_load->Vss = complex<double>(_p_load->Vss.real(),value.toDouble());
     if( _tags.last()=="Vexpa" )
       _p_load->Vexpa = value.toDouble();
     if( _tags.last()=="Vexpb" )
@@ -191,31 +194,22 @@ bool PowersystemXMLHandler::endElement(QString const& namespaceURI,
                                        QString const& localName,
                                        QString const& qName){
   _tags.remove(_tags.size()-1);
-  int ans;
 
   // Check if component instantiation has been finished
   if( qName=="bus" ){
-    ans = _p_ps->addBus( *_p_bus );
-    if( ans )
-      cout << "Failed adding bus with code " << ans << "." << endl;
+    _p_ps->addBus( *_p_bus );
     _resetState();
 
   }else if( qName=="generator" ){
-    ans = _p_ps->addGen( *_p_gen );
-    if( ans )
-      cout << "Failed adding generator with code " << ans << "." << endl;
+    _p_ps->addGen( *_p_gen );
     _resetState();
 
   }else if( qName=="load" ){
-    ans = _p_ps->addLoad( *_p_load );
-    if( ans )
-      cout << "Failed adding load with code " << ans << "." << endl;
+    _p_ps->addLoad( *_p_load );
     _resetState();
 
   }else if( qName=="branch" ){
-    ans = _p_ps->addBranch( *_p_br );
-    if( ans )
-      cout << "Failed adding branch with code " << ans << "." << endl;
+    _p_ps->addBranch( *_p_br );
     _resetState();
   }
 

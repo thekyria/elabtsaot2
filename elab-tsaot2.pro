@@ -137,7 +137,7 @@ SOURCES += \
   $$ELABTSAOT2_ROOT/gui/powersystem_editor/powersystem_model/pwsschematicmodel.cpp \
   $$ELABTSAOT2_ROOT/gui/powersystem_editor/powersystem_model/pwsschematicmodelelement.cpp \
   $$ELABTSAOT2_ROOT/gui/ssanalysis_editor/ssanalysiseditor.cpp \
-  $$ELABTSAOT2_ROOT/gui/ssanalysis_editor/loadfloweditor.cpp \
+  $$ELABTSAOT2_ROOT/gui/ssanalysis_editor/powerfloweditor.cpp \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/slicewidget.cpp \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/mapperslicewidget.cpp \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/mapperemulatoreditor.cpp \
@@ -253,7 +253,7 @@ HEADERS += \
   $$ELABTSAOT2_ROOT/gui/powersystem_editor/powersystem_model/pwsschematicmodel.h \
   $$ELABTSAOT2_ROOT/gui/powersystem_editor/powersystem_model/pwsschematicmodelelement.h \
   $$ELABTSAOT2_ROOT/gui/ssanalysis_editor/ssanalysiseditor.h \
-  $$ELABTSAOT2_ROOT/gui/ssanalysis_editor/loadfloweditor.h \
+  $$ELABTSAOT2_ROOT/gui/ssanalysis_editor/powerfloweditor.h \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/slicewidget.h \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/mapperslicewidget.h \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/mapperemulatoreditor.h \

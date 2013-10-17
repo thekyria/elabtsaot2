@@ -299,90 +299,48 @@ int pwsEditorDialogs::genDialog(Generator *gen){
   // Properties
   // extId & atBus
   QHBoxLayout layoutExtIdBus;
-  QLabel labelExtId("Id:");
+  QLabel labelExtId("extId:");
   QSpinBox formExtId;
   formExtId.setMaximum( RAND_MAX );
-  formExtId.setValue( gen->extId() );
+  formExtId.setValue( gen->extId );
   layoutExtIdBus.addWidget( &labelExtId );
   layoutExtIdBus.addWidget( &formExtId );
-  QLabel labelBus("At bus:");
+  QLabel labelBus("busExtId:");
   QSpinBox formBus;
   formBus.setMaximum( RAND_MAX );
-  formBus.setValue( gen->busExtId() );
+  formBus.setValue( gen->busExtId );
   layoutExtIdBus.addWidget( &labelBus );
   layoutExtIdBus.addWidget( &formBus );
   layoutMain.addLayout( &layoutExtIdBus );
   // name
   QHBoxLayout layoutName;
-  QLabel labelName("Name:");
+  QLabel labelName("name:");
   QLineEdit formName;
-  formName.setText( gen->name().c_str() );
+  formName.setText( gen->name.c_str() );
   layoutName.addWidget( &labelName );
   layoutName.addWidget( &formName );
   layoutMain.addLayout( &layoutName );
-  // voltage setpoint
-  QHBoxLayout layoutVPoint;
-  QLabel labelVPoint("Voltage setpoint [pu]:");
-  QDoubleSpinBox formVPoint;
-  formVPoint.setDecimals( 5 );
-  formVPoint.setValue( gen->voltageSetpoint() );
-  layoutVPoint.addWidget( &labelVPoint );
-  layoutVPoint.addWidget( &formVPoint );
-  QCheckBox formAvr("AVR");
-  formAvr.setChecked( gen->avr() );
-  layoutVPoint.addWidget( &formAvr );
-  layoutMain.addLayout( &layoutVPoint );
-  // p power
-  QHBoxLayout layoutPPower;
-  QLabel labelPPower("Active Power (min/generated/max) [pu]:");
-  QDoubleSpinBox formPMin, formPGen, formPMax;
-  formPMin.setDecimals( 5 );
-  formPGen.setDecimals( 5 );
-  formPMax.setDecimals( 5 );
-  formPMin.setValue( gen->pmin() );
-  formPGen.setValue( gen->pgen() );
-  formPMax.setValue( gen->pmax() );
-  layoutPPower.addWidget( &labelPPower );
-  layoutPPower.addWidget( &formPMin );
-  layoutPPower.addWidget( &formPGen );
-  layoutPPower.addWidget( &formPMax );
-  layoutMain.addLayout( &layoutPPower );
-  // q power
-  QHBoxLayout layoutQPower;
-  QLabel labelQPower("Reactive Power (min/generated/max) [pu]:");
-  QDoubleSpinBox formQMin, formQGen, formQMax;
-  formQMin.setDecimals( 5 );
-  formQGen.setDecimals( 5 );
-  formQMax.setDecimals( 5 );
-  formQMin.setValue( gen->qmin() );
-  formQGen.setValue( gen->qgen() );
-  formQMax.setValue( gen->qmax() );
-  layoutQPower.addWidget( &labelQPower );
-  layoutQPower.addWidget( &formQMin );
-  layoutQPower.addWidget( &formQGen );
-  layoutQPower.addWidget( &formQMax );
-  layoutMain.addLayout( &layoutQPower );
 
   // dynamic data
   QLabel labelDynamic("<br>Dynamic data<hr>");
   layoutMain.addWidget( &labelDynamic );
   // model
   QHBoxLayout layoutDyn0;
-  QLabel labelDyn01("Model:");
+  QLabel labelDyn01("model:");
   QSpinBox formDyn01;
-  formDyn01.setValue( gen->model() );
+  formDyn01.setValue(gen->model);
   layoutDyn0.addWidget( &labelDyn01 );
   layoutDyn0.addWidget( &formDyn01 );
   layoutMain.addLayout( &layoutDyn0 );
   // leakage reactance, armature resistance
   QHBoxLayout layoutDyn1;
-  QLabel labelDyn11("Leakage reactance [pu]:");
-  QLabel labelDyn12("Armature reactance [pu]:");
+  QLabel labelDyn11("xl [pu]:");
+  QLabel labelDyn12("ra [pu]:");
   QDoubleSpinBox formDyn11, formDyn12;
   formDyn11.setDecimals( 5 );
   formDyn12.setDecimals( 5 );
-  formDyn11.setValue( gen->xl() );
-  formDyn12.setValue( gen->ra() );
+  formDyn11.setValue( gen->xl );
+  formDyn12.setValue( gen->ra );
   layoutDyn1.addWidget( &labelDyn11 );
   layoutDyn1.addWidget( &formDyn11 );
   layoutDyn1.addWidget( &labelDyn12 );
@@ -393,27 +351,27 @@ int pwsEditorDialogs::genDialog(Generator *gen){
   layoutMain.addWidget( &labelDirAxis );
   // reactance
   QHBoxLayout layoutDyn2;
-  QLabel labelDyn21("Reactance (synchronous/transient/sub-transient) [pu]:");
+  QLabel labelDyn21("xd/xd_1/xd_2 [pu]:");
   QDoubleSpinBox formDyn21, formDyn22, formDyn23;
-  formDyn21.setDecimals( 5 );
-  formDyn22.setDecimals( 5 );
-  formDyn23.setDecimals( 5 );
-  formDyn21.setValue( gen->xd() );
-  formDyn22.setValue( gen->xd_1() );
-  formDyn23.setValue( gen->xd_2() );
-  layoutDyn2.addWidget( &labelDyn21 );
-  layoutDyn2.addWidget( &formDyn21 );
-  layoutDyn2.addWidget( &formDyn22 );
-  layoutDyn2.addWidget( &formDyn23 );
-  layoutMain.addLayout( &layoutDyn2 );
+  formDyn21.setDecimals(5);
+  formDyn22.setDecimals(5);
+  formDyn23.setDecimals(5);
+  formDyn21.setValue(gen->xd );
+  formDyn22.setValue(gen->xd_1);
+  formDyn23.setValue(gen->xd_2);
+  layoutDyn2.addWidget(&labelDyn21);
+  layoutDyn2.addWidget(&formDyn21);
+  layoutDyn2.addWidget(&formDyn22);
+  layoutDyn2.addWidget(&formDyn23);
+  layoutMain.addLayout(&layoutDyn2);
   // time constants
   QHBoxLayout layoutDyn3;
-  QLabel labelDyn31("Open-circuit transient/sub-transient time constant [s]:");
+  QLabel labelDyn31("Td0_1/Td0_2 [s]:");
   QDoubleSpinBox formDyn31, formDyn32;
-  formDyn31.setDecimals( 5 );
-  formDyn32.setDecimals( 5 );
-  formDyn31.setValue( gen->Td0_1() );
-  formDyn32.setValue( gen->Td0_2() );
+  formDyn31.setDecimals(5);
+  formDyn32.setDecimals(5);
+  formDyn31.setValue( gen->Td0_1 );
+  formDyn32.setValue( gen->Td0_2 );
   layoutDyn3.addWidget( &labelDyn31 );
   layoutDyn3.addWidget( &formDyn31 );
   layoutDyn3.addWidget( &formDyn32 );
@@ -423,14 +381,14 @@ int pwsEditorDialogs::genDialog(Generator *gen){
   layoutMain.addWidget( &labelQuadAxis );
   // reactance
   QHBoxLayout layoutDyn4;
-  QLabel labelDyn41("Reactance (synchronous/transient/sub-transient) [pu]:");
+  QLabel labelDyn41("xq/xq_1/xq_2 [pu]:");
   QDoubleSpinBox formDyn41, formDyn42, formDyn43;
-  formDyn41.setDecimals( 5 );
-  formDyn42.setDecimals( 5 );
-  formDyn43.setDecimals( 5 );
-  formDyn41.setValue( gen->xq() );
-  formDyn42.setValue( gen->xq_1() );
-  formDyn43.setValue( gen->xq_2() );
+  formDyn41.setDecimals(5);
+  formDyn42.setDecimals(5);
+  formDyn43.setDecimals(5);
+  formDyn41.setValue( gen->xq );
+  formDyn42.setValue( gen->xq_1 );
+  formDyn43.setValue( gen->xq_2 );
   layoutDyn4.addWidget( &labelDyn41 );
   layoutDyn4.addWidget( &formDyn41 );
   layoutDyn4.addWidget( &formDyn42 );
@@ -438,31 +396,31 @@ int pwsEditorDialogs::genDialog(Generator *gen){
   layoutMain.addLayout( &layoutDyn4 );
   // time constants
   QHBoxLayout layoutDyn5;
-  QLabel labelDyn51("Transient/Sub-transient time constant [s]:");
+  QLabel labelDyn51("Tq0_1/Tq0_2 [s]:");
   QDoubleSpinBox formDyn51, formDyn52;
-  formDyn51.setDecimals( 5 );
-  formDyn52.setDecimals( 5 );
-  formDyn51.setValue( gen->Tq0_1() );
-  formDyn52.setValue( gen->Tq0_2() );
+  formDyn51.setDecimals(5);
+  formDyn52.setDecimals(5);
+  formDyn51.setValue(gen->Tq0_1);
+  formDyn52.setValue(gen->Tq0_2);
   layoutDyn5.addWidget( &labelDyn51 );
   layoutDyn5.addWidget( &formDyn51 );
   layoutDyn5.addWidget( &formDyn52 );
   layoutMain.addLayout( &layoutDyn5 );
   // Mech starting t & damping coeff
   QHBoxLayout layoutDyn6;
-  QLabel labelDyn61("Mechanical starting t \n (M) [kWs/kVA]:");
-  QLabel labelDyn62("Damping coefficient \n d(k) [pu]:");
+  QLabel labelDyn61("M [kWs/kVA]:");
+  QLabel labelDyn62("D [pu]:");
   QDoubleSpinBox formDyn61, formDyn62;
-  formDyn61.setDecimals( 5 );
-  formDyn62.setDecimals( 5 );
+  formDyn61.setDecimals(5);
+  formDyn62.setDecimals(5);
   formDyn61.setMaximum(10000000.0);
 //  formDyn61.setSpecialValueText("Inf");
 //  formDyn61.setWrapping(true);
 //  if( gen->M() == formDyn61.maximum() )
 //    formDyn61.setValue(0);
 //  else
-    formDyn61.setValue( gen->M() );
-  formDyn62.setValue( gen->D() );
+    formDyn61.setValue( gen->M );
+  formDyn62.setValue( gen->D );
   layoutDyn6.addWidget( &labelDyn61 );
   layoutDyn6.addWidget( &formDyn61 );
   layoutDyn6.addWidget( &labelDyn62 );
@@ -473,9 +431,9 @@ int pwsEditorDialogs::genDialog(Generator *gen){
   QHBoxLayout layoutStatus;
   QLabel labelStatus("Status:");
   QRadioButton statusOn("On-line", &labelStatus);
-  if( gen->status()==true ) statusOn.setChecked(true);
+  if( gen->status==true ) statusOn.setChecked(true);
   QRadioButton statusOff("Off-line", &labelStatus);
-  if( gen->status()==false ) statusOff.setChecked(true);
+  if( gen->status==false ) statusOff.setChecked(true);
   QHBoxLayout layoutSubstatus;
   layoutSubstatus.addWidget( &statusOn );
   layoutSubstatus.addWidget( &statusOff );
@@ -495,37 +453,29 @@ int pwsEditorDialogs::genDialog(Generator *gen){
   if( dialog.exec() ){
     // Dialog executed properly
     // Store values back
-    gen->set_extId( formExtId.value() );
-    gen->set_name( formName.text().toStdString() );
-    gen->set_busExtId( formBus.value() );
-    gen->set_voltageSetpoint( formVPoint.value() );
-    gen->set_avr( formAvr.isChecked() );
-    gen->set_pmin( formPMin.value() );
-    gen->set_pgen( formPGen.value() );
-    gen->set_pmax( formPMax.value() );
-    gen->set_qmin( formQMin.value() );
-    gen->set_qgen( formQGen.value() );
-    gen->set_qmax( formQMax.value() );
-    gen->set_status( statusOn.isChecked() );
+    gen->extId=formExtId.value();
+    gen->status=statusOn.isChecked();
+    gen->name=formName.text().toStdString();
+    gen->busExtId=formBus.value();
     // dynamic data
-    gen->set_model( formDyn01.value() );
-    gen->set_xl( formDyn11.value() );
-    gen->set_ra( formDyn12.value() );
-    gen->set_xd( formDyn21.value() );
-    gen->set_xd_1( formDyn22.value() );
-    gen->set_xd_2( formDyn23.value() );
-    gen->set_Td0_1( formDyn31.value() );
-    gen->set_Td0_2( formDyn32.value() );
-    gen->set_xq( formDyn41.value() );
-    gen->set_xq_1( formDyn42.value() );
-    gen->set_xq_2( formDyn43.value() );
-    gen->set_Tq0_1( formDyn51.value() );
-    gen->set_Tq0_2( formDyn52.value() );
+    gen->model=formDyn01.value();
+    gen->xl=formDyn11.value();
+    gen->ra=formDyn12.value();
+    gen->xd=formDyn21.value();
+    gen->xd_1=formDyn22.value();
+    gen->xd_2=formDyn23.value();
+    gen->Td0_1=formDyn31.value();
+    gen->Td0_2=formDyn32.value();
+    gen->xq=formDyn41.value();
+    gen->xq_1=formDyn42.value();
+    gen->xq_2=formDyn43.value();
+    gen->Tq0_1=formDyn51.value();
+    gen->Tq0_2=formDyn52.value();
     if( formDyn61.value()==0 )
-      gen->set_M( formDyn61.maximum() );
+      gen->M=formDyn61.maximum();
     else
-      gen->set_M( formDyn61.value() );
-    gen->set_D( formDyn62.value() );
+      gen->M=formDyn61.value();
+    gen->D=formDyn62.value();
 
     return 0;
 
@@ -585,26 +535,10 @@ int pwsEditorDialogs::loadDialog(Load *load){
   layoutBus.addWidget( &labelBus );
   layoutBus.addWidget( &formBus );
   layoutMain.addLayout( &layoutBus );
-  // p power
-  QHBoxLayout layoutPPower;
-  layoutMain.addLayout( &layoutPPower );
-  QLabel labelPPower("Active Power [pu]:");
-  QDoubleSpinBox formPPower;
-  formPPower.setMinimum(-10000);
-  formPPower.setValue( load->Pdemand );
-  layoutPPower.addWidget( &labelPPower );
-  layoutPPower.addWidget( &formPPower );
-  // q power
-  QHBoxLayout layoutQPower;
-  layoutMain.addLayout( &layoutQPower );
-  QLabel labelQPower("Reactive Power [pu]:");
-  QDoubleSpinBox formQPower;
-  formQPower.setMinimum(-10000);
-  formQPower.setValue( load->Qdemand );
-  layoutQPower.addWidget( &labelQPower );
-  layoutQPower.addWidget( &formQPower );
+
   // dynamic parameters: Vexpa, Vexpb, kpf, kqf
   // TODO
+
   // Buttons
   QHBoxLayout layoutButtons;
   QPushButton ok("Ok");
@@ -629,9 +563,7 @@ int pwsEditorDialogs::loadDialog(Load *load){
     // Store values back
     load->extId = formExtId.value();
     load->busExtId = formBus.value();
-    load->Pdemand = formPPower.value();
-    load->Qdemand = formQPower.value();
-    load->set_type( type );
+    load->setType( type );
 //    // TODO: Dependent variables on load type
 //    load->set_k_p_f( formPParamKPF.value() );
 //    load->set_v_exp_a( formPParamVExp.value() );

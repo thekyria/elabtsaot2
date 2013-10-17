@@ -21,7 +21,7 @@ class SSEngine;
 class MoteurRenard;
 class MoteurFengtian;
 
-class LoadflowEditor;
+class PowerFlowEditor;
 
 class SSAnalysisEditor : public QSplitter {
 
@@ -49,7 +49,7 @@ class SSAnalysisEditor : public QSplitter {
   MoteurFengtian* _sse_fen;
 
   // GUI widgets
-  LoadflowEditor* loadflowEditor;
+  PowerFlowEditor* powerFlowEditor;
   QComboBox* ssEngineSelectBox;
 
 };

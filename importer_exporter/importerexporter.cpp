@@ -395,18 +395,12 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
 
   // --------------- Output network's info ---------------
   fprintf(f, "<info>\n");
-  fprintf(f, "\t<name> %s </name>\n",
-          pws->name().c_str());
-  fprintf(f, "\t<description> %s </description>\n",
-          pws->description().c_str());
-  fprintf(f, "\t<baseMVA> %.12f </baseMVA>\n",
-          pws->baseS());
-  fprintf(f, "\t<baseFreq> %.12f </baseFreq>\n",
-          pws->baseF());
-  fprintf(f, "\t<slackBus> %d </slackBus>\n",
-          pws->slackBusExtId());
-  fprintf(f, "\t<slackGen> %d </slackGen>\n",
-          pws->slackGenExtId());
+  fprintf(f, "\t<name> %s </name>\n", pws->name().c_str());
+  fprintf(f, "\t<description> %s </description>\n", pws->description().c_str());
+  fprintf(f, "\t<baseMVA> %.12f </baseMVA>\n", pws->baseS());
+  fprintf(f, "\t<baseFreq> %.12f </baseFreq>\n", pws->baseF());
+  fprintf(f, "\t<slackBus> %d </slackBus>\n", pws->slackBusExtId());
+  fprintf(f, "\t<slackGen> %d </slackGen>\n", pws->slackGenExtId());
   fprintf(f, "</info>\n");
   fflush(f);
 
@@ -423,9 +417,12 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
     fprintf(f, "\t<bus>\n");
     fprintf(f, "\t\t<extId> %d </extId>\n", bus->extId);
     fprintf(f, "\t\t<name> %s </name>\n", bus->name.c_str());
+    fprintf(f, "\t\t<type> %d </type>\n", bus->type);
     fprintf(f, "\t\t<Gsh> %.12f </Gsh>\n", bus->Bsh);
     fprintf(f, "\t\t<Bsh> %.12f </Bsh>\n", bus->Gsh);
     fprintf(f, "\t\t<baseKV> %.12f </baseKV>\n", bus->baseKV);
+    fprintf(f, "\t\t<P> %.12f </P>\n", bus->P);
+    fprintf(f, "\t\t<Q> %.12f </Q>\n", bus->Q);
     fprintf(f, "\t\t<V> %.12f </V>\n", bus->V);
     fprintf(f, "\t\t<theta> %.12f </theta>\n", bus->theta);
     fprintf(f, "\t</bus>\n");
@@ -444,7 +441,7 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
 
     // Write its parameters to the xml file
     fprintf(f, "\t<branch>\n");
-    fprintf(f, "\t\t<id> %d </id>\n", br->extId);
+    fprintf(f, "\t\t<extId> %d </extId>\n", br->extId);
     fprintf(f, "\t\t<status> %d </status>\n", static_cast<int>( br->status ) );
     fprintf(f, "\t\t<fromBusExtId> %d </fromBusExtId>\n", br->fromBusExtId);
     fprintf(f, "\t\t<toBusExtId> %d </toBusExtId>\n", br->toBusExtId);
@@ -473,54 +470,31 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
     // Write its parameters to the xml file
     fprintf(f, "\t<generator>\n");
 
-    fprintf(f, "\t\t<id> %d </id>\n", gen->extId());
-    fprintf(f, "\t\t<name> %s </name>\n", gen->name().c_str());
-    fprintf(f, "\t\t<atbus> %d </atbus>\n", gen->busExtId() );
-    fprintf(f, "\t\t<avr> %d </avr>\n", gen->avr());
-    fprintf(f, "\t\t<vsetpoint>%.12f</vsetpoint>\n", gen->voltageSetpoint());
-    fprintf(f, "\t\t<status>%d</status>\n", static_cast<int>( gen->status() ) );
+    fprintf(f, "\t\t<extId> %d </extId>\n", gen->extId);
+    fprintf(f, "\t\t<status>%d</status>\n", static_cast<int>(gen->status) );
+    fprintf(f, "\t\t<name> %s </name>\n", gen->name.c_str());
+    fprintf(f, "\t\t<busExtId> %d </busExtId>\n", gen->busExtId );
 
-    fprintf(f, "\t\t<generation>\n");
-    fprintf(f, "\t\t\t<pgen> %.12f </pgen>\n", gen->pgen());
-    fprintf(f, "\t\t\t<qgen> %.12f </qgen>\n", gen->qgen());
-    fprintf(f, "\t\t\t<pmin> %.12f </pmin>\n", gen->pmin());
-    fprintf(f, "\t\t\t<pmax> %.12f </pmax>\n", gen->pmax());
-    fprintf(f, "\t\t\t<qmin> %.12f </qmin>\n", gen->qmin());
-    fprintf(f, "\t\t\t<qmax> %.12f </qmax>\n", gen->qmax());
-    fprintf(f, "\t\t</generation>\n");
+    fprintf(f, "\t\t<Pgen> %.12f </Pgen>\n", gen->Pgen);
+    fprintf(f, "\t\t<Qgen> %.12f </Qgen>\n", gen->Qgen);
+    fprintf(f, "\t\t<Vss_real> %.12f </Vss_real>\n", gen->Vss.real());
+    fprintf(f, "\t\t<Vss_imag> %.12f </Vss_imag>\n", gen->Vss.imag());
 
-    fprintf(f, "\t\t<dynamic>\n");
-    fprintf(f, "\t\t\t<model> %d ", gen->model());
-    fprintf(f, "</model>\n");
-    fprintf(f, "\t\t\t<leakage_reactance> %.12f ", gen->xl());
-    fprintf(f, "</leakage_reactance>\n");
-    fprintf(f, "\t\t\t<armature_resistance> %.12f ", gen->ra());
-    fprintf(f, "</armature_resistance>\n");
-    fprintf(f, "\t\t\t<synchronous_direct_reactance> %.12f ", gen->xd());
-    fprintf(f, "</synchronous_direct_reactance>\n");
-    fprintf(f, "\t\t\t<transient_direct_reactance> %.12f ", gen->xd_1());
-    fprintf(f, "</transient_direct_reactance>\n");
-    fprintf(f, "\t\t\t<subtransient_direct_reactance> %.12f ", gen->xd_2());
-    fprintf(f, "</subtransient_direct_reactance>\n");
-    fprintf(f, "\t\t\t<transient_direct_time_const> %.12f ", gen->Td0_1());
-    fprintf(f, "</transient_direct_time_const>\n");
-    fprintf(f, "\t\t\t<subtransient_direct_time_const> %.12f ", gen->Td0_2());
-    fprintf(f, "</subtransient_direct_time_const>\n");
-    fprintf(f, "\t\t\t<synchronous_quadrature_reactance> %.12f ", gen->xq());
-    fprintf(f, "</synchronous_quadrature_reactance>\n");
-    fprintf(f, "\t\t\t<transient_quadrature_reactance> %.12f ", gen->xq_1());
-    fprintf(f, "</transient_quadrature_reactance>\n");
-    fprintf(f, "\t\t\t<subtransient_quadrature_reactance> %.12f ", gen->xq_2());
-    fprintf(f, "</subtransient_quadrature_reactance>\n");
-    fprintf(f, "\t\t\t<transient_quadrature_time_const> %.12f ", gen->Tq0_1());
-    fprintf(f, "</transient_quadrature_time_const>\n");
-    fprintf(f, "\t\t\t<subtransient_quadrature_time_const> %.12f ", gen->Tq0_2());
-    fprintf(f, "</subtransient_quadrature_time_const>\n");
-    fprintf(f, "\t\t\t<mechanical_starting_time> %.12f ", gen->M());
-    fprintf(f, "</mechanical_starting_time>\n");
-    fprintf(f, "\t\t\t<damping_coefficient> %.12f ", gen->D());
-    fprintf(f, "</damping_coefficient>\n");
-    fprintf(f, "\t\t</dynamic>\n");
+    fprintf(f, "\t\t<model> %d </model>\n", gen->model);
+    fprintf(f, "\t\t<xl> %.12f </xl>\n", gen->xl);
+    fprintf(f, "\t\t<ra> %.12f </ra>\n", gen->ra);
+    fprintf(f, "\t\t<xd> %.12f </xd>\n", gen->xd);
+    fprintf(f, "\t\t<xd_1> %.12f </xd_1>\n", gen->xd_1);
+    fprintf(f, "\t\t<xd_2> %.12f </xd_2>\n", gen->xd_2);
+    fprintf(f, "\t\t<Td0_1> %.12f </Td0_1>\n", gen->Td0_1);
+    fprintf(f, "\t\t<Td0_2> %.12f </Td0_2>\n", gen->Td0_2);
+    fprintf(f, "\t\t<xq> %.12f </xq>\n", gen->xq);
+    fprintf(f, "\t\t<xq_1> %.12f </xq_1>\n", gen->xq_1);
+    fprintf(f, "\t\t<xq_2> %.12f </xq_2>\n", gen->xq_2);
+    fprintf(f, "\t\t<Tq0_1> %.12f </Tq0_1>\n", gen->Tq0_1);
+    fprintf(f, "\t\t<Tq0_2> %.12f </Tq0_2>\n", gen->Tq0_2);
+    fprintf(f, "\t\t<M> %.12f </M>\n", gen->M);
+    fprintf(f, "\t\t<D> %.12f </D>\n", gen->D);
 
     fprintf(f, "\t</generator>\n");
     fflush(f);
@@ -543,6 +517,8 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
     fprintf(f, "\t\t<busExtId> %d </busExtId>\n", load->busExtId);
     fprintf(f, "\t\t<Pdemand> %.12f </Pdemand>\n", load->Pdemand);
     fprintf(f, "\t\t<Qdemand> %.12f </Qdemand>\n", load->Qdemand);
+    fprintf(f, "\t\t<Vss_real> %.12f </Vss_real>\n", load->Vss.real());
+    fprintf(f, "\t\t<Vss_imag> %.12f </Vss_imag>\n", load->Vss.imag());
     fprintf(f, "\t\t<Vexpa> %.12f </Vexpa>\n", load->Vexpa);
     fprintf(f, "\t\t<Vexpb> %.12f </Vexpb>\n", load->Vexpb);
     fprintf(f, "\t\t<kpf> %.12f </kpf>\n", load->kpf);

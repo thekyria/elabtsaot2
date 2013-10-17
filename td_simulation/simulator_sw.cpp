@@ -111,8 +111,7 @@ bool Simulator_sw::do_isEngineCompatible(Scenario const& sce) const{
     if (sce.getEvent(i).element_type()==EVENT_ELEMENT_TYPE_GEN)
       if (!(sce.getEvent(i).event_type()==EVENT_EVENTTYPE_GENTRIP||
             sce.getEvent(i).event_type()==EVENT_EVENTTYPE_GENPCHANGE||
-            sce.getEvent(i).event_type()==EVENT_EVENTTYPE_GENQCHANGE||
-            sce.getEvent(i).event_type()==EVENT_EVENTTYPE_GENVCHANGE))
+            sce.getEvent(i).event_type()==EVENT_EVENTTYPE_GENQCHANGE))
         compatibility=false;
     if (sce.getEvent(i).element_type()==EVENT_ELEMENT_TYPE_LOAD)
       if (!( sce.getEvent(i).event_type()==EVENT_EVENTTYPE_LOADPCHANGE||
@@ -144,10 +143,10 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
   // Initialize generator specific internal variables
   for ( size_t k = 0 ; k != _genCount ; ++k ){
     Generator const* gen = _pwsLocal.getGenerator(k);
-    if ( !gen->status() ) continue;
+    if (!gen->status) continue;
 
-    _genBusIntId.push_back( _pwsLocal.getBus_intId(gen->busExtId()) );
-    _genModel.push_back( gen->model() );
+    _genBusIntId.push_back(_pwsLocal.getBus_intId(gen->busExtId));
+    _genModel.push_back(gen->model);
   }
 
   // Initialize load specific internal variables and check whether loads other
@@ -201,7 +200,7 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
 //                               / std::conj(Ubus[_genBusIntId[i]]);
 //      // Initial steady-state internal EMF
 //      complex<double> E0 = Ubus[_genBusIntId[i]]
-//                  + I0 * complex<double>(0.0, tempGen->xd_1());
+//                  + I0 * complex<double>(0.0, tempGen->xd_1);
 //      Xgen[i][0] = std::arg(E0);
 //      Xgen[i][1] = 2*M_PI*baseF;
 //      Xgen[i][2] = std::abs(E0);
@@ -212,23 +211,23 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
 
     else if (_genModel[i] == GENMODEL_1p1) {
       // Transient saliency is not supported => xd_t = xq_t
-      tempGen->set_xq_1(tempGen->xd_1());
+      tempGen->xq_1 = tempGen->xd_1;
       // Initial machine armature currents
-      complex<double> Ia0 = complex<double>( tempGen->pgen(), -tempGen->qgen() )
+      complex<double> Ia0 = complex<double>( tempGen->Pgen, -tempGen->Qgen )
                               / std::conj(Ubus[_genBusIntId[i]]);
       double phi0 = std::arg(Ia0);
       // Initial steady-state internal EMF
       complex<double> Eq0 = Ubus[_genBusIntId[i]]
-                  + Ia0 * complex<double>(0.0, tempGen->xq());
+                  + Ia0 * complex<double>(0.0, tempGen->xq);
       double delta0 = std::arg(Eq0);
       // Machine currents in dq frame
       Id[i] = -std::abs(Ia0) * std::sin( delta0 - phi0 );
       Iq[i] =  std::abs(Ia0) * std::cos( delta0 - phi0 );
       // Field voltage
-      Efd[i] = std::abs(Eq0) - Id[i]*(tempGen->xd()-tempGen->xq());
+      Efd[i] = std::abs(Eq0) - Id[i]*(tempGen->xd-tempGen->xq);
       //Initial transient internal EMF
-      double Eq_tr0 = Efd[i] + Id[i]*(tempGen->xd()-tempGen->xd_1());
-      double Ed_tr0 = -Iq[i]*(tempGen->xq()-tempGen->xq_1());
+      double Eq_tr0 = Efd[i] + Id[i]*(tempGen->xd-tempGen->xd_1);
+      double Ed_tr0 = -Iq[i]*(tempGen->xq-tempGen->xq_1);
       Xgen[i][0] = delta0;
       Xgen[i][1] = 2*M_PI*baseF;
       Xgen[i][2] = Eq_tr0;
@@ -384,7 +383,7 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
       }
     }
 
-    // The new parameters of the pws was set, running loadflow now
+    // The new parameters of the pws was set, running power flow now
     if (curEvents.size() != 0) {
 
       /*
@@ -392,7 +391,7 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
           - build Y matrix
           - calculate augmented Y matrix
           - LU factorize augmented Y matrix
-          - solve loadflow
+          - solve power flow
           - calculate machine currents
           - calculate bus current injections
       */
@@ -414,7 +413,7 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
         cout << "Operation failed!" << endl;
         return 4;
       } BOOST_CATCH_END
-      // Solve loadflow
+      // Solve power flow
       _solveNetwork( LUaugY, pmatrix, Xgen, _genBusIntId, Ubus );
       // Calculate machine currents
       _calculateMachineCurrents( Xgen, Ubus, _genBusIntId, Iq, Id, Pel );
@@ -499,7 +498,7 @@ _calculateAugmentedYMatrix( vector<complex<double> > const& Ubus,
   for ( size_t i = 0 ; i < busCount ; ++i )
     for ( size_t g = 0 ; g < _genBusIntId.size() ; g++ )
       if ( i == _genBusIntId[g] )
-        ygen[i] = 1.0/complex<double>( 0.0,_pwsLocal.getGenerator(g)->xd_1() );
+        ygen[i] = 1.0/complex<double>(0.0,_pwsLocal.getGenerator(g)->xd_1);
 
   // Augmented Y matrix
   for ( size_t i = 0 ; i != busCount ; ++i)
@@ -526,7 +525,7 @@ void Simulator_sw::_solveNetwork( ublas::matrix<complex<double> > const& LUaugY,
                 * std::exp(complex<double>(0.0,Xgen[i][0]));
     }
 
-    complex<double> Zgen = complex<double>( 0.0, _pwsLocal.getGenerator(i)->xd_1() );
+    complex<double> Zgen = complex<double>(0.0, _pwsLocal.getGenerator(i)->xd_1);
 
     Ibus(genBusIntId[i]) += Vgen/Zgen;
   }
@@ -549,7 +548,7 @@ void Simulator_sw::_calculateMachineCurrents( vector<vector<double> > const& Xge
     Generator const* gen = _pwsLocal.getGenerator(i);
     switch ( _genModel[i] ){
     case GENMODEL_0p0:
-      Pel[i] = (1.0/gen->xd_1())
+      Pel[i] = (1.0/gen->xd_1)
           * std::abs( Ubus[genBusIntId[i]] )
           * std::abs( Xgen[i][2] )
           * std::sin( Xgen[i][0]-std::arg(Ubus[genBusIntId[i]]) );
@@ -560,9 +559,9 @@ void Simulator_sw::_calculateMachineCurrents( vector<vector<double> > const& Xge
                     * sin(Xgen[i][0]-std::arg(Ubus[genBusIntId[i]]));
       double vq =  std::abs(Ubus[genBusIntId[i]])
                     * cos(Xgen[i][0]-std::arg(Ubus[genBusIntId[i]]));
-      Iq[i] = -(vd - Xgen[i][3])/gen->xq_1();
-      Id[i] =  (vq - Xgen[i][2])/gen->xd_1();
-      Pel[i] = Xgen[i][2]*Iq[i] + Xgen[i][3]*Id[i] + (gen->xd_1()-gen->xq_1())*Id[i]*Iq[i];
+      Iq[i] = -(vd - Xgen[i][3])/gen->xq_1;
+      Id[i] =  (vq - Xgen[i][2])/gen->xd_1;
+      Pel[i] = Xgen[i][2]*Iq[i] + Xgen[i][3]*Id[i] + (gen->xd_1-gen->xq_1)*Id[i]*Iq[i];
       break;}
     }
   }
@@ -582,18 +581,18 @@ Simulator_sw::_calculateGeneratorDynamics( vector<vector<double> > const& Xgen,
    Generator const* gen = _pwsLocal.getGenerator(i);
    if (_genModel[i]==GENMODEL_0p0){
      dXgen[i][0] = Xgen[i][1] - omegas;
-     dXgen[i][1] = omegas*(gen->pgen() - Pel[i] - gen->D()*(Xgen[i][1]-omegas))
-                   / gen->M();
+     dXgen[i][1] = omegas*(gen->Pgen - Pel[i] - gen->D*(Xgen[i][1]-omegas))
+                   / gen->M;
      dXgen[i][2] = 0.0; // Eq doesnt change for model 1
    }
    else if (_genModel[i]==GENMODEL_1p1){
      dXgen[i][0] = Xgen[i][1] - omegas;
-     dXgen[i][1] = omegas*(gen->pgen() - Pel[i] - gen->D()*(Xgen[i][1]-omegas))
-                   / gen->M();
-     dXgen[i][2] = ( Efd[i] - Xgen[i][2] + (gen->xd()-gen->xd_1())*Id[i] )
-                   / gen->Td0_1();
-     dXgen[i][3] = ( -Xgen[i][3]- (gen->xq()-gen->xq_1())*Iq[i] )
-                   / gen->Tq0_1();
+     dXgen[i][1] = omegas*(gen->Pgen - Pel[i] - gen->D*(Xgen[i][1]-omegas))
+                   / gen->M;
+     dXgen[i][2] = ( Efd[i] - Xgen[i][2] + (gen->xd-gen->xd_1)*Id[i] )
+                   / gen->Td0_1;
+     dXgen[i][3] = ( -Xgen[i][3]- (gen->xq-gen->xq_1)*Iq[i] )
+                   / gen->Td0_1;
    }
  }
 }
@@ -792,7 +791,7 @@ int Simulator_sw::_storeTDResults(TDResults& res){
         vector<double> temp_speeds;
         vector<double> temp_internal_voltages;
         vector<double> temp_acc_power;
-        double Pmech = _pwsLocal.getGenerator(intid)->pgen();
+        double Pmech = _pwsLocal.getGenerator(intid)->Pgen;
         for ( size_t n=0 ; n<_angles.size() ; ++n ){
           temp_angles.push_back(_angles.at(n).at(intid));
           temp_speeds.push_back(_speeds.at(n).at(intid) - 1); // for uniformity
@@ -960,8 +959,7 @@ int Simulator_sw::_parseBrFault(Event &event){
         busofevent->Bsh = bsh;
         branchofevent->status = false; //trip the old line
         // Create a new branch  frombus the new faulty bus
-        int ans = _pwsLocal.addBus(*busofevent);
-        if ( ans ) return 4;
+        _pwsLocal.addBus(*busofevent);
 
         Branch* newfromline = new Branch();
         int maxextidfrombr=_pwsLocal.getBr_extId(0);//Set the default first ext id
@@ -1011,10 +1009,8 @@ int Simulator_sw::_parseBrFault(Event &event){
         _br_branchoffault_extid.push_back(branchofevent->extId);
         _br_faultbus_extid.push_back(maxextid+1);
 
-        ans =_pwsLocal.addBranch(*newfromline);
-        if ( ans ) return 5;
-        ans = _pwsLocal.addBranch(*newtoline);
-        if ( ans ) return 6;
+        _pwsLocal.addBranch(*newfromline);
+        _pwsLocal.addBranch(*newtoline);
         //We dont keep the old gsh bsh because in the bus we create is always 0
         //We keep only the exintid! of the fault bus and the two new lines
 
@@ -1131,34 +1127,31 @@ int Simulator_sw::_parseGenFault(Event &event){
 
   if (event.event_type()==EVENT_EVENTTYPE_GENTRIP){//0: trip
     if (event.bool_arg()){
-      genofevent->set_status(false);//status == false meaning tripped
+      genofevent->status = false; //status == false meaning tripped
       _genBusIntId.clear();
       for (size_t i=0;i<_genCount;++i){
-        if (_pwsLocal.getGenerator(i)->status()==true){
-          _genBusIntId.push_back(_pwsLocal.getBus_intId(_pwsLocal.getGenerator(i)->busExtId()));
+        if (_pwsLocal.getGenerator(i)->status == true){
+          _genBusIntId.push_back(_pwsLocal.getBus_intId(_pwsLocal.getGenerator(i)->busExtId));
         }
       }
       --_genCount;
     }
     else{
-      genofevent->set_status(true);
+      genofevent->status = true;
       ++_genCount;
       _genBusIntId.clear();
       for (size_t i=0;i<_genCount;++i){
-        if (_pwsLocal.getGenerator(i)->status()==true){
-          _genBusIntId.push_back(_pwsLocal.getBus_intId(_pwsLocal.getGenerator(i)->busExtId()));
+        if (_pwsLocal.getGenerator(i)->status == true){
+          _genBusIntId.push_back(_pwsLocal.getBus_intId(_pwsLocal.getGenerator(i)->busExtId));
         }
       }
     }
   }
   else if (event.event_type()==EVENT_EVENTTYPE_GENPCHANGE){//1: p change
-    genofevent->set_pgen(event.double_arg());
+    genofevent->Pgen = event.double_arg();
   }
   else if (event.event_type()==EVENT_EVENTTYPE_GENQCHANGE){//2: q change
-    genofevent->set_qgen(event.double_arg());
-  }
-  else if (event.event_type()==EVENT_EVENTTYPE_GENVCHANGE){//2: vset change
-    genofevent->set_voltageSetpoint(event.double_arg());
+    genofevent->Qgen = event.double_arg();
   }
 
   return 0;

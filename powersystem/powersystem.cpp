@@ -18,7 +18,6 @@ using std::string;
 using std::vector;
 //#include <iostream>
 using std::ostream;
-using std::cout;
 using std::endl;
 using std::ios;
 #include <sstream>
@@ -56,7 +55,6 @@ Powersystem::Powersystem( string const& name,
     _baseS(baseS), _baseF(baseF),
     _slackBusExtId(-1), _slackGenExtId(-1) {}
 
-//! Serializes the contents of the powersystem bus into an std::string
 string Powersystem::serialize() const{
 
   stringstream ss;
@@ -88,16 +86,11 @@ string Powersystem::serialize() const{
   return ss.str();
 }
 
-int Powersystem::log_loadflow_results(ostream& ostr) const{
+int Powersystem::logPowerFlowResults(ostream& ostr) const{
 
-  if ( _status != PWSSTATUS_LF ){
-#ifdef VERBOSE_PWR
-    ostr << "ERROR: Loadflow not yet performed on the powersystem!" << endl;
-    ostr << "Please run loadflow first and then "
-         << "invoke Powersystem::log_loadflow_results()" << endl;
-#endif // VERBOSE_PWR
+  if ( _status != PWSSTATUS_LF )
     return 1;
-  }
+
   // else{ // ( _status == PWSSTATUS_LF )
   if ( ostr.bad() )
     // Error writing to ostr!
@@ -112,73 +105,6 @@ int Powersystem::log_loadflow_results(ostream& ostr) const{
                             // next insertion operation; no turn around.
   ostr.setf ( ios::fixed, ios::floatfield );  // use fixed-point notation
   //ostr.setf ( ios::right, ios::adjustfield ); // adjust fields right (TODO!)
-
-  ostr << "========================================" ;
-  ostr << "=======================================" ;
-  ostr << endl;
-  ostr << "\tSystem summary" << endl;
-  ostr << "========================================" ;
-  ostr << "=======================================" ;
-  ostr << endl;
-  ostr << endl;
-
-  ostr << "Name of the power system: " << this->_name << endl;
-  ostr << "Short description: " << this->_description << endl;
-  ostr << endl;
-
-  ostr << "Power base:\t\t" << this->_baseS << " MVA" << endl;
-  ostr << "Frequency base:\t\t" << this->_baseF << " Hz" << endl;
-  ostr << "Index of slack bus:\t" << this->_slackBusExtId << endl;
-  ostr << "Index of slack gen:\t" << this->_slackGenExtId << endl;
-  ostr << endl;
-
-  ostr << "Number of buses:\t" << this->_busSet.size() << endl;
-  ostr << "Number of branches:\t" << this->_brSet.size() << endl;
-  ostr << "Number of generators:\t" << this->_genSet.size() << endl;
-  ostr << "Number of loads:\t" << this->_loadSet.size() << endl;
-  ostr << endl;
-
-  double pgen_capacity_total = 0;
-  double qgen_capacity_total_min = 0, qgen_capacity_total_max = 0;
-  double pgen_capacity_online = 0;
-  double qgen_capacity_online_min = 0, qgen_capacity_online_max = 0;
-  double pgen_actual_total = 0, qgen_actual_total = 0;
-  double pload_actual_total = 0, qload_actual_total = 0;
-
-  for ( k = 0 ; k != _genSet.size() ; ++k ){
-    pgen_capacity_total += _genSet[k].pmax();
-    qgen_capacity_total_min += _genSet[k].qmin();
-    qgen_capacity_total_max += _genSet[k].qmax();
-    if ( _genSet[k].status() ){
-      pgen_capacity_online += _genSet[k].pmax();
-      qgen_capacity_online_min += _genSet[k].qmin();
-      qgen_capacity_online_max += _genSet[k].qmax();
-    }
-    pgen_actual_total += _genSet[k].pgen();
-    qgen_actual_total += _genSet[k].qgen();
-  }
-  for ( k = 0 ; k != _loadSet.size() ; ++k ){
-    pload_actual_total += _loadSet[k].Qdemand;
-    qload_actual_total += _loadSet[k].Qdemand;
-  }
-  ostr << "Generation capacity total:\t";
-  ostr << "P = " << pgen_capacity_total << "\t";
-  ostr << "Q = " << qgen_capacity_total_min << " ";
-  ostr << "to " << qgen_capacity_total_max << endl;
-  ostr << "Generation capacity online:\t";
-  ostr << "P = " << pgen_capacity_online << "\t";
-  ostr << "Q = " << qgen_capacity_online_min << " ";
-  ostr << "to " << qgen_capacity_online_max << endl;
-  ostr << "Actual generation total:\t";
-  ostr << "P = " << pgen_actual_total << "\t";
-  ostr << "Q = " << qgen_actual_total << endl;
-  ostr << "Actual load total:\t\t";
-  ostr << "P = " << pload_actual_total << "\t";
-  ostr << "Q = " << qload_actual_total << endl;
-  ostr << "Losses total:\t\t\t";
-  ostr << "P = " << pgen_actual_total - pload_actual_total << "\t";
-  ostr << "Q = " << qgen_actual_total - qload_actual_total << endl;
-  ostr << endl;
 
   ostr << "========================================" ;
   ostr << "=======================================" ;
@@ -255,18 +181,6 @@ int Powersystem::log_loadflow_results(ostream& ostr) const{
     ostr.width(5);
     ostr << _brSet[k].toBusExtId;   // branch to bus ext id
     ostr.width(9);
-    ostr << _brSet[k].Sfrom.real(); // active power flow at from side
-    ostr.width(9);
-    ostr << _brSet[k].Sfrom.imag(); // reactive power flow at from side
-    ostr.width(9);
-    ostr << _brSet[k].Sto.real();   // active power flow at to side
-    ostr.width(9);
-    ostr << _brSet[k].Sto.imag();   // reactive power flow at to side
-    ostr.width(9);
-    ostr << _brSet[k].Ifrom;        // current flow at from side
-    ostr.width(9);
-    ostr << _brSet[k].Ito;          // current flow at to side
-    ostr << endl;
   }
   ostr << endl;
 
@@ -291,16 +205,16 @@ int Powersystem::log_loadflow_results(ostream& ostr) const{
   ostr << "delta";
   ostr << endl;
   for ( k = 0 ; k != _genSet.size() ; ++k ){
-    if ( _genSet[k].status() )
+    if ( _genSet[k].status )
       ostr << "*";
     else
       ostr << " ";
     ostr.width(4);
-    ostr << _genSet[k].extId();
+    ostr << _genSet[k].extId;
     ostr.width(9);
-    ostr << _genSet[k].pgen();
+    ostr << _genSet[k].Pgen;
     ostr.width(9);
-    ostr << _genSet[k].qgen();
+    ostr << _genSet[k].Qgen;
     ostr.width(9);
     ostr << _genSet[k].Ess();
     ostr.width(9);
@@ -312,7 +226,7 @@ int Powersystem::log_loadflow_results(ostream& ostr) const{
   return 0;
 }
 
-int Powersystem::log_loadflow_results(string const& filename) const{
+int Powersystem::logPowerFlowResults(string const& filename) const{
 
   if ( _status != PWSSTATUS_LF ){
     return 1;
@@ -328,7 +242,7 @@ int Powersystem::log_loadflow_results(string const& filename) const{
   ofstream ofstr;
   ofstr.open( a , std::ios::trunc);
   if ( ofstr.is_open() ){
-    ans = log_loadflow_results(ofstr);
+    ans = logPowerFlowResults(ofstr);
     ofstr.close();
   } else{
   // Error opening the file
@@ -348,14 +262,13 @@ double Powersystem::getMaxX() const{
 
   // Check generator set
   for ( size_t k = 0 ; k != _genSet.size(); ++k )
-    if ( _genSet[k].xd_1() > maxX )
-      maxX = _genSet[k].xd_1();
+    if ( _genSet[k].xd_1 > maxX )
+      maxX = _genSet[k].xd_1;
 
   return maxX;
 }
 
-//// network builder functions
-int Powersystem::clear(){
+void Powersystem::clear(){
   _status = PWSSTATUS_INIT;
 
   _slackBusExtId = -1;
@@ -374,17 +287,9 @@ int Powersystem::clear(){
   _busBrMap.clear();
   _busGenMap.clear();
   _busLoadMap.clear();
-
-  return 0;
 }
 
-int Powersystem::addBus(Bus const& newBus){
-
-  // Check whether extId of newBus exists in _busSet
-  if(_busIdBimap.left.find(newBus.extId) != _busIdBimap.left.end()){
-    // extId of newBus already exists in Powersystem
-    return 1;
-  }
+void Powersystem::addBus(Bus const& newBus){
 
   // Insert newBus into the _busSet
   _busSet.push_back(newBus);
@@ -396,30 +301,9 @@ int Powersystem::addBus(Bus const& newBus){
   _rebuildBusLoadMap();
 
   _status = PWSSTATUS_INIT;
-
-  return 0;
 }
 
-int Powersystem::addBranch(Branch const& newBranch){
-
-  // Check whether extId of newBranch exists in _brSet
-  if(_brIdBimap.left.find(newBranch.extId) != _brIdBimap.left.end()){
-    // extId of newBranch already exists in Powersystem
-    return 1;
-  }
-
-  // Check whether newBranch fromBusExtId and toBusExtId exist in busSet
-  if(_busIdBimap.left.find(newBranch.fromBusExtId)==_busIdBimap.left.end() ||
-     _busIdBimap.left.find(newBranch.toBusExtId)==_busIdBimap.left.end() ){
-    // from/to-BusExtId's not found in busSet, so addBranch fails as newBranch
-    // would be floating
-    return 2;
-  }
-
-  // Assert that newBranch fromBusExtId <> toBusExtId
-  if(newBranch.fromBusExtId==newBranch.toBusExtId){
-    return 3;
-  }  
+void Powersystem::addBranch(Branch const& newBranch){
 
   // Insert newBranch into the _busSet
   _brSet.push_back(newBranch);
@@ -429,37 +313,9 @@ int Powersystem::addBranch(Branch const& newBranch){
   _rebuildBusBrMap();
 
   _status = PWSSTATUS_INIT;
-
-  return 0;
 }
 
-int Powersystem::addGen(Generator const& newGen){
-
-  // Check whether extId of newGen exists in _genSet
-  if(_genIdBimap.left.find(newGen.extId()) != _genIdBimap.left.end()){
-    // extId of newGen already exists in Powersystem
-    return 1;
-  }
-  
-  // Check whether newGen busExtId exists in busSet
-  if(_busIdBimap.left.find(newGen.busExtId())==_busIdBimap.left.end() ){
-    // busExtId not found in busSet, so addGen fails as newGen would be floating
-    return 2;
-  }
-
-  // Check whether voltageSetpoint of newGen is different from the
-  // voltageSetpoint of generators already present at the bus
-  size_t n = _genSet.size();
-  size_t k;
-
-  for(k = 0; k != n; ++k){
-      if ( (_genSet[k].busExtId() == newGen.busExtId()) &&
-           (_genSet[k].voltageSetpoint() != newGen.voltageSetpoint()) ){
-        // there is a gen in the powersystem at the bus of newGen with different
-        // voltageSetpoint (illegal)
-        return 3;
-      }
-  }
+void Powersystem::addGen(Generator const& newGen){
 
   // Insert newGen into the _genSet
   _genSet.push_back(newGen);
@@ -469,22 +325,9 @@ int Powersystem::addGen(Generator const& newGen){
   _rebuildBusGenMap();
 
   _status = PWSSTATUS_INIT;
-  return 0;
 }
 
-int Powersystem::addLoad(Load const& newLoad){
-
-  // Check whether extId of newLoad exists in _loadSet
-  if(_loadIdBimap.left.find(newLoad.extId) != _loadIdBimap.left.end()){
-    // extId of newLoad already exists in Powersystem
-    return 1;
-  }
-  
-  // Check whether newLoad busExtId exists in busSet
-  if(_busIdBimap.left.find(newLoad.busExtId)==_busIdBimap.left.end() ){
-    // busExtId not found in busSet so addLoad fails as newLoad would be floatin
-    return 2;
-  }
+void Powersystem::addLoad(Load const& newLoad){
 
   // Insert newLoad into the _loadSet
   _loadSet.push_back(newLoad);
@@ -494,8 +337,6 @@ int Powersystem::addLoad(Load const& newLoad){
   _rebuildBusLoadMap();
 
   _status = PWSSTATUS_INIT;
-
-  return 0;
 }
 
 // TODO: Adapt deleteBus() to use _busGenMap, _busBrMap, _busLoadMap
@@ -517,8 +358,8 @@ int Powersystem::deleteBus(unsigned int busExtId, bool recursive){
         --i;
       }
     for(vector<Generator>::iterator i = _genSet.begin(); i != _genSet.end(); ++i)
-      if ( i->busExtId() == static_cast<int>(busExtId) ){
-        deleteGen(i->extId());
+      if ( i->busExtId == static_cast<int>(busExtId) ){
+        deleteGen(i->extId);
         --i;
       }
     for(vector<Load>::iterator i = _loadSet.begin(); i != _loadSet.end(); ++i)
@@ -534,7 +375,7 @@ int Powersystem::deleteBus(unsigned int busExtId, bool recursive){
            || (i->toBusExtId   == static_cast<int>(busExtId)) )
         return 2;
     for(vector<Generator>::iterator i = _genSet.begin(); i != _genSet.end(); ++i)
-      if ( i->busExtId() == static_cast<int>(busExtId) )
+      if ( i->busExtId == static_cast<int>(busExtId) )
         return 3;
     for(vector<Load>::iterator i = _loadSet.begin(); i != _loadSet.end(); ++i)
       if ( i->busExtId == static_cast<int>(busExtId) )
@@ -629,7 +470,7 @@ int Powersystem::deleteLoad(unsigned int loadExtId){
 
 int Powersystem::validate(){
 
-  size_t k, m; // counters
+  size_t k; // counters
 
   // ***** Validate bus set *****
   // Validate that all bus extIds are unique
@@ -693,22 +534,22 @@ int Powersystem::validate(){
   bool slackBusHasGen = false;
   for ( k = 0 ; k != _genSet.size() ; ++k ){
     // Validate that all gen extIds are unique
-    if ( genExtIds.find(_genSet[k].extId()) != genExtIds.end() ){
+    if ( genExtIds.find(_genSet[k].extId) != genExtIds.end() ){
       return 6;
     } else {
-      genExtIds.insert( _genSet[k].extId() );
+      genExtIds.insert( _genSet[k].extId );
     }
     // Validate that all generators point to existing buses
-    if ( busExtIds.find( _genSet[k].busExtId() ) == busExtIds.end() ){
+    if ( busExtIds.find( _genSet[k].busExtId ) == busExtIds.end() ){
       return 7;
     }
     // Make sure that slack bus has at least one online gen
-    if ( (_genSet[k].busExtId() == static_cast<unsigned int>(_slackBusExtId))
-         && (_genSet[k].status()) )
+    if ( (_genSet[k].busExtId == _slackBusExtId)
+         && (_genSet[k].status) )
       slackBusHasGen = true;
     // Assert that the slack gen is at the slack bus
-    if ( (_genSet[k].extId() == static_cast<unsigned int>(_slackGenExtId) )
-         && (_genSet[k].busExtId() != static_cast<unsigned int>(_slackBusExtId))
+    if ( (_genSet[k].extId == static_cast<unsigned int>(_slackGenExtId) )
+         && (_genSet[k].busExtId != _slackBusExtId)
         ){
       return 71;
     }
@@ -719,23 +560,6 @@ int Powersystem::validate(){
   // Validate that the slack generator is an existing generator
   if ( genExtIds.find(_slackGenExtId) == genExtIds.end() ){
     return 81;
-  }
-
-  // Validate that no 2 gens in _genSet are at the same bus but have different
-  // voltage setpoints
-  size_t n = _genSet.size();
-  unsigned int busExtId;
-  double voltageSetpoint;
-  for(k = 0; k != n-1; ++k){
-    busExtId = _genSet[k].busExtId();
-    voltageSetpoint = _genSet[k].voltageSetpoint();
-    for (m = k+1; m != n ; ++m)
-      if ( (_genSet[m].busExtId() == busExtId) &&
-           (_genSet[m].voltageSetpoint() != voltageSetpoint) ){
-        // there are two gens (k, m) of the _genSet, both at bus busExtId but
-        // with different voltageSetpoints (illegal)
-        return 9;
-      }
   }
 
   // Rebuild genIdBimap
@@ -810,7 +634,7 @@ int Powersystem::getGen_extId(size_t intId) const{
     return -1;
   } else{
     // Element found; return its external index
-    return _genSet[intId].extId();
+    return _genSet[intId].extId;
   }
 }
 int Powersystem::getLoad_extId(size_t intId) const{
@@ -1100,7 +924,7 @@ void Powersystem::_rebuildGenIdBimap(){
   // Rebuild _genIdBimap bimap; first: extId - second: intId
   _genIdBimap.clear();
   for(vector<Generator>::iterator i = _genSet.begin(); i != _genSet.end(); ++i){
-    _genIdBimap.insert(UintPair(i->extId(),_genIdBimap.size()));
+    _genIdBimap.insert(UintPair(i->extId,_genIdBimap.size()));
   }
 }
 
@@ -1136,7 +960,7 @@ void Powersystem::_rebuildBusGenMap(){
 
   size_t busIntId;
   for ( size_t k = 0 ; k != _genSet.size() ; ++k ){
-    busIntId = _busIdBimap.left.at( _genSet[k].busExtId() );
+    busIntId = _busIdBimap.left.at( _genSet[k].busExtId );
     _busGenMap[busIntId].insert(k);
   }
 

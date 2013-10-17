@@ -273,13 +273,13 @@ int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Generator c
 
   double Vmaxreal = slc->ana.real_voltage_ref_val_max()- slc->ana.real_voltage_ref_val();
   double Vmaximag = slc->ana.imag_voltage_ref_val_max()- slc->ana.imag_voltage_ref_val();
-  if ( gen.M() < GEN_MECHSTARTTIME_THRESHOLD ){
+  if ( gen.M < GEN_MECHSTARTTIME_THRESHOLD ){
     // Normal (non-slack) generator inserted into generator pipeline
     // Configure dig.pipe_gen
     if ( slc->dig.pipe_gen.insert_element(id_ver, id_hor, gen, true) )
       return 25;
 
-    double shuntR = gen.xd_1() * ratioZ;
+    double shuntR = gen.xd_1 * ratioZ;
     double Vmax = std::min(Vmaxreal,Vmaximag);
     double seriesR = Vmax/(max_I_pu*ratioI);
     if ( slc->ana.nodeCurrentSource(id_ver,id_hor, seriesR, shuntR) )
@@ -300,16 +300,16 @@ int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Generator c
     // for desired Voltage = 1 + j0 [u] -> 2 + j0 [V]
     // the resulting DAC code would be 2/maxV = 2/2.5 = 0.8
     // and the resulting currents = maxI(0*0.8 + j 1*0.8) = 0 + j12.8 pu
-    double imagI = max_I_pu * ( (real(gen.Uss())*ratioV) / Vmaxreal );
-    double realI = max_I_pu * ( (imag(gen.Uss())*ratioV) / Vmaximag );
+    double imagI = max_I_pu *  gen.Vss.real()*ratioV / Vmaxreal;
+    double realI = max_I_pu *  gen.Vss.real()*ratioV / Vmaximag;
     // So into the const I load pipeline we have to insert a fake "load" that
     // results in the above currents in [pu]
     complex<double> I ( realI, imagI );
-    complex<double> S = gen.Uss() * conj(I);
+    complex<double> S = gen.Vss * conj(I);
     Load temp_iload = Load();
     temp_iload.Pdemand = real(S);
     temp_iload.Qdemand = imag(S);
-    temp_iload.set_type(LOADTYPE_CONSTI);
+    temp_iload.setType(LOADTYPE_CONSTI);
     // Configure dig.pipe_iload
     if ( slc->dig.pipe_iload.insert_element(id_ver,id_hor,temp_iload,true) )
       return 26;
@@ -758,7 +758,7 @@ int Emulator::autoFitting(vector<string>* outputMsg){
     return -1;
 
 //  if ( _pws->status() != PWSSTATUS_LF ){
-//    // Loadflow must be solved before fitting onto the emulator!
+//    // Power flow must be solved before fitting onto the emulator!
 //    return 10;
 //  }
 //  if ( _mmd->status() != PWSMODELSTATUS_VALID )
@@ -1007,7 +1007,7 @@ int Emulator::validateFitting(){
     return -1;
 
 //  if ( _pws->status() != PWSSTATUS_LF ){
-//    // Loadflow must be solved before fitting onto the emulator!
+//    // Power flow must be solved before fitting onto the emulator!
 //    return 10;
 //  }
 

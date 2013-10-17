@@ -360,11 +360,7 @@ void PowersystemEditor::addBusSlot(){
   // otherwise ...
 
   // --- Add bus to the powersystem ---
-  ans = _pws->addBus( bus );
-  if ( ans ){
-    cout << "Adding bus to the powersystem failed with code " << ans << endl;
-    return;
-  }
+  _pws->addBus(bus);
 
   // --- Add the bus element (in the middle of the '_sch' widget) ---
   QPoint temp = QPoint( _sch->width()/2 , _sch->height()/2 );
@@ -403,11 +399,7 @@ void PowersystemEditor::addBranchSlot(){
   // otherwise ...
 
   // --- Add branch to the powersystem ---
-  ans = _pws->addBranch( branch );
-  if ( ans ){
-    cout << "Adding branch to the powersystem failed with code " << ans << endl;
-    return;
-  }
+  _pws->addBranch( branch );
 
   // --- Add the branch element to the powersystem schematic model ---
   ans = _smd->addBranchElement( branch );
@@ -439,11 +431,7 @@ void PowersystemEditor::addGeneratorSlot(){
   // otherwise ...
 
   // --- Add generator to the powersystem ---
-  ans = _pws->addGen( gen );
-  if ( ans ){
-    cout << "Adding generator to the powersystem failed with code " << ans << endl;
-    return;
-  }
+  _pws->addGen( gen );
 
   // --- Add the generator component to the powersystem schematic model ---
   ans = _smd->addGenElement( gen );
@@ -475,11 +463,7 @@ void PowersystemEditor::addLoadSlot(){
   // otherwise ...
 
   // --- Add the load to the powersystem ---
-  ans = _pws->addLoad( load );
-  if ( ans ){
-    cout << "Adding load to the powersystem failed with code " << ans << endl;
-    return;
-  }
+  _pws->addLoad( load );
 
   // --- Add the load component to the powersystem schematic model ---
   ans = _smd->addLoadElement( load );
@@ -503,21 +487,17 @@ void PowersystemEditor::addLoadSlot(){
 void PowersystemEditor::setSlackGen(){
 
   int newSlackGenExtId;
-  int ans = pwsEditorDialogs::slackDialog( _pws->slackBusExtId(),
-                                                   _pws->slackGenExtId(),
-                                                   &newSlackGenExtId );
+  int ans = pwsEditorDialogs::slackDialog( _pws->slackBusExtId(), _pws->slackGenExtId(), &newSlackGenExtId );
 
   // If dialog failed the exit without doing anything
-  if ( ans )
-    return;
-  // otherwise ...
+  if (ans) return;
 
   // Check the value input by the user; if it is a valid generator then set it
   // as slack and its respective bus as slack bus
   int newSlackGenIntId = _pws->getGen_intId( newSlackGenExtId );
   if ( newSlackGenIntId >= 0 ){
     _pws->set_slackGenExtId( newSlackGenExtId );
-    int newSlackBusExtId = _pws->getGenerator(newSlackGenIntId)->busExtId();
+    int newSlackBusExtId = _pws->getGenerator(newSlackGenIntId)->busExtId;
     _pws->set_slackBusExtId( newSlackBusExtId );
   } else{
     cout << "Invalid generator input" << endl;

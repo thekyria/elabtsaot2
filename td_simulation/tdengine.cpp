@@ -1,4 +1,4 @@
-
+﻿
 #include "tdengine.h"
 using namespace elabtsaot;
 
@@ -74,7 +74,7 @@ int TDEngine::_checkStability( Scenario const& sce,
   tempTdri.elementType = TDRESULTS_GENERATOR;
   tempTdri.variable = TDRESULTS_ANGLE;
   for ( size_t k = 0 ; k != getPws()->getGenSet_size() ; ++k ){
-    tempTdri.extId = getPws()->getGenerator( k )->extId();
+    tempTdri.extId = getPws()->getGenerator(k)->extId;
     tdris.push_back( tempTdri );
   }
   TDResults res(tdris);
@@ -107,8 +107,8 @@ int TDEngine::_checkStability( Scenario const& sce,
   tempTdri.elementType = TDRESULTS_GENERATOR;
   tempTdri.variable = TDRESULTS_ANGLE;
   for ( size_t k = 0 ; k != getPws()->getGenSet_size() ; ++k ){
-    tempTdri.extId = getPws()->getGenerator( k )->extId();
-    tdris.push_back( tempTdri );
+    tempTdri.extId = getPws()->getGenerator(k)->extId;
+    tdris.push_back(tempTdri);
   }
   TDResults res(tdris);
 
@@ -528,7 +528,7 @@ int TDEngine::_do_checkCCT( Scenario const& scenario,
   N = 1
   While N = NMAX { limit iterations to prevent infinite loop
     c = (a + b)/2 new midpoint
-    If (f(c) = 0 or (b � a)/2 < TOL then { solution found
+    If (f(c) = 0 or (b – a)/2 < TOL then { solution found
       Output(c)
       Stop
     }
