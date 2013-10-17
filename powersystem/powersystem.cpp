@@ -34,38 +34,28 @@ using std::numeric_limits;
 #include <cmath>                      // for M_PI constant
 #define _USE_MATH_DEFINES
 
-//! Auxiliary definition for UintUintBimap
-typedef UintUintBimap::value_type UintPair;
-//! Auxiliary definition for UintUintBimap
-typedef UintUintBimap::const_iterator UintUintBimapConstIt;
+typedef UintUintBimap::value_type UintPair; //!< Auxiliary definition for UintUintBimap
+typedef UintUintBimap::const_iterator UintUintBimapConstIt; //!< Auxiliary definition for UintUintBimap
 
 //! Bus type enumeration
 enum BusType {
   BUSTYPE_UNDEF,         //!< Undefined bus type (possibly only yet)
   BUSTYPE_PQ,            //!< PQ bus type: P and Q injection defined at the bus
-  BUSTYPE_PV,            //!< PV bus type: P injection and voltage magnitude
-                         //!< defined at the bus
-  BUSTYPE_SLACK          //!< Slack bus: Voltage magnitude and angle defined
-                         //!< defined at the bus
+  BUSTYPE_PV,            //!< PV bus type: P injection and voltage magnitude defined at the bus
+  BUSTYPE_SLACK          //!< Slack bus: Voltage magnitude and angle defined defined at the bus
 };
 
-Powersystem::Powersystem( string const& name,
-                          double baseS, double baseF) :
-    _status(PWSSTATUS_INIT), _name(name),
-    _baseS(baseS), _baseF(baseF),
-    _slackBusExtId(-1), _slackGenExtId(-1) {}
+Powersystem::Powersystem( string const& name, double baseS, double baseF) :
+    name(name), baseS(baseS), baseF(baseF), _status(PWSSTATUS_INIT) {}
 
 string Powersystem::serialize() const{
 
   stringstream ss;
 
   ss << _status << " ";
-  ss << "_name:" << _name << ":_name ";
-  ss << "_description:" << _description << ":_description ";
-  ss << _baseS << " ";
-  ss << _baseF << " ";
-  ss << _slackBusExtId << " ";
-  ss << _slackGenExtId << " ";
+  ss << "_name:" << name << ":_name ";
+  ss << baseS << " ";
+  ss << baseF << " ";
   ss << "_busSet.size=" << _busSet.size() << " ";
   for ( size_t k = 0 ; k != _busSet.size() ; ++k )
     ss << "_busSet[" << k << "]:" << _busSet[k].serialize()
@@ -271,9 +261,6 @@ double Powersystem::getMaxX() const{
 void Powersystem::clear(){
   _status = PWSSTATUS_INIT;
 
-  _slackBusExtId = -1;
-  _slackGenExtId = -1;
-
   _busSet.clear();
   _brSet.clear();
   _genSet.clear();
@@ -382,10 +369,6 @@ int Powersystem::deleteBus(unsigned int busExtId, bool recursive){
         return 4;
   }
 
-  // If the bus to be deleted was the slackBus, reset _slackBusExtId to -1
-  if( busExtId == static_cast<unsigned int>(_slackBusExtId) )
-    _slackBusExtId = -1;
-
   // Delete busIntId'th element of the _busSet
   size_t busIntId = _busIdBimap.left.at(busExtId);
   _busSet.erase(_busSet.begin()+busIntId);
@@ -425,14 +408,9 @@ int Powersystem::deleteBranch(unsigned int brExtId){
 int Powersystem::deleteGen(unsigned int genExtId){
 
   // Check whether genExtId exists in _genSet
-  if( _genIdBimap.left.find(genExtId) == _genIdBimap.left.end()){
+  if (_genIdBimap.left.find(genExtId) == _genIdBimap.left.end())
     // genExtId not found, cannot delete a non-existent generator!
     return 1;
-  }
-
-  // If the gen to be deleted was the slackGen, reset _slackGenExtId to -1
-  if( genExtId == static_cast<unsigned int>(_slackGenExtId) )
-    _slackGenExtId = -1;
 
   // Delete genIntId'th element of the vector
   size_t genIntId = _genIdBimap.left.at(genExtId);
@@ -483,15 +461,6 @@ int Powersystem::validate(){
     }
   }
 
-  // Validate that the slack bus has been set
-  if ( _slackBusExtId < 0 )
-
-  // Validate that the slack bus is an existing bus
-  if ( busExtIds.find( static_cast<unsigned int>(_slackBusExtId) )
-        == busExtIds.end() ){
-    return 2;
-  }
-
   // Rebuild busIdBimap
   _rebuildBusIdBimap();
 
@@ -531,39 +500,17 @@ int Powersystem::validate(){
 
   // ***** Validate gen set *****
   set<unsigned int> genExtIds;
-  bool slackBusHasGen = false;
   for ( k = 0 ; k != _genSet.size() ; ++k ){
     // Validate that all gen extIds are unique
-    if ( genExtIds.find(_genSet[k].extId) != genExtIds.end() ){
+    if ( genExtIds.find(_genSet[k].extId) != genExtIds.end() )
       return 6;
-    } else {
+    else
       genExtIds.insert( _genSet[k].extId );
-    }
     // Validate that all generators point to existing buses
-    if ( busExtIds.find( _genSet[k].busExtId ) == busExtIds.end() ){
+    if ( busExtIds.find( _genSet[k].busExtId ) == busExtIds.end() )
       return 7;
-    }
-    // Make sure that slack bus has at least one online gen
-    if ( (_genSet[k].busExtId == _slackBusExtId)
-         && (_genSet[k].status) )
-      slackBusHasGen = true;
-    // Assert that the slack gen is at the slack bus
-    if ( (_genSet[k].extId == static_cast<unsigned int>(_slackGenExtId) )
-         && (_genSet[k].busExtId != _slackBusExtId)
-        ){
-      return 71;
-    }
   }
-  if ( !slackBusHasGen ){
-    return 8;
-  }
-  // Validate that the slack generator is an existing generator
-  if ( genExtIds.find(_slackGenExtId) == genExtIds.end() ){
-    return 81;
-  }
-
-  // Rebuild genIdBimap
-  _rebuildGenIdBimap();
+  _rebuildGenIdBimap(); // Rebuild genIdBimap
 
   // ***** Validate load set *****
   set<unsigned int> loadExtIds;
@@ -580,72 +527,25 @@ int Powersystem::validate(){
       return 11;
     }
   }
-
-  // Rebuild loadIdBimap
-  _rebuildLoadIdBimap();
+  _rebuildLoadIdBimap(); // Rebuild loadIdBimap
 
   this->_status = PWSSTATUS_VALID;
   return 0;
 }
 
-// --- getters ---
-int Powersystem::status() const{ return _status; }
-string Powersystem::name() const{ return _name; }
-string Powersystem::description() const{ return _description; }
-double Powersystem::baseS() const{ return _baseS; }
-double Powersystem::baseF() const{ return _baseF; }
-int Powersystem::slackBusExtId() const{ return _slackBusExtId; }
-int Powersystem::slackGenExtId() const{ return _slackGenExtId; }
-vector<set<size_t> > Powersystem::getBusBrMap() const{ return _busBrMap; }
-vector<set<size_t> > Powersystem::getBusGenMap() const{ return _busGenMap; }
-vector<set<size_t> > Powersystem::getBusLoadMap() const{ return _busLoadMap; }
-
-vector<Bus> const& Powersystem::getBusSet() const{return _busSet;}
-vector<Generator> const& Powersystem::getGenSet() const{return _genSet;}
-vector<Branch> const& Powersystem::getBrSet() const{return _brSet;}
-vector<Load> const& Powersystem::getLoadSet() const{return _loadSet;}
-
 size_t Powersystem::getBusSet_size() const{ return _busSet.size(); }
 size_t Powersystem::getBrSet_size() const{ return _brSet.size(); }
 size_t Powersystem::getGenSet_size() const{ return _genSet.size(); }
 size_t Powersystem::getLoadSet_size() const{ return _loadSet.size(); }
+unsigned int Powersystem::getBus_extId(size_t intId) const{ return _busSet[intId].extId; }
+unsigned int Powersystem::getBr_extId(size_t intId) const{ return _brSet[intId].extId; }
+unsigned int Powersystem::getGen_extId(size_t intId) const{ return _genSet[intId].extId; }
+unsigned int Powersystem::getLoad_extId(size_t intId) const{ return _loadSet[intId].extId; }
 
-int Powersystem::getBus_extId(size_t intId) const{
-  if ( intId >= _busSet.size() ){
-    // Element not found!
-    return -1;
-  } else{
-    // Element found; return its external index
-    return _busSet[intId].extId;
-  }
-}
-int Powersystem::getBr_extId(size_t intId) const{
-  if ( intId >= _brSet.size() ){
-    // Element not found!
-    return -1;
-  } else{
-    // Element found; return its external index
-    return _brSet[intId].extId;
-  }
-}
-int Powersystem::getGen_extId(size_t intId) const{
-  if ( intId >= _genSet.size() ){
-    // Element not found!
-    return -1;
-  } else{
-    // Element found; return its external index
-    return _genSet[intId].extId;
-  }
-}
-int Powersystem::getLoad_extId(size_t intId) const{
-  if ( intId >= _loadSet.size() ){
-    // Element not found!
-    return -1;
-  } else{
-    // Element found; return its external index
-    return _loadSet[intId].extId;
-  }
-}
+set<size_t> Powersystem::getBusBrMap(size_t busIntId) const{ return _busBrMap[busIntId]; }
+set<size_t> Powersystem::getBusGenMap(size_t busIntId) const{ return _busGenMap[busIntId]; }
+set<size_t> Powersystem::getBusLoadMap(size_t busIntId) const{ return _busLoadMap[busIntId]; }
+
 
 int Powersystem::getBus_intId(unsigned int extId) const{
   if(_busIdBimap.left.find( extId ) == _busIdBimap.left.end()){
@@ -685,222 +585,91 @@ int Powersystem::getLoad_intId(unsigned int extId) const{
 }
 
 int Powersystem::getBus(unsigned int busExtId, Bus*& pBusReturned ){
-
   // Check whether busExtId exists in _busSet
-  if(_busIdBimap.left.find(busExtId) == _busIdBimap.left.end()){
+  if(_busIdBimap.left.find(busExtId) == _busIdBimap.left.end())
     // busExtId not found, cannot get a non-existent bus!
     return 1;
-  }
-
   size_t busIntId = _busIdBimap.left.at( busExtId );
-
   pBusReturned = &(_busSet[busIntId]);
-
   return 0;
 }
-
-int Powersystem::getBus( unsigned int busExtId,
-                         Bus const*& pBusReturned ) const{
-
+int Powersystem::getBus( unsigned int busExtId, Bus const*& pBusReturned ) const{
   // Check whether busExtId exists in _busSet
-  if(_busIdBimap.left.find(busExtId) == _busIdBimap.left.end()){
+  if(_busIdBimap.left.find(busExtId) == _busIdBimap.left.end())
     // busExtId not found, cannot get a non-existent bus!
     return 1;
-  }
-
   size_t busIntId = _busIdBimap.left.at( busExtId );
-
   pBusReturned = &(_busSet[busIntId]);
-
   return 0;
 }
+Bus* Powersystem::getBus(size_t busIntId){ return &_busSet[busIntId]; }
+Bus const* Powersystem::getBus(size_t busIntId) const{ return &_busSet[busIntId]; }
 
 int Powersystem::getBranch(unsigned int brExtId, Branch*& pBrReturned){
-
   // Check whether brExtId exists in _brSet
-  if( _brIdBimap.left.find(brExtId) == _brIdBimap.left.end()){
+  if( _brIdBimap.left.find(brExtId) == _brIdBimap.left.end())
     // brExtId not found, cannot get a non-existent branch!
     return 1;
-  }
-
   size_t brIntId = _brIdBimap.left.at( brExtId );
-
   pBrReturned = &(_brSet[brIntId]);
-
   return 0;
 }
-
-int Powersystem::getBranch(unsigned int brExtId,
-                           Branch const*& pBrReturned) const{
-
+int Powersystem::getBranch(unsigned int brExtId, Branch const*& pBrReturned) const{
   // Check whether brExtId exists in _brSet
-  if( _brIdBimap.left.find(brExtId) == _brIdBimap.left.end()){
+  if( _brIdBimap.left.find(brExtId) == _brIdBimap.left.end())
     // brExtId not found, cannot get a non-existent branch!
     return 1;
-  }
-
   size_t brIntId = _brIdBimap.left.at( brExtId );
-
   pBrReturned = &(_brSet[brIntId]);
-
   return 0;
 }
+Branch* Powersystem::getBranch(size_t brIntId){ return &_brSet[brIntId]; }
+Branch const* Powersystem::getBranch(size_t brIntId) const{ return &_brSet[brIntId]; }
 
-int Powersystem::getGenerator(unsigned int genExtId,
-                              Generator*& pGenReturned){
-
+int Powersystem::getGenerator(unsigned int genExtId, Generator*& pGenReturned){
   // Check whether genExtId exists in _genSet
-  if( _genIdBimap.left.find(genExtId) == _genIdBimap.left.end()){
+  if( _genIdBimap.left.find(genExtId) == _genIdBimap.left.end())
     // genExtId not found, cannot get a non-existent generator!
     return 1;
-  }
-
   size_t genIntId = _genIdBimap.left.at( genExtId );
-
   pGenReturned = &(_genSet[genIntId]);
-
   return 0;
 }
-
-int Powersystem::getGenerator( unsigned int genExtId,
-                               Generator const*& pGenReturned) const{
-
+int Powersystem::getGenerator( unsigned int genExtId, Generator const*& pGenReturned) const{
   // Check whether genExtId exists in _genSet
-  if( _genIdBimap.left.find(genExtId) == _genIdBimap.left.end()){
+  if( _genIdBimap.left.find(genExtId) == _genIdBimap.left.end())
     // genExtId not found, cannot get a non-existent generator!
     return 1;
-  }
-
   size_t genIntId = _genIdBimap.left.at( genExtId );
-
   pGenReturned = &(_genSet[genIntId]);
-
   return 0;
 }
+Generator* Powersystem::getGenerator(size_t genIntId){ return &_genSet[genIntId]; }
+Generator const* Powersystem::getGenerator(size_t genIntId) const{ return &_genSet[genIntId]; }
 
 int Powersystem::getLoad(unsigned int loadExtId, Load*& pLoadReturned){
-
   // Check whether loadExtId exists in _loadSet
-  if( _loadIdBimap.left.find(loadExtId) == _loadIdBimap.left.end()){
+  if( _loadIdBimap.left.find(loadExtId) == _loadIdBimap.left.end())
     // loadExtId not found, get modify a non-existent load!
     return 1;
-  }
-
   size_t loadIntId = _loadIdBimap.left.at( loadExtId );
-
   pLoadReturned = &(_loadSet[loadIntId]);
-
   return 0;
 }
-
-int Powersystem::getLoad(unsigned int loadExtId,
-                         Load const*& pLoadReturned) const{
-
+int Powersystem::getLoad(unsigned int loadExtId, Load const*& pLoadReturned) const{
   // Check whether loadExtId exists in _loadSet
-  if( _loadIdBimap.left.find(loadExtId) == _loadIdBimap.left.end()){
+  if( _loadIdBimap.left.find(loadExtId) == _loadIdBimap.left.end())
     // loadExtId not found, get modify a non-existent load!
     return 1;
-  }
-
   size_t loadIntId = _loadIdBimap.left.at( loadExtId );
-
   pLoadReturned = &(_loadSet[loadIntId]);
-
   return 0;
 }
+Load* Powersystem::getLoad(size_t loadIntId){ return &_loadSet[loadIntId]; }
+Load const* Powersystem::getLoad(size_t loadIntId) const{ return &_loadSet[loadIntId]; }
 
-Bus* Powersystem::getBus(size_t busIntId){
-//  return static_cast<Bus&>( _busSet[busIntId] );
-  if( busIntId >= _busSet.size() )
-    return 0;
-  else
-    return &_busSet[busIntId];
-}
-
-Bus const* Powersystem::getBus(size_t busIntId) const{
-//  return static_cast<Bus const&>( _busSet[busIntId] );
-  if( busIntId >= _busSet.size() )
-    return 0;
-  else
-    return &_busSet[busIntId];
-}
-
-Branch* Powersystem::getBranch(size_t brIntId){
-//  return static_cast<Branch&>( _brSet[brIntId] );
-  if( brIntId >= _brSet.size() )
-    return 0;
-  else
-    return &_brSet[brIntId];
-}
-
-Branch const* Powersystem::getBranch(size_t brIntId) const{
-//  return static_cast<Branch const&>( _brSet[brIntId] );
-  if( brIntId >= _brSet.size() )
-    return 0;
-  else
-    return &_brSet[brIntId];
-}
-
-Generator* Powersystem::getGenerator(size_t genIntId){
-//  return static_cast<Generator&>( _genSet[genIntId] );
-  if( genIntId >= _genSet.size() )
-    return 0;
-  else
-    return &_genSet[genIntId];
-}
-
-Generator const* Powersystem::getGenerator(size_t genIntId) const{
-//  return static_cast<Generator const&>( _genSet[genIntId] );
-  if( genIntId >= _genSet.size() )
-    return 0;
-  else
-    return &_genSet[genIntId];
-}
-
-Load* Powersystem::getLoad(size_t loadIntId){
-//  return static_cast<Load&>( _loadSet[loadIntId] );
-  if( loadIntId >= _loadSet.size() )
-    return 0;
-  else
-    return &_loadSet[loadIntId];
-}
-
-Load const* Powersystem::getLoad(size_t loadIntId) const{
-//  return static_cast<Load const&>( _loadSet[loadIntId] );
-  if( loadIntId >= _loadSet.size() )
-    return 0;
-  else
-    return &_loadSet[loadIntId];
-}
-
-// --- setters ---
-void Powersystem::set_name(string const& val){ _name = val; }
-void Powersystem::set_description(string const& val){ _description = val; }
-int Powersystem::set_baseS(double val){
-  _baseS = val;
-  return 0;
-}
-int Powersystem::set_baseF(double val){
-  _baseF = val;
-  return 0;
-}
-int Powersystem::set_slackBusExtId(int val){
-//  // Argument consistency: val should exist in _busSet of the Powersystem
-//  if(_busIdBimap.left.find(val) == _busIdBimap.left.end())
-//    return 1;
-
-  _slackBusExtId = val;
-  return 0;
-}
-int Powersystem::set_slackGenExtId(int val){
-//  // Argument consistency: val should exist in _busSet of the Powersystem
-//  if(_genIdBimap.left.find(val) == _genIdBimap.left.end())
-//    return 1;
-
-  _slackGenExtId = val;
-  return 0;
-}
 void Powersystem::set_status(int val){ _status = val; }
+int Powersystem::status() const{ return _status; }
 
 /////////////////// PRIVATE MEMBERS ///////////////////
 
@@ -911,7 +680,6 @@ void Powersystem::_rebuildBusIdBimap(){
     _busIdBimap.insert(UintPair(i->extId,_busIdBimap.size()));
   }
 }
-
 void Powersystem::_rebuildBrIdBimap(){
   // Rebuild _brIdBimap bimap; first: extId - second: intId
   _brIdBimap.clear();
@@ -919,7 +687,6 @@ void Powersystem::_rebuildBrIdBimap(){
     _brIdBimap.insert(UintPair(i->extId,_brIdBimap.size()));
   }
 }
-
 void Powersystem::_rebuildGenIdBimap(){
   // Rebuild _genIdBimap bimap; first: extId - second: intId
   _genIdBimap.clear();
@@ -927,7 +694,6 @@ void Powersystem::_rebuildGenIdBimap(){
     _genIdBimap.insert(UintPair(i->extId,_genIdBimap.size()));
   }
 }
-
 void Powersystem::_rebuildLoadIdBimap(){
   // Rebuild _loadIdBimap bimap; first: extId - second: intId
   _loadIdBimap.clear();
@@ -939,43 +705,31 @@ void Powersystem::_rebuildLoadIdBimap(){
 void Powersystem::_rebuildBusBrMap(){
   _busBrMap.clear();
   _busBrMap.resize(_busSet.size());
-
   size_t fromBusIntId, toBusIntId;
   for ( size_t k = 0 ; k != _brSet.size() ; ++k ){
     // Add branch to _busBrMap for fromBus
     fromBusIntId = _busIdBimap.left.at( _brSet[k].fromBusExtId );
     _busBrMap[fromBusIntId].insert(k);
-
     // Add branch to _busBrMap for toBus
     toBusIntId = _busIdBimap.left.at( _brSet[k].toBusExtId );
     _busBrMap[toBusIntId].insert(k);
   }
-
-  return;
 }
-
 void Powersystem::_rebuildBusGenMap(){
   _busGenMap.clear();
   _busGenMap.resize(_busSet.size());
-
   size_t busIntId;
   for ( size_t k = 0 ; k != _genSet.size() ; ++k ){
     busIntId = _busIdBimap.left.at( _genSet[k].busExtId );
     _busGenMap[busIntId].insert(k);
   }
-
-  return;
 }
-
 void Powersystem::_rebuildBusLoadMap(){
   _busLoadMap.clear();
   _busLoadMap.resize(_busSet.size());
-
   size_t busIntId;
   for ( size_t k = 0 ; k != _loadSet.size() ; ++k ){
     busIntId = _busIdBimap.left.at( _loadSet[k].busExtId );
     _busLoadMap[busIntId].insert(k);
   }
-
-  return;
 }

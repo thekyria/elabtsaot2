@@ -420,13 +420,13 @@ int PwsMapperModel::autoMapping(){
 
   // Check if more than one element is present on a bus
   for ( size_t k = 0 ; k != _pws->getBusSet_size() ; ++k ){
-    if ( _pws->getBusGenMap().at(k).size() + _pws->getBusLoadMap().at(k).size() > 1 )
+    if ( _pws->getBusGenMap(k).size() + _pws->getBusLoadMap(k).size() > 1 )
       return -4;
   }
 
   // Check if graph degree of a pws bus is more than maximum allowed
   for ( size_t k = 0 ; k != _pws->getBusSet_size() ; ++k ){
-    if ( _pws->getBusBrMap().at(k).size() > 6 )
+    if ( _pws->getBusBrMap(k).size() > 6 )
       return -5;
   }
 
@@ -1416,7 +1416,7 @@ void PwsMapperModel::_hintBus( int mdlId ){
   // If the generators are mapped to different positions then there is a
   // problem! and the bus cannot be hinted!
   size_t busIntId = static_cast<size_t>(_pws->getBus_intId(cd->extId));
-  set<size_t> busGensIntIds = _pws->getBusGenMap().at(busIntId);
+  set<size_t> busGensIntIds = _pws->getBusGenMap(busIntId);
   if ( busGensIntIds.size() > 0 ){
     PwsMapperModelElement const* cdGen;
     unsigned int genExtId;
@@ -1455,7 +1455,7 @@ void PwsMapperModel::_hintBus( int mdlId ){
   // the bus can only be mapped to that position
   // If the loads are mapped to different positions then there is a
   // problem! and the bus cannot be hinted!
-  set<size_t> busLoadsIntIds = _pws->getBusLoadMap().at(busIntId);
+  set<size_t> busLoadsIntIds = _pws->getBusLoadMap(busIntId);
   if ( busLoadsIntIds.size() > 0 ){
     PwsMapperModelElement const* cdLoad;
     unsigned int loadExtId;
@@ -1515,7 +1515,7 @@ void PwsMapperModel::_hintBus( int mdlId ){
   _andMask();
 
   // For every branch ending to that bus apply restrictions in case it is mapped
-  set<size_t> busBrIntIds = _pws->getBusBrMap().at(busIntId);
+  set<size_t> busBrIntIds = _pws->getBusBrMap(busIntId);
   PwsMapperModelElement const* cdBr;
   unsigned int brExtId;
   for ( set<size_t>::iterator i = busBrIntIds.begin() ;

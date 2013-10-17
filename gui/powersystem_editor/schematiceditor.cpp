@@ -140,7 +140,7 @@ void SchematicEditor::mouseMoveEvent(QMouseEvent* event){
     PwsSchematicModelElement* cdEl;
 //    int ans;
     int busIntId, elExtId;
-    vector<set<size_t> > busElMap;
+    set<size_t> busElMap;
     set<size_t>::iterator i;
 
     float dx = _xmouse - _xclick;
@@ -167,8 +167,8 @@ void SchematicEditor::mouseMoveEvent(QMouseEvent* event){
       busIntId = _pws->getBus_intId( _selected.at(k).second );
 
       // --- Move all branches attached to the bus ---
-      busElMap = _pws->getBusBrMap();
-      for ( i = busElMap[busIntId].begin() ; i != busElMap[busIntId].end() ; ++i ){
+      busElMap = _pws->getBusBrMap(busIntId);
+      for ( i = busElMap.begin() ; i != busElMap.end() ; ++i ){
         Branch const* pBr;
         elExtId = _pws->getBr_extId( *i );
         if ( _pws->getBranch( elExtId, pBr ) )
@@ -191,8 +191,8 @@ void SchematicEditor::mouseMoveEvent(QMouseEvent* event){
       }
 
       // --- Move all generators attached to the bus ---
-      busElMap = _pws->getBusGenMap();
-      for ( i = busElMap[busIntId].begin() ; i != busElMap[busIntId].end() ; ++i ){
+      busElMap = _pws->getBusGenMap(busIntId);
+      for ( i = busElMap.begin() ; i != busElMap.end() ; ++i ){
         elExtId = _pws->getGen_extId( *i );
         cdEl = _smd->element( PWSMODELELEMENTTYPE_GEN, elExtId );
         if ( cdEl == NULL )
@@ -205,8 +205,8 @@ void SchematicEditor::mouseMoveEvent(QMouseEvent* event){
       }
 
       // --- Move all loads attached to the bus ---
-      busElMap = _pws->getBusLoadMap();
-      for ( i = busElMap[busIntId].begin() ; i != busElMap[busIntId].end() ; ++i ){
+      busElMap = _pws->getBusLoadMap(busIntId);
+      for ( i = busElMap.begin() ; i != busElMap.end() ; ++i ){
         elExtId = _pws->getLoad_extId( *i );
         cdEl = _smd->element( PWSMODELELEMENTTYPE_LOAD, elExtId );
         if ( cdEl == NULL )

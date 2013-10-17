@@ -24,7 +24,7 @@ class SSEngine : public PropertyHolder {
   void setLogger(Logger* log);
   int buildY( Powersystem const& pws,
               boost::numeric::ublas::matrix<std::complex<double> >& Y ) const;
-  int solvePowerFlow( Powersystem& pws ) const;
+  int solvePowerFlow(Powersystem& pws) const;
 
  protected:
 

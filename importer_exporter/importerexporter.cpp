@@ -395,24 +395,17 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
 
   // --------------- Output network's info ---------------
   fprintf(f, "<info>\n");
-  fprintf(f, "\t<name> %s </name>\n", pws->name().c_str());
-  fprintf(f, "\t<description> %s </description>\n", pws->description().c_str());
-  fprintf(f, "\t<baseMVA> %.12f </baseMVA>\n", pws->baseS());
-  fprintf(f, "\t<baseFreq> %.12f </baseFreq>\n", pws->baseF());
-  fprintf(f, "\t<slackBus> %d </slackBus>\n", pws->slackBusExtId());
-  fprintf(f, "\t<slackGen> %d </slackGen>\n", pws->slackGenExtId());
+  fprintf(f, "\t<name> %s </name>\n", pws->name.c_str());
+  fprintf(f, "\t<baseMVA> %.12f </baseMVA>\n", pws->baseS);
+  fprintf(f, "\t<baseFreq> %.12f </baseFreq>\n", pws->baseF);
   fprintf(f, "</info>\n");
   fflush(f);
 
   // --------------- Output buses ---------------
   fprintf(f, "<buses>\n");
   for( size_t k = 0 ; k != pws->getBusSet_size(); ++k ){
-
     // Get bus at pos (intId) k
     Bus const* bus = pws->getBus(k);
-    if( !bus )
-      break;
-
     // Write its parameters to the xml file
     fprintf(f, "\t<bus>\n");
     fprintf(f, "\t\t<extId> %d </extId>\n", bus->extId);
@@ -433,12 +426,8 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
   // --------------- Output branches --------------------
   fprintf(f, "<branches>\n");
   for( size_t k = 0 ; k != pws->getBrSet_size() ; ++k ){
-
     // Get branch at pos (intId) k
     Branch const* br = pws->getBranch(k);
-    if( !br )
-      break;
-
     // Write its parameters to the xml file
     fprintf(f, "\t<branch>\n");
     fprintf(f, "\t\t<extId> %d </extId>\n", br->extId);
@@ -461,12 +450,8 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
   // -------------------- Output generators --------------------
   fprintf(f, "<generators>\n");
   for( size_t k = 0 ; k != pws->getGenSet_size() ; ++k ){
-
     // Get generator at pos (intId) k
     Generator const* gen = pws->getGenerator(k);
-    if( !gen )
-      break;
-
     // Write its parameters to the xml file
     fprintf(f, "\t<generator>\n");
 
@@ -504,12 +489,8 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
   // --------------- Output loads ---------------
   fprintf(f, "<loads>\n");
   for( size_t k = 0 ; k != pws->getLoadSet_size() ; ++k ){
-
     // Get load at pos (intId) k
     Load const* load = pws->getLoad(k);
-    if( !load )
-      break;
-
     // And write its parameters to the xml file
     fprintf(f, "\t<load>\n");
 

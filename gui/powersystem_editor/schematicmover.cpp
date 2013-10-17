@@ -105,7 +105,7 @@ void SchematicMover::mouseMoveEvent(QMouseEvent* event){
     PwsSchematicModelElement* cdEl;
 //    int ans;
     int busIntId, elExtId;
-    vector<set<size_t> > busElMap;
+    set<size_t> busElMap;
     set<size_t>::iterator i;
 
     float dx = _xmouse - _xclick;
@@ -132,8 +132,8 @@ void SchematicMover::mouseMoveEvent(QMouseEvent* event){
       busIntId = _pws->getBus_intId( _selected.at(k).second );
 
       // --- Move all branches attached to the bus ---
-      busElMap = _pws->getBusBrMap();
-      for ( i = busElMap[busIntId].begin() ; i != busElMap[busIntId].end() ; ++i ){
+      busElMap = _pws->getBusBrMap(busIntId);
+      for ( i = busElMap.begin() ; i != busElMap.end() ; ++i ){
         Branch const* pBr;
         elExtId = _pws->getBr_extId( *i );
         if ( _pws->getBranch( elExtId, pBr ) )
@@ -143,12 +143,12 @@ void SchematicMover::mouseMoveEvent(QMouseEvent* event){
         if ( cdEl == NULL )
           cout << "Branch update failed! extId=" << elExtId << endl;
         // Displace branch
-        if ( pBr->fromBusExtId == cdBus->extId ){
+        if ( pBr->fromBusExtId == static_cast<int>(cdBus->extId) ){
           // Bus moved is at the from end of the branch
           cdEl->x1 += dx;
           cdEl->y1 += dy;
         }
-        if ( pBr->toBusExtId == cdBus->extId ){
+        if ( pBr->toBusExtId == static_cast<int>(cdBus->extId) ){
           // Bus moved is at the to end of the branch
           cdEl->x2 += dx;
           cdEl->y2 += dy;
@@ -156,8 +156,8 @@ void SchematicMover::mouseMoveEvent(QMouseEvent* event){
       }
 
       // --- Move all generators attached to the bus ---
-      busElMap = _pws->getBusGenMap();
-      for ( i = busElMap[busIntId].begin() ; i != busElMap[busIntId].end() ; ++i ){
+      busElMap = _pws->getBusGenMap(busIntId);
+      for ( i = busElMap.begin() ; i != busElMap.end() ; ++i ){
         elExtId = _pws->getGen_extId( *i );
         cdEl = _smd->element( PWSMODELELEMENTTYPE_GEN, elExtId );
         if ( cdEl == NULL )
@@ -170,8 +170,8 @@ void SchematicMover::mouseMoveEvent(QMouseEvent* event){
       }
 
       // --- Move all loads attached to the bus ---
-      busElMap = _pws->getBusLoadMap();
-      for ( i = busElMap[busIntId].begin() ; i != busElMap[busIntId].end() ; ++i ){
+      busElMap = _pws->getBusLoadMap(busIntId);
+      for ( i = busElMap.begin() ; i != busElMap.end() ; ++i ){
         elExtId = _pws->getLoad_extId( *i );
         cdEl = _smd->element( PWSMODELELEMENTTYPE_LOAD, elExtId );
         if ( cdEl == NULL )

@@ -24,19 +24,13 @@ bool PowersystemXMLHandler::characters(QString const& ch){
     return true;
 
   // Fill in info
-  if( _tags.contains("info") ){
-    if( _tags.last()=="name" )
-      _p_ps->set_name( value.toStdString() );
-    if( _tags.last()=="description" )
-      _p_ps->set_description( value.toStdString() );
-    if( _tags.last()=="baseMVA" )
-      _p_ps->set_baseS( value.toDouble() );
-    if( _tags.last()=="baseFreq" )
-      _p_ps->set_baseF( value.toDouble() );
-    if( _tags.last()=="slackBus" )
-      _p_ps->set_slackBusExtId( value.toInt() );
-    if( _tags.last()=="slackGen" )
-      _p_ps->set_slackGenExtId( value.toInt() );
+  if (_tags.contains("info")){
+    if (_tags.last()=="name")
+      _p_ps->name = value.toStdString();
+    if (_tags.last()=="baseMVA")
+      _p_ps->baseS = value.toDouble();
+    if (_tags.last()=="baseFreq")
+      _p_ps->baseF = value.toDouble();
   }
   // Find which attribute is set
   // --------------- Bus ---------------

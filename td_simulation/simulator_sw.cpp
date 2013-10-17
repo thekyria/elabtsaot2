@@ -133,7 +133,7 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
 
   Scenario _sce(sce);
   _sce.sort_t();//Put the events in order
-  double baseF = _pwsLocal.baseF();
+  double baseF = _pwsLocal.baseF;
 
   _genCount = _pwsLocal.getGenSet_size();
   _brCount = _pwsLocal.getBrSet_size();
@@ -575,7 +575,7 @@ Simulator_sw::_calculateGeneratorDynamics( vector<vector<double> > const& Xgen,
                                            vector<double> const& Id,
                                            vector<vector<double> >& dXgen ){
 
- double omegas = 2.0*M_PI*_pwsLocal.baseF();
+ double omegas = 2.0*M_PI*_pwsLocal.baseF;
  dXgen.resize( _genCount, vector<double>(4,0.0) );
  for ( size_t i = 0 ; i != _genCount ; ++i ){
    Generator const* gen = _pwsLocal.getGenerator(i);
@@ -943,9 +943,9 @@ int Simulator_sw::_parseBrFault(Event &event){
         double loc = event.double_arg();
         Bus* busofevent = new Bus();
         // Set the default first ext id
-        int maxextid = _pwsLocal.getBus_extId(0);
+        unsigned int maxextid = _pwsLocal.getBus_extId(0);
         for (size_t m=0;m<_busCount;m++){
-          if(_pwsLocal.getBus_extId(m)>maxextid)
+          if (_pwsLocal.getBus_extId(m)>maxextid)
             maxextid=_pwsLocal.getBus_extId(m);
         }
 //        unsigned int maxextid;
@@ -962,7 +962,7 @@ int Simulator_sw::_parseBrFault(Event &event){
         _pwsLocal.addBus(*busofevent);
 
         Branch* newfromline = new Branch();
-        int maxextidfrombr=_pwsLocal.getBr_extId(0);//Set the default first ext id
+        unsigned int maxextidfrombr=_pwsLocal.getBr_extId(0);//Set the default first ext id
         for (size_t m=0;m<_pwsLocal.getBrSet_size();m++){
           if(_pwsLocal.getBr_extId(m)>maxextidfrombr)
             maxextidfrombr=_pwsLocal.getBr_extId(m);
@@ -986,9 +986,9 @@ int Simulator_sw::_parseBrFault(Event &event){
         // Create a new branch  tobus the new faulty bus
 //        _pws.getBranch(event.element_extId(),branchofevent);
         Branch* newtoline = new Branch();
-        int maxextidtobr=_pwsLocal.getBr_extId(0);//Set the default first ext id
+        unsigned int maxextidtobr=_pwsLocal.getBr_extId(0);//Set the default first ext id
         for (size_t m=0;m<_pwsLocal.getBrSet_size();m++){
-          if(_pwsLocal.getBr_extId(m)>maxextidtobr)
+          if (_pwsLocal.getBr_extId(m)>maxextidtobr)
             maxextidtobr=_pwsLocal.getBr_extId(m);
         }
 //        unsigned int maxextidtobr;

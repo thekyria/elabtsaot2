@@ -99,7 +99,7 @@ int PwsSchematicModel::validate(){
   bool found;
   // ----- Ensure that each powersystem element has a respective element -----
   for ( k = 0; k != _pws->getBusSet_size() ; ++k ){
-    cur_extId = _pws->getBusSet().at(k).extId;
+    cur_extId = _pws->getBus_extId(k);
     found = false;
     for ( m = 0 ; m != _busElements.size() ; ++m ){
       if ( _busElements[k].extId == cur_extId ){
@@ -112,7 +112,7 @@ int PwsSchematicModel::validate(){
       return 11;
   }
   for ( k = 0; k != _pws->getBrSet_size() ; ++k ){
-    cur_extId = _pws->getBrSet().at(k).extId;
+    cur_extId = _pws->getBr_extId(k);
     found = false;
     for ( m = 0 ; m != _branchElements.size() ; ++m ){
       if ( _branchElements[k].extId == cur_extId ){
@@ -125,7 +125,7 @@ int PwsSchematicModel::validate(){
       return 11;
   }
   for ( k = 0; k != _pws->getGenSet_size() ; ++k ){
-    cur_extId = _pws->getGenSet().at(k).extId;
+    cur_extId = _pws->getGen_extId(k);
     found = false;
     for ( m = 0 ; m != _genElements.size() ; ++m ){
       if ( _genElements[k].extId == cur_extId ){
@@ -138,7 +138,7 @@ int PwsSchematicModel::validate(){
       return 11;
   }
   for ( k = 0; k != _pws->getLoadSet_size() ; ++k ){
-    cur_extId = _pws->getLoadSet().at(k).extId;
+    cur_extId = _pws->getLoad_extId(k);
     found = false;
     for ( m = 0 ; m != _loadElements.size() ; ++m ){
       if ( _loadElements[k].extId == cur_extId ){

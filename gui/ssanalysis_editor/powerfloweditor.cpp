@@ -70,7 +70,7 @@ void PowerFlowEditor::logPowerFlowResults(){
   int ans = logPowerFlowDialog(&toConsole, filename);
 
   if ( toConsole )
-    ans = _pws->logPowerFlowResults();
+    ans = _pws->logPowerFlowResults(std::cout);
   else
     ans = _pws->logPowerFlowResults(filename.toStdString());
 

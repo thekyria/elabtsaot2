@@ -100,13 +100,6 @@ PowersystemEditor::PowersystemEditor( Powersystem* pws,
   connect( addLoadAct, SIGNAL( triggered()),
            this, SLOT( addLoadSlot() ) );
 
-  // Set slack generator button (action)
-  QAction* setSlackGenAct = new QAction( QIcon(":/images/slack.png"),
-                                         "Set slack generator", ntwToolbar);
-  ntwToolbar->addAction( setSlackGenAct );
-  connect( setSlackGenAct, SIGNAL( triggered() ),
-           this, SLOT( setSlackGen() ) );
-
   // Validate powersystem button (action)
   QAction* validateAct = new QAction( QIcon(":/images/validate.png"),
                                       "Validate powersystem", ntwToolbar );
@@ -480,28 +473,6 @@ void PowersystemEditor::addLoadSlot(){
   // --- Update tabular and the schematic views ---
   _tbl->updt();
   _sch->repaint();
-
-  return;
-}
-
-void PowersystemEditor::setSlackGen(){
-
-  int newSlackGenExtId;
-  int ans = pwsEditorDialogs::slackDialog( _pws->slackBusExtId(), _pws->slackGenExtId(), &newSlackGenExtId );
-
-  // If dialog failed the exit without doing anything
-  if (ans) return;
-
-  // Check the value input by the user; if it is a valid generator then set it
-  // as slack and its respective bus as slack bus
-  int newSlackGenIntId = _pws->getGen_intId( newSlackGenExtId );
-  if ( newSlackGenIntId >= 0 ){
-    _pws->set_slackGenExtId( newSlackGenExtId );
-    int newSlackBusExtId = _pws->getGenerator(newSlackGenIntId)->busExtId;
-    _pws->set_slackBusExtId( newSlackBusExtId );
-  } else{
-    cout << "Invalid generator input" << endl;
-  }
 
   return;
 }

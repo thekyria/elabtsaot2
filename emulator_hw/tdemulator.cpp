@@ -896,9 +896,9 @@ int TDEmulator::do_simulate( Scenario const& sce, TDResults& res ){
       }
       bool genMapped = false;
       bool loadMapped = false;
-      if ( _pws->getBusGenMap().at( busIntId ).size() == 1 ){
+      if ( _pws->getBusGenMap(busIntId).size() == 1 ){
         genMapped = true;
-      } else if ( _pws->getBusLoadMap().at( busIntId ).size() == 1 ){
+      } else if ( _pws->getBusLoadMap(busIntId).size() == 1 ){
         loadMapped = true;
       }
       if ( !genMapped && !loadMapped ){
@@ -1443,10 +1443,6 @@ int TDEmulator::do_checkStability( vector<Scenario> const& scenarios,
     // corresponds to input argument 'scenarios' scenario index as per
     // newSceIndex
     size_t sceId = newSceIndex.at(sceRunId);
-    // Unless there is already a stability entry for the slack gen (it was found
-    // in the generators pipeline) assume stable
-    if (genStable[sceId].count(_pws->slackGenExtId()) <= 0)
-      genStable[sceId][_pws->slackGenExtId()] = true;
   }
   cout << "TDEmulator::do_checkStability(): ";
   cout << "parse results " << timer.Stop() << " s" << endl;
@@ -2067,7 +2063,7 @@ int TDEmulator::_encodeScenarioBase( Scenario const& sce_,
       return 15;
 
     // Retrieve the branch incident to the fault bus that has the largest x val
-    set<unsigned int> incidentBrExtIds = _pws->getBusBrMap().at(el_intId);
+    set<unsigned int> incidentBrExtIds = _pws->getBusBrMap(el_intId);
     set<unsigned int>::const_iterator it;
     double maxBrX = -1;
     unsigned int maxBrX_brExtId;
@@ -3324,13 +3320,13 @@ int TDEmulator::_getStartCode( TDResultIdentifier const& tdri,
     if ( busIntId < 0)
       // Bus does not exist in the bus set! Should never happen
       return 11;
-    if ( _pws->getBusGenMap().at( busIntId ).size() == 1 ){
+    if ( _pws->getBusGenMap(busIntId).size() == 1 ){
       genMapped = true;
-      genIntId = *_pws->getBusGenMap().at( busIntId ).begin();
+      genIntId = *_pws->getBusGenMap(busIntId).begin();
       genExtId = _pws->getGen_extId( genIntId );
-    } else if ( _pws->getBusLoadMap().at( busIntId ).size() == 1 ){
+    } else if ( _pws->getBusLoadMap(busIntId).size() == 1 ){
       loadMapped = true;
-      loadIntId = *_pws->getBusLoadMap().at( busIntId ).begin();
+      loadIntId = *_pws->getBusLoadMap(busIntId).begin();
       loadExtId = _pws->getLoad_extId( loadIntId );
     }
     if ( !genMapped && !loadMapped )

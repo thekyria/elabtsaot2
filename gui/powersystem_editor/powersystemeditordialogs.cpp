@@ -18,55 +18,6 @@ using namespace elabtsaot;
 #include <QString>
 #include <QButtonGroup>
 
-int pwsEditorDialogs::slackDialog( int oldSlackBusExtId,
-                                   int oldSlackGenExtId,
-                                   int* newSlackGenExtId){
-
-  QDialog* dialog = new QDialog();
-  dialog->setWindowTitle("Set Slack Generator");
-
-  // Main vertical layout
-  QVBoxLayout* layMain = new QVBoxLayout();
-  dialog->setLayout( layMain );
-  // Information label
-  unsigned int slackBusExtId = oldSlackBusExtId;
-  unsigned int slackGenExtId = oldSlackGenExtId;
-  QString infoString;
-  infoString = QString("Current slack generator %0 at bus %1")
-                .arg(slackGenExtId)
-                .arg(slackBusExtId);
-  QLabel* infoLabel = new QLabel( infoString );
-  layMain->addWidget( infoLabel );
-  // Slack selection spinbox
-  QSpinBox* num = new QSpinBox();
-  num->setMaximum( RAND_MAX );
-  num->setValue( slackGenExtId );
-  layMain->addWidget( num );
-  // Horizonal button layout
-  QHBoxLayout* layButtons = new QHBoxLayout();
-  layMain->addLayout( layButtons );
-  // Ok button
-  QPushButton* ok = new QPushButton("Ok");
-  layButtons->addWidget( ok );
-  dialog->connect( ok , SIGNAL(clicked()), dialog, SLOT(accept()) );
-  // Cancel button
-  QPushButton* cancel = new QPushButton("Cancel");
-  layButtons->addWidget( cancel );
-  dialog->connect( cancel, SIGNAL(clicked()), dialog, SLOT(reject()) );
-
-  // Excecute dialog
-  if ( dialog->exec() ){
-    // Return requested slack gen external id to the output argument
-    *newSlackGenExtId = num->value();
-    return 0;
-  } else{
-    // Dialog cancelled or not executed correctly
-    return 1;
-  }
-
-  return 0;
-}
-
 int pwsEditorDialogs::busDialog(Bus *bus){
   // Main dialog
   QDialog dialog;

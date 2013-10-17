@@ -33,16 +33,11 @@ class PowersystemEditor : public QSplitter {
 
  public:
 
-  PowersystemEditor( Powersystem* pws,
-                     PwsModel* const pwsModel0,
-                     QWidget* parent = 0 );
+  PowersystemEditor( Powersystem* pws, PwsModel* const pwsModel0, QWidget* parent = 0 );
   ~PowersystemEditor();
-  //! Initialize the powersystem editor to incorporate any _pws changes
-  int init();
-  //! Initialize the powersystem editor to a new schematic model
-  int init( PwsSchematicModel* smd );
-  //! Update the GUI according to _pws and _smd
-  void updt();
+  int init(); //!< Initialize the powersystem editor to incorporate any _pws changes
+  int init( PwsSchematicModel* smd ); //!< Initialize the powersystem editor to a new schematic model
+  void updt(); //!< Update the GUI according to _pws and _smd
 
   PwsSchematicModel* smd();
   PwsSchematicModel const* smd() const;
@@ -57,7 +52,6 @@ class PowersystemEditor : public QSplitter {
   void addBranchSlot();
   void addGeneratorSlot();
   void addLoadSlot();
-  void setSlackGen();
   void validatePowersystem();
 
  private:
