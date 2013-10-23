@@ -59,7 +59,7 @@ void ScenarioSet::createScenariosPerBranch( Powersystem const* pws,
                                             double faultLocation,
                                             double faultStart,
                                             double faultStop ){
-  for ( size_t k = 0 ; k != pws->getBrSet_size() ; ++k ){
+  for ( size_t k = 0 ; k != pws->getBranchCount() ; ++k ){
 
     // Retrieve branch
     const Branch* br( pws->getBranch(k) );

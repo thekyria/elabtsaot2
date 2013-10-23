@@ -2,6 +2,8 @@
 #include "moteurfengtian.h"
 using namespace elabtsaot;
 
+using namespace boost::numeric::ublas;
+
 #include "emulator.h"
 #include "precisiontimer.h"
 
@@ -10,7 +12,7 @@ using std::cout;
 using std::endl;
 //#include <string>
 using std::string;
-#include <ctime>                      // for time(), ctime()
+#include <ctime> // for time(), ctime()
 
 enum MoteurFengtianProperties{
   SSEMFT_PROPERTY_BETA1,
@@ -72,15 +74,15 @@ MoteurFengtian::MoteurFengtian(Emulator* emu, Logger* log) :
   _properties[tempPt] = tempPt.defaultValue;
 }
 
-int MoteurFengtian::do_solvePowerFlow( Powersystem const& pws,
-                                      boost::numeric::ublas::vector<double>& x,
-                                      boost::numeric::ublas::vector<double>& F ) const{
+int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws,
+                                      matrix<complex>& Y,
+                                      vector<complex>& V) const{
 
   // Before entering into the power flow main routine, check that the power system
   // has been validated
-  if ( pws.status() != PWSSTATUS_VALID && pws.status() != PWSSTATUS_LF )
+  if ( pws.status() != PWSSTATUS_VALID && pws.status() != PWSSTATUS_PF )
     return 1;
-  if ( pws.status() == PWSSTATUS_LF )
+  if ( pws.status() == PWSSTATUS_PF )
     // Nothing to do!
     return 0;
 
@@ -104,40 +106,9 @@ int MoteurFengtian::do_solvePowerFlow( Powersystem const& pws,
   time ( &rawtime );
   string time_string = ctime( &rawtime );
 
-  // ----- Start power flow computation -----
+  // TODO!!!!
 
-  /* Let be:
-  x   = [th]                   the vector of unknown values
-        [ U]
-  Fsp = [Psp]                  the vector of setpoint power values
-        [Qsp]
-  F   = [P=f(th,U)]            the vector of calculated power values
-        [Q=g(th,U)]
-  DF  = Fsp - F                the calculated power mismatch
-  J   = dF/dx = [dP/dth dP/dU] the Jacobian of the non linear system DF = J*Dx
-                [dQ/dth dQ/dU]
-
-  __Algorithm to solve case__
-  Init x  : known th for slack bus, know U's for slack and BUSTYPE_PV buses.
-  Init F  : according to x.
-  Init Fsp: known P's for BUSTYPE_PV and BUSTYPE_PQ buses,
-            known Q for BUSTYPE_PQ buses, value from F for the rest.
-  Loop:
-    Calculate DF
-    Check convergence criteria: if norm(DF)<tolerance exit and x_solution = x.
-    Calculate J
-    Build pv, pq index vectors
-    Build reduced DFred vector: include P for BUSTYPE_PV & BUSTYPE_PQ buses and
-                                        Q for BUSTYPE_PQ buses
-    Build reduced Jred matrix: no dF/dx elements for slack x's
-                               no dQ/dx and dF/dU elements for BUSTYPE_PV buses
-    Solve DFred = Jred*Dxred: solve system for Dxred
-    Update x from Dxred: according to pv,pq index vectors
-    Update F = F(x)
-    Update Fsp from F: P & Q for slack bus, Q for BUSTYPE_PV buses
-  End_loop
-  */
-
+  // ----- End timer -----
   double elapsed_time = timer.Stop();
   bool converged(false);
 

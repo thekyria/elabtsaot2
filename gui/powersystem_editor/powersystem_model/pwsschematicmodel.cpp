@@ -29,22 +29,22 @@ int PwsSchematicModel::init(){
   this->clear();
   size_t k, n;
   int ans = 0;
-  n = _pws->getBusSet_size();
+  n = _pws->getBusCount();
   for( k = 0 ; k != n ; ++k ){
     Bus const* bus = _pws->getBus( k );
     ans |= this->addBusElement( *bus, true );
   }
-  n = _pws->getBrSet_size();
+  n = _pws->getBranchCount();
   for( k = 0 ; k != n ; ++k ){
     Branch const* br = _pws->getBranch(k);
     ans |= this->addBranchElement( *br, true );
   }
-  n = _pws->getGenSet_size();
+  n = _pws->getGenCount();
   for( k = 0 ; k != n ; ++k ){
     Generator const* gen = _pws->getGenerator(k);
     ans |= this->addGenElement( *gen, true );
   }
-  n = _pws->getLoadSet_size();
+  n = _pws->getLoadCount();
   for( k = 0 ; k != n ; ++k ){
     Load const *load = _pws->getLoad(k);
     ans |= this->addLoadElement( *load, true );
@@ -98,7 +98,7 @@ int PwsSchematicModel::validate(){
 
   bool found;
   // ----- Ensure that each powersystem element has a respective element -----
-  for ( k = 0; k != _pws->getBusSet_size() ; ++k ){
+  for ( k = 0; k != _pws->getBusCount() ; ++k ){
     cur_extId = _pws->getBus_extId(k);
     found = false;
     for ( m = 0 ; m != _busElements.size() ; ++m ){
@@ -111,7 +111,7 @@ int PwsSchematicModel::validate(){
       // No corresponding bus model element was found for bus k
       return 11;
   }
-  for ( k = 0; k != _pws->getBrSet_size() ; ++k ){
+  for ( k = 0; k != _pws->getBranchCount() ; ++k ){
     cur_extId = _pws->getBr_extId(k);
     found = false;
     for ( m = 0 ; m != _branchElements.size() ; ++m ){
@@ -124,7 +124,7 @@ int PwsSchematicModel::validate(){
       // No corresponding branch model element was found for branch k
       return 11;
   }
-  for ( k = 0; k != _pws->getGenSet_size() ; ++k ){
+  for ( k = 0; k != _pws->getGenCount() ; ++k ){
     cur_extId = _pws->getGen_extId(k);
     found = false;
     for ( m = 0 ; m != _genElements.size() ; ++m ){
@@ -137,7 +137,7 @@ int PwsSchematicModel::validate(){
       // No corresponding gen model element was found for gen k
       return 11;
   }
-  for ( k = 0; k != _pws->getLoadSet_size() ; ++k ){
+  for ( k = 0; k != _pws->getLoadCount() ; ++k ){
     cur_extId = _pws->getLoad_extId(k);
     found = false;
     for ( m = 0 ; m != _loadElements.size() ; ++m ){
@@ -174,7 +174,7 @@ int PwsSchematicModel::planarizeSchematic( Powersystem const* pws ){
   // Initialize topology graph
   vector< pair<int,int> > edges;
   size_t k, n;
-  n = pws->getBrSet_size();
+  n = pws->getBranchCount();
   for( k = 0 ; k != n ; ++k ){
     // Get next branch
     Branch const* br = pws->getBranch(k);
@@ -188,7 +188,7 @@ int PwsSchematicModel::planarizeSchematic( Powersystem const* pws ){
     edges.push_back( e );
   }
   // Count how many buses exist in the network
-  n = pws->getBusSet_size();
+  n = pws->getBusCount();
   if ( n <= 0 ) return 2; // Planarization of an empty powersystem is trivial!
   // Calculate planarized graph
   vector< pair<int,int> > pos;
@@ -197,27 +197,27 @@ int PwsSchematicModel::planarizeSchematic( Powersystem const* pws ){
 
   // ---- Update PwsSchematicModelElements with their respective positions ----
   int ans = 0;
-  n = pws->getBusSet_size();
+  n = pws->getBusCount();
   for( k = 0 ; k != n ; ++k ){
     Bus const* bus = pws->getBus( k );
     ans |= addBusElement( *bus, 60*pos[k].first, 30*pos[k].second, true, true );
   }
   // ... with branches
-  n = pws->getBrSet_size();
+  n = pws->getBranchCount();
   for( k = 0 ; k != n ; ++k ){
     Branch const* br = pws->getBranch(k);
     ans |= this->addBranchElement( *br, true );
   }
 
   // ... with generators
-  n = pws->getGenSet_size();
+  n = pws->getGenCount();
   for( k = 0 ; k != n ; ++k ){
     Generator const* gen = pws->getGenerator(k);
     ans |= addGenElement( *gen, true );
   }
 
   // ... with loads
-  n = pws->getLoadSet_size();
+  n = pws->getLoadCount();
   for( k = 0 ; k != n ; ++k ){
     Load const *load = pws->getLoad(k);
     ans |= addLoadElement( *load, true );

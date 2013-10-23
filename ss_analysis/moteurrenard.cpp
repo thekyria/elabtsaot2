@@ -3,45 +3,23 @@
 using namespace elabtsaot;
 
 #include "logger.h"
-#include "precisiontimer.h"
 
 #include <boost/numeric/ublas/lu.hpp> // for matrix operations
 #include <boost/numeric/ublas/io.hpp> // for ublas::matrix '<<'
-//#include <boost/numeric/ublas/matrix.hpp> // Required for matrix operations
-namespace ublas = boost::numeric::ublas;
+using namespace ublas;
 
-#include <set>
-using std::set;
-//#include <string>
-using std::string;
-#include <vector>
-using std::vector;
+#include <complex>
+using std::polar;
+#include <cmath>                      // for M_PI constant
+#define _USE_MATH_DEFINES
 #include <iostream>
 using std::cout;
 using std::endl;
-#include <complex>
-using std::complex;
-#include <limits>
-using std::numeric_limits;
-#include <ctime>                      // for time(), ctime()
-#include <cmath>                      // for M_PI constant
-#define _USE_MATH_DEFINES
 
 enum MoteurRenardProperties{
   SSEMRN_PROPERTY_FLATSTART,
-  SSEMRN_PROPERTY_QLIM,
   SSEMRN_PROPERTY_TOL,
   SSEMRN_PROPERTY_MAXIT
-};
-
-//! Bus type enumeration
-enum BusType {
-  BUSTYPE_UNDEF,         //!< Undefined bus type (possibly only yet)
-  BUSTYPE_PQ,            //!< PQ bus type: P and Q injection defined at the bus
-  BUSTYPE_PV,            //!< PV bus type: P injection and voltage magnitude
-                         //!< defined at the bus
-  BUSTYPE_SLACK          //!< Slack bus: Voltage magnitude and angle defined
-                         //!< defined at the bus
 };
 
 MoteurRenard::MoteurRenard(Logger* log):
@@ -53,13 +31,6 @@ MoteurRenard::MoteurRenard(Logger* log):
   tempPt.dataType = PROPERTYT_DTYPE_BOOL;
   tempPt.name = "Flat start";
   tempPt.description = "Start power flow computation from a flat point, ie. |V|=1 ang(V)=0 for all buses";
-  tempPt.defaultValue = true;
-  _properties[tempPt] = tempPt.defaultValue;
-
-  tempPt.key = SSEMRN_PROPERTY_QLIM;
-  tempPt.dataType = PROPERTYT_DTYPE_BOOL;
-  tempPt.name = "Enforce Q limits";
-  tempPt.description = "Enforce gen reactive power limits at expense of |V|";
   tempPt.defaultValue = true;
   _properties[tempPt] = tempPt.defaultValue;
 
@@ -82,130 +53,186 @@ MoteurRenard::MoteurRenard(Logger* log):
   _properties[tempPt] = tempPt.defaultValue;
 }
 
-int MoteurRenard::do_solvePowerFlow( Powersystem const& pws,
-                                     ublas::vector<double>& x,
-                                     ublas::vector<double>& F ) const{
+int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
+                                    matrix<complex>& Y,
+                                    vector<complex>& V) const{
 
   // Before entering into the power flow main routine, check that the power system
   // has been validated
-  if ( pws.status() != PWSSTATUS_VALID && pws.status() != PWSSTATUS_LF )
-    return 1;
-  if ( pws.status() == PWSSTATUS_LF )
-    // Nothing to do!
-    return 0;
+  if (pws.status()!=PWSSTATUS_VALID && pws.status()!=PWSSTATUS_PF)
+    return -1;
 
-  // ----- Retrieve options -----
+  // Retrieve options
   /* flatStart: start iteration from a flat voltage profile (Vmag=1, Vang=0)
    tolerance: convergence criteria tolerance
-   enforceQLimits : if true, generator Q limits are enforced, by converting pv
-                    buses to pq buses when qgen limits are violated
    maxIterCount: maximum number of allowable iterations of main loop converge */
   bool flatStart;
-  bool enforceQLimits;
   double tolerance;
   size_t maxIterCount;
-  _getOptions( flatStart, enforceQLimits, tolerance, maxIterCount );
+  _getOptions( flatStart, tolerance, maxIterCount );
 
-  // ----- Start timer -----
-  PrecisionTimer timer;
-  timer.Start();
-  time_t rawtime;
-  time ( &rawtime );
-  string time_string = ctime( &rawtime );
+  // initialize
+  size_t N = pws.getBusCount();
+  bool converged(false);
+  size_t iterCount(0);
+//  cout << "init" << endl;
 
-  // TODO
-  return 721;
-  // ----- Start power flow computation proper -----
+  // Build admittance matrix Y
+  ssengine::buildY(pws, Y);
+//  cout << "Y: " << Y << endl;
 
-  /* Let be:
-  x   = [th]                   the vector of unknown values
-        [ U]
-  Fsp = [Psp]                  the vector of setpoint power values
-        [Qsp]
-  F   = [P=f(th,U)]            the vector of calculated power values
-        [Q=g(th,U)]
-  DF  = Fsp - F                the calculated power mismatch
-  J   = dF/dx = [dP/dth dP/dU] the Jacobian of the non linear system DF = J*Dx
-                [dQ/dth dQ/dU]
+  // initialize voltage and power vectors
+  V.resize(N);
+  vector<complex> Sset(N);
+  vector<double> Va(N), Vm(N);
+  size_t Npv(0), Npq(0);
+  std::vector<size_t> pv, pq; // old names: pv, pq
+  for (size_t k=0;k!=N;++k){
+    Bus const* bus = pws.getBus(k);
+    V(k) = polar(bus->V,bus->theta);
+    Va(k) = bus->theta;
+    Vm(k) = bus->V;
+    Sset(k) = complex(bus->P,bus->Q); // power setpoint
+    if (bus->type==BUSTYPE_PV){
+      Npv++;
+      pv.push_back(k);
+    }
+    if (bus->type==BUSTYPE_PQ){
+      Npq++;
+      pq.push_back(k);
+    }
+  }
+//  cout << "Sset: " << Sset << endl;
 
-  __Algorithm to solve case__
-  Init x  : known th for slack bus, know U's for slack and BUSTYPE_PV buses.
-  Init F  : according to x.
-  Init Fsp: known P's for BUSTYPE_PV and BUSTYPE_PQ buses,
-            known Q for BUSTYPE_PQ buses, value from F for the rest.
-  Loop:
-    Calculate DF
-    Check convergence criteria: if norm(DF)<tolerance exit and x_solution = x.
-    Calculate J
-    Build pv, pq index vectors
-    Build reduced DFred vector: include P for BUSTYPE_PV & BUSTYPE_PQ buses and
-                                        Q for BUSTYPE_PQ buses
-    Build reduced Jred matrix: no dF/dx elements for slack x's
-                               no dQ/dx and dF/dU elements for BUSTYPE_PV buses
-    Solve DFred = Jred*Dxred: solve system for Dxred
-    Update x from Dxred: according to pv,pq index vectors
-    Update F = F(x)
-    Update Fsp from F: P & Q for slack bus, Q for BUSTYPE_PV buses
-  End_loop
-  */
+  // Evaluate F(x0)
+  vector<complex> Smis(N);
+  ssengine::calculatePower(Y,V,Smis); // temporarily Smis holds actual power at current V
+//  cout << "Scur: " << Smis << endl;
+  Smis -= Sset; // now it holds the power mismatch
+//  cout << "Smis: " << Smis << endl;
+  vector<double> F(Npv+Npq+Npq);
+  for (size_t k=0; k!=Npv; ++k)
+    F(k)         = real(Smis(pv[k]));
+  for (size_t k=0; k!=Npq; ++k){
+    F(Npv+k)     = real(Smis(pq[k]));
+    F(Npv+Npq+k) = imag(Smis(pq[k]));
+  }
+//  cout << "F: " << F << endl;
+//  cout << "norm_inf(F): " << norm_inf(F) << endl;
+  // Check tolerance
+  if (norm_inf(F)<tolerance)
+    converged = true;
 
-  // ***************************** Initialization *****************************
+  // do Newton iterations
+  while (!converged && iterCount<maxIterCount){
+    ++iterCount;
+//    cout << "itercount: " << iterCount << endl;
 
+    // Evaluate Jacobian
+    matrix<complex> dSdVm(N,N), dSdVa(N,N);
+    ssengine::calculateDSdV(Y,V,dSdVm,dSdVa);
+//    cout << "dSdVm: " << dSdVm << endl;
+//    cout << "dSdVa: " << dSdVa << endl;
+    matrix<double> J11(Npv+Npq,Npv+Npq), J12(Npv+Npq,Npq), J21(Npq,Npv+Npq), J22(Npq,Npq);
+    for (size_t k=0; k!=Npv; ++k){
+      for (size_t m=0; m!=Npv; ++m){
+        J11(    k,    m) = real(dSdVa(pv[k],pv[m])); // Npv, Npv
+      }
+    }
+    for (size_t k=0; k!=Npq; ++k){
+      for (size_t m=0; m!=Npv; ++m){
+        J11(Npv+k,    m) = real(dSdVa(pq[k],pv[m])); // Npq, Npv
+        J21(    k,    m) = imag(dSdVa(pq[k],pv[m])); // Npq, Npv
+      }
+    }
+    for (size_t k=0; k!=Npv; ++k){
+      for (size_t m=0; m!=Npq; ++m){
+        J11(    k,Npv+m) = real(dSdVa(pv[k],pq[m])); // Npv, Npq
+        J12(    k,    m) = real(dSdVm(pv[k],pq[m])); // Npv, Npq
+      }
+    }
+    for (size_t k=0; k!=Npq; ++k){
+      for (size_t m=0; m!=Npq; ++m){
+        J11(Npv+k,Npv+m) = real(dSdVa(pq[k],pq[m])); // Npq, Npq
+        J12(Npv+k,    m) = real(dSdVm(pq[k],pq[m])); // Npq, Npq
+        J21(    k,Npv+m) = imag(dSdVa(pq[k],pq[m])); // Npq, Npq
+        J22(    k,    m) = imag(dSdVm(pq[k],pq[m])); // Npq, Npq
+      }
+    } // TODO: compact this into one loop with range checks!
+//    cout << "J11: " << J11 << endl;
+//    cout << "J12: " << J12 << endl;
+//    cout << "J21: " << J21 << endl;
+//    cout << "J22: " << J22 << endl;
+    matrix<double> J(Npv+2*Npq,Npv+2*Npq);
+    range r1(0,Npv+Npq), r2(Npv+Npq,Npv+2*Npq);
+    project(J, r1, r1) = J11;
+    project(J, r1, r2) = J12;
+    project(J, r2, r1) = J21;
+    project(J, r2, r2) = J22;
+//    cout << "J: " << J << endl;
 
-  // ************** Calculate full Jacobian J **************
-  /*
-    J = [dP/dth dP/dU]   and   [DP] = [J] * [dth] => [DP] = [JPth JPU] * [dth]
-        [dQ/dth dQ/dU]         [DQ]         [dU ]    [DQ]   [JQth JQU]   [dU]
-    JPth = dP/dth
-    JPU  = dP/dU
-    JQth = dQ/dth
-    JQU  = dQ/dU
-  */
+    // Compute update step
+    permutation_matrix<size_t>* pm = new permutation_matrix<size_t>(J.size1());
+    vector<double> dx = F;
+    BOOST_TRY{
+      int ans = lu_factorize(J,*pm);
+      if (ans) return ans;
+      lu_substitute(J,*pm,dx);
+    }BOOST_CATCH(ublas::singular const& ex){
+      cout << "Singularity likely!" << endl;
+      cout << "Exception message: " << ex.what() << endl;
+    }BOOST_CATCH(std::exception const& ex){
+      cout << "Other exception caught!" << endl;
+      cout << "Exception message: " << ex.what() << endl;
+    }BOOST_CATCH(...){
+      cout << "Operation failed!" << endl;
+    }BOOST_CATCH_END
+    dx = -dx;
+//    cout << "dx: " << dx << endl;
 
-    // ************** Build reduced Jred matrix **************
-/*
-     DFred   =     Jred        Dxred
-  (p+2q x 1)   (p+2q x p+2q) (p+2q x 1)
+    // Update voltage
+    for (size_t k=0; k!=Npv; ++k)
+      Va(pv[k]) += dx(k);
+    for (size_t k=0; k!=Npq; ++k){
+      Va(pq[k]) += dx(Npv+k);
+      Vm(pq[k]) += dx(Npv+Npq+k);
+    }
+    for (size_t k=0;k!=N;++k){
+      V(k) = polar(Vm(k),Va(k));
+      Vm(k) = std::abs(V(k)); // Update Vm & Va in case
+      Va(k) = std::arg(V(k)); // we wrapped around the angle
+    }
+//    cout << "Vm: " << Vm << endl;
+//    cout << "Va: " << Va << endl;
+    delete pm;
 
-In the following:
-PVz: z'th BUSTYPE_PV bus, PQz: z'th BUSTYPE_PQ bus
-
-DFred = [ DP(PV1) .. DP(PVp)  DP(PQ1)  .. DP(PQq)  DQ(PQ1)   .. DQ(PQq)  ]' =
-      = [ DF(PV1) .. DF(PVp)  DF(PQq)  .. DF(PQq)  DF(n+PQ1) .. DQ(n+PQq)]'
-
-Dxred = [Dth(PV1) .. Dth(PVp) Dth(PQ1) .. Dth(PQq) DU(PQ1)   .. DU(PQq)  ]' =
-      = [ Dx(PV1) .. Dx(PVp)  Dx(PQ1)  .. Dx(PQq)  Dx(n+PQ1) .. Dx(n+PQq)]'
-
-Jred = [
-JPth(PV1,PV1)..JPth(PV1,PVp) JPth(PV1,PQ1)..JPth(PV1,PQq) JPU(PV1,PQ1)..JPU(PV1,PQq)
-     ..              ..             ..              ..            ..             ..
-JPth(PVp,PV1)..JPth(PVp,PVp) JPth(PVp,PQ1)..JPth(PVp,PQq) JPU(PVp,PQ1)..JPU(PVp,PQq)
-JPth(PQ1,PV1)..JPth(PQ1,PVp) JPth(PQ1,PQ1)..JPth(PQ1,PQq) JPU(PQ1,PQ1)..JPU(PQ1,PQq)
-     ..              ..             ..              ..            ..             ..
-JPth(PQq,PV1)..JPth(PQq,PVp) JPth(PQq,PQ1)..JPth(PQq,PQq) JPU(PQq,PQ1)..JPU(PQq,PQq)
-JQth(PQ1,PV1)..JQth(PQ1,PVp) JQth(PQ1,PQ1)..JQth(PQ1,PQq) JQU(PQ1,PQ1)..JQU(PQ1,PQq)
-     ..              ..             ..              ..            ..             ..
-JQth(PQq,PV1)..JQth(PQq,PVp) JQth(PQq,PQ1)..JQth(PQq,PQq) JQU(PQq,PQ1)..JQU(PQq,PQq)
-] =
-                      [ subJred(1,1) subJred(1,2) subJred(1,3) ]
-                      [ subJred(2,1) subJred(2,2) subJred(2,3) ]
-                      [ subJred(3,1) subJred(3,2) subJred(3,3) ]
-*/
-
+    // Evaluate F
+    ssengine::calculatePower(Y,V,Smis); // temporarily Smis holds actual power at current V
+    Smis -= Sset; // now it holds the power mismatch
+//    cout << "Smis: " << Smis << endl;
+    for (size_t k=0; k!=Npv; ++k)
+      F(k)         = real(Smis(pv[k]));
+    for (size_t k=0; k!=Npq; ++k){
+      F(Npv+k)     = real(Smis(pq[k]));
+      F(Npv+Npq+k) = imag(Smis(pq[k]));
+    }
+//    cout << "F: " << F << endl;
+//    cout << "norm_inf(F): " << norm_inf(F) << endl;
+    // Check tolerance
+    if (norm_inf(F)<tolerance)
+      converged = true;
+  }
+  if (!converged) return 2;
+  return 0;
 }
 
-void MoteurRenard::_getOptions( bool& flatStart,
-                                bool& enforceQLimits,
-                                double& tolerance,
-                                size_t& maxIterCount ) const{
+void MoteurRenard::_getOptions( bool& flatStart, double& tolerance, size_t& maxIterCount ) const{
   // Retrieve boost::any properties
   boost::any anyFlatStart = _getPropertyValueFromKey(SSEMRN_PROPERTY_FLATSTART);
-  boost::any anyEnforceQLimits = _getPropertyValueFromKey(SSEMRN_PROPERTY_QLIM);
   boost::any anyTolerance = _getPropertyValueFromKey(SSEMRN_PROPERTY_TOL);
   boost::any anyMaxIterCount = _getPropertyValueFromKey(SSEMRN_PROPERTY_MAXIT);
   // Store them in output arguments
   flatStart = boost::any_cast<bool>( anyFlatStart );
-  enforceQLimits = boost::any_cast<bool>( anyEnforceQLimits );
   tolerance = boost::any_cast<double>( anyTolerance );
   maxIterCount = boost::any_cast<int>( anyMaxIterCount );
 }

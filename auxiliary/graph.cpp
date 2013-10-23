@@ -344,7 +344,7 @@ int graph::countIslands( Powersystem const& pws ){
 
   // Fill the graph (adjacency list) used to check about islands in the topology
   // ---------- Initialize topology graph from powersystem ----------
-  size_t branchCount = pws.getBrSet_size();
+  size_t branchCount = pws.getBranchCount();
   for( size_t k = 0 ; k != branchCount ; ++k ){
     Branch const* br = pws.getBranch(k);
     if( !br ) break;
@@ -407,7 +407,7 @@ bool graph::isPlanar( Powersystem const& pws ){
 
   // ---------- Initialize topology graph from powersystem ----------
   std::vector<std::pair<int,int> > edges;
-  size_t branchCount = pws.getBrSet_size();
+  size_t branchCount = pws.getBranchCount();
   for( size_t k = 0 ; k != branchCount ; ++k ){
 
     // Get next branch
@@ -424,7 +424,7 @@ bool graph::isPlanar( Powersystem const& pws ){
     edges.push_back( e );
   }
   // Count how many buses exist in the network
-  size_t vertexCount = pws.getBusSet_size();
+  size_t vertexCount = pws.getBusCount();
   if ( vertexCount <= 0 )
     return false; // Planarization of an empty powersystem is trivial!
 

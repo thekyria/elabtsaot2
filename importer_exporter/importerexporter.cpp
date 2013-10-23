@@ -403,7 +403,7 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
 
   // --------------- Output buses ---------------
   fprintf(f, "<buses>\n");
-  for( size_t k = 0 ; k != pws->getBusSet_size(); ++k ){
+  for( size_t k = 0 ; k != pws->getBusCount(); ++k ){
     // Get bus at pos (intId) k
     Bus const* bus = pws->getBus(k);
     // Write its parameters to the xml file
@@ -425,7 +425,7 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
 
   // --------------- Output branches --------------------
   fprintf(f, "<branches>\n");
-  for( size_t k = 0 ; k != pws->getBrSet_size() ; ++k ){
+  for( size_t k = 0 ; k != pws->getBranchCount() ; ++k ){
     // Get branch at pos (intId) k
     Branch const* br = pws->getBranch(k);
     // Write its parameters to the xml file
@@ -449,7 +449,7 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
 
   // -------------------- Output generators --------------------
   fprintf(f, "<generators>\n");
-  for( size_t k = 0 ; k != pws->getGenSet_size() ; ++k ){
+  for( size_t k = 0 ; k != pws->getGenCount() ; ++k ){
     // Get generator at pos (intId) k
     Generator const* gen = pws->getGenerator(k);
     // Write its parameters to the xml file
@@ -488,7 +488,7 @@ int io::exportPowersystem( string filename, Powersystem const* pws){
 
   // --------------- Output loads ---------------
   fprintf(f, "<loads>\n");
-  for( size_t k = 0 ; k != pws->getLoadSet_size() ; ++k ){
+  for( size_t k = 0 ; k != pws->getLoadCount() ; ++k ){
     // Get load at pos (intId) k
     Load const* load = pws->getLoad(k);
     // And write its parameters to the xml file

@@ -116,7 +116,7 @@ void GTDAEditor::branchStabCheckSlot(){
   // ----- Create scenarios corresponding to 3ph faults in the middle of -----
   // ----- the branches -----
   vector<Scenario> scenarios;
-  for ( size_t k = 0 ; k != pws->getBrSet_size() ; ++k ){
+  for ( size_t k = 0 ; k != pws->getBranchCount() ; ++k ){
     unsigned int brExtId = pws->getBranch(k)->extId;
     Scenario tempSce( k,
                       "Scenario for branch " + auxiliary::to_string(brExtId),
@@ -158,7 +158,7 @@ void GTDAEditor::branchStabCheckSlot(){
   }
   // Parse checkStability results
   map<unsigned int,map<unsigned int,bool> > brGenStab;
-  for ( unsigned int k = 0 ; k != pws->getBrSet_size() ; ++k ){
+  for ( unsigned int k = 0 ; k != pws->getBranchCount() ; ++k ){
     unsigned int brExtId = pws->getBranch(k)->extId;
     brGenStab[brExtId] = genStable[k];
   }
@@ -217,7 +217,7 @@ void GTDAEditor::cctCheckSlot(){
   // ----- the branches -----
   Powersystem const* pws(_tde->getPws());
   vector<Scenario> scenarios;
-  for ( size_t k = 0 ; k != pws->getBrSet_size() ; ++k ){
+  for ( size_t k = 0 ; k != pws->getBranchCount() ; ++k ){
     unsigned int brExtId = pws->getBranch(k)->extId;
     Scenario tempSce( k,
                       "Scenario for branch " + auxiliary::to_string(brExtId),
@@ -258,7 +258,7 @@ void GTDAEditor::cctCheckSlot(){
 
   // ----- Parse results and output detailedly to console -----
   map<unsigned int, pair<double,double> > cctMap;
-  for ( size_t k = 0 ; k != pws->getBrSet_size() ; ++k ){
+  for ( size_t k = 0 ; k != pws->getBranchCount() ; ++k ){
     unsigned int brExtId = pws->getBranch(k)->extId;
     cctMap[brExtId] = make_pair(cctMin[k], cctMax[k]);
   }

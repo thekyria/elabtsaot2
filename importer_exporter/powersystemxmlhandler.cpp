@@ -48,9 +48,9 @@ bool PowersystemXMLHandler::characters(QString const& ch){
     if (_tags.last()=="baseKV")
       _p_bus->baseKV = value.toDouble();
     if (_tags.last()=="P")
-      _p_bus->baseKV = value.toDouble();
+      _p_bus->P = value.toDouble();
     if (_tags.last()=="Q")
-      _p_bus->baseKV = value.toDouble();
+      _p_bus->Q = value.toDouble();
     if (_tags.last()=="V")
       _p_bus->V = value.toDouble();
     if (_tags.last()=="theta")

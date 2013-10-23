@@ -35,7 +35,7 @@ namespace elabtsaot{
 enum PowerSystemStatus {
   PWSSTATUS_INIT  = 0,   //!< Powersystem initialized (just created)
   PWSSTATUS_VALID = 1,   //!< Powersystem validated (checked for topological consistency)
-  PWSSTATUS_LF    = 2    //!< Power flow solved successfully for the powersystem
+  PWSSTATUS_PF    = 2    //!< Power flow solved successfully for the powersystem
 };
 
 class Powersystem {
@@ -60,10 +60,10 @@ class Powersystem {
   int deleteLoad(unsigned int loadExtId);
   int validate();
 
-  size_t getBusSet_size() const;   //!< gets the size of _busSet
-  size_t getBrSet_size() const;    //!< gets the size of _brSet
-  size_t getGenSet_size() const;   //!< gets the size of _genSet
-  size_t getLoadSet_size() const;  //!< gets the size of _loadSet
+  size_t getBusCount() const;   //!< gets the size of _busSet
+  size_t getBranchCount() const;    //!< gets the size of _brSet
+  size_t getGenCount() const;   //!< gets the size of _genSet
+  size_t getLoadCount() const;  //!< gets the size of _loadSet
   unsigned int getBus_extId(size_t intId) const;
   unsigned int getBr_extId(size_t intId) const;
   unsigned int getGen_extId(size_t intId) const;

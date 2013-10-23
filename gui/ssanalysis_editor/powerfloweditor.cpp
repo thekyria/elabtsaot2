@@ -36,20 +36,31 @@ PowerFlowEditor::PowerFlowEditor( Powersystem*& pws,
 
   pfToolbar->addSeparator(); // -- Separator
 
+  QAction* calculateYAct = new QAction( QIcon(), "Calculate Y", pfToolbar );
+  pfToolbar->addAction( calculateYAct );
+  connect( calculateYAct, SIGNAL(triggered()), this, SLOT(calculateYSlot()) );
+
   QAction* solvePowerFlowAct = new QAction( QIcon(), "Solve power flow", pfToolbar );
   pfToolbar->addAction( solvePowerFlowAct );
-  connect( solvePowerFlowAct, SIGNAL(triggered()), this, SLOT(powerFlowPowersystem()) );
+  connect( solvePowerFlowAct, SIGNAL(triggered()), this, SLOT(powerFlowPowersystemSlot()) );
 
   QAction* logPowerFlowAct = new QAction( QIcon(), "Log power flow results", pfToolbar );
   pfToolbar->addAction( logPowerFlowAct );
-  connect( logPowerFlowAct, SIGNAL(triggered()), this, SLOT(logPowerFlowResults()) );
+  connect( logPowerFlowAct, SIGNAL(triggered()), this, SLOT(logPowerFlowResultsSlot()) );
 
 }
 
 void PowerFlowEditor::updt(){ _tbl->updt(); }
 
-void PowerFlowEditor::powerFlowPowersystem() const{
+#include <boost/numeric/ublas/io.hpp>
 
+void PowerFlowEditor::calculateYSlot() const{
+  ublas::matrix<complex> Y;
+  ssengine::buildY(*_pws,Y);
+  cout << "Y: " << Y << endl;
+}
+
+void PowerFlowEditor::powerFlowPowersystemSlot() const{
   int ans = _sse->solvePowerFlow( *_pws);
   if( !ans ){
     cout << "Power flow succedeed." << endl;
@@ -58,11 +69,9 @@ void PowerFlowEditor::powerFlowPowersystem() const{
   }else{
     cout << "Power flow failed with code " << ans << "." << endl;
   }
-
-  return;
 }
 
-void PowerFlowEditor::logPowerFlowResults(){
+void PowerFlowEditor::logPowerFlowResultsSlot(){
 
   // Show log power flow results dialog
   bool toConsole = true;

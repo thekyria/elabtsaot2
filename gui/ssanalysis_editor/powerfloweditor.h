@@ -22,8 +22,9 @@ class PowerFlowEditor : public QSplitter {
  public slots:
 
   void updt();
-  void powerFlowPowersystem() const;
-  void logPowerFlowResults();
+  void calculateYSlot() const;
+  void powerFlowPowersystemSlot() const;
+  void logPowerFlowResultsSlot();
 
  private:
 

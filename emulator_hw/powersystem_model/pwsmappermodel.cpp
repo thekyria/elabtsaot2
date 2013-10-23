@@ -71,22 +71,22 @@ int PwsMapperModel::init(){
   clear();
   size_t k, n;
   int ans = 0;
-  n = _pws->getBusSet_size();
+  n = _pws->getBusCount();
   for ( k = 0 ; k != n ; ++k ){
     Bus const* bus = _pws->getBus( k );
     ans |= addBusElement( *bus );
   }
-  n = _pws->getBrSet_size();
+  n = _pws->getBranchCount();
   for ( k = 0 ; k != n ; ++k ){
     Branch const* br = _pws->getBranch( k );
     ans |= addBranchElement( *br );
   }
-  n = _pws->getGenSet_size();
+  n = _pws->getGenCount();
   for ( k = 0 ; k != n ; ++k ){
     Generator const* gen = _pws->getGenerator( k );
     ans |= addGenElement( *gen );
   }
-  n = _pws->getLoadSet_size();
+  n = _pws->getLoadCount();
   for ( k = 0 ; k != n ; ++k ){
     Load const* load = _pws->getLoad( k );
     ans |= addLoadElement( *load );
@@ -411,21 +411,21 @@ int PwsMapperModel::autoMapping(){
     return -1;
 
   // Check number of buses
-  if ( _pws->getBusSet_size() > _tabs*_rows*_cols )
+  if ( _pws->getBusCount() > _tabs*_rows*_cols )
     return -2;
 
   // Check number of branches
-  if ( _pws->getBrSet_size() > _emuhw->getEmbrCount() )
+  if ( _pws->getBranchCount() > _emuhw->getEmbrCount() )
     return -3;
 
   // Check if more than one element is present on a bus
-  for ( size_t k = 0 ; k != _pws->getBusSet_size() ; ++k ){
+  for ( size_t k = 0 ; k != _pws->getBusCount() ; ++k ){
     if ( _pws->getBusGenMap(k).size() + _pws->getBusLoadMap(k).size() > 1 )
       return -4;
   }
 
   // Check if graph degree of a pws bus is more than maximum allowed
-  for ( size_t k = 0 ; k != _pws->getBusSet_size() ; ++k ){
+  for ( size_t k = 0 ; k != _pws->getBusCount() ; ++k ){
     if ( _pws->getBusBrMap(k).size() > 6 )
       return -5;
   }

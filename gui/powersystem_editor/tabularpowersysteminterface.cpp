@@ -17,13 +17,13 @@ TabularPowersystemInterface::TabularPowersystemInterface(int type,
 int TabularPowersystemInterface::rowCount(QModelIndex const& index) const{
   switch( _type ){
   case PWSMODELELEMENTTYPE_BUS: // Buses
-    return _pws->getBusSet_size();
+    return _pws->getBusCount();
   case PWSMODELELEMENTTYPE_BR: // Branches
-    return _pws->getBrSet_size();
+    return _pws->getBranchCount();
   case PWSMODELELEMENTTYPE_GEN: // Generators
-    return _pws->getGenSet_size();
+    return _pws->getGenCount();
   case PWSMODELELEMENTTYPE_LOAD: // Loads
-    return _pws->getLoadSet_size();
+    return _pws->getLoadCount();
   }
 
   return 0;
@@ -32,7 +32,7 @@ int TabularPowersystemInterface::rowCount(QModelIndex const& index) const{
 int TabularPowersystemInterface::columnCount(QModelIndex const& index) const{
   switch( _type ){
   case PWSMODELELEMENTTYPE_BUS: // Buses
-    return 9;
+    return 10;
   case PWSMODELELEMENTTYPE_BR: // Branches
     return 12;
   case PWSMODELELEMENTTYPE_GEN: // Generators
@@ -61,14 +61,14 @@ QVariant TabularPowersystemInterface::data(QModelIndex const& index, int role) c
     switch(index.column()){
     case 0: return _pws->getBus(index.row())->extId;
     case 1: return _pws->getBus(index.row())->name.c_str();
-    case 2: return _pws->getBus(index.row())->Gsh;
-    case 3: return _pws->getBus(index.row())->Bsh;
-    case 4: return _pws->getBus(index.row())->baseKV;
-
-    case 5: return _pws->getBus(index.row())->P;
-    case 6: return _pws->getBus(index.row())->Q;
-    case 7: return _pws->getBus(index.row())->V;
-    case 8: return _pws->getBus(index.row())->theta;
+    case 2: return _pws->getBus(index.row())->type;
+    case 3: return _pws->getBus(index.row())->Gsh;
+    case 4: return _pws->getBus(index.row())->Bsh;
+    case 5: return _pws->getBus(index.row())->baseKV;
+    case 6: return _pws->getBus(index.row())->P;
+    case 7: return _pws->getBus(index.row())->Q;
+    case 8: return _pws->getBus(index.row())->V;
+    case 9: return _pws->getBus(index.row())->theta;
     }
     break;
   }
@@ -168,20 +168,21 @@ bool TabularPowersystemInterface::setData(QModelIndex const& index,
         bus->extId = v.toInt(); break;
     case 1: if(v.convert(QVariant::String))
         bus->name = v.toString().toStdString(); break;
-    case 2: if(v.convert(QVariant::Double))
-        bus->Gsh = v.toFloat(); break;
+    case 2: if(v.convert(QVariant::Int))
+        bus->type = v.toInt(); break;
     case 3: if(v.convert(QVariant::Double))
-        bus->Bsh = v.toFloat(); break;
+        bus->Gsh = v.toFloat(); break;
     case 4: if(v.convert(QVariant::Double))
-        bus->baseKV = v.toFloat(); break;
-
+        bus->Bsh = v.toFloat(); break;
     case 5: if(v.convert(QVariant::Double))
-        bus->P = v.toFloat(); break;
+        bus->baseKV = v.toFloat(); break;
     case 6: if(v.convert(QVariant::Double))
-        bus->Q = v.toFloat(); break;
+        bus->P = v.toFloat(); break;
     case 7: if(v.convert(QVariant::Double))
-        bus->V = v.toFloat(); break;
+        bus->Q = v.toFloat(); break;
     case 8: if(v.convert(QVariant::Double))
+        bus->V = v.toFloat(); break;
+    case 9: if(v.convert(QVariant::Double))
         bus->theta = v.toFloat(); break;
     }
     break;
@@ -237,7 +238,6 @@ bool TabularPowersystemInterface::setData(QModelIndex const& index,
         gen->name=v.toString().toStdString(); break;
     case  3: if(v.convert(QVariant::Int))
         gen->busExtId=v.toInt(); break;
-
 //    case  4: if(v.convert(QVariant::Double))
 //        gen->Pgen=v.toFloat(); break;
 //    case  5: if(v.convert(QVariant::Double))
@@ -246,7 +246,6 @@ bool TabularPowersystemInterface::setData(QModelIndex const& index,
 //        gen->Vss=complex<double>(v.toFloat(),gen->Vss.imag()); break;
 //    case  7: if(v.convert(QVariant::Double))
 //        gen->Vss=complex<double>(gen->Vss.real(),v.toFloat()); break;
-
     case  8: if(v.convert(QVariant::Int))
         gen->model=v.toInt(); break;
     case  9: if(v.convert(QVariant::Double))
@@ -292,16 +291,14 @@ bool TabularPowersystemInterface::setData(QModelIndex const& index,
         load->extId = v.toInt(); break;
     case 1: if(v.convert(QVariant::Int))
         load->busExtId = v.toInt(); break;
-
-    case 2: if(v.convert(QVariant::Double))
-        load->Pdemand = v.toFloat(); break;
-    case 3: if(v.convert(QVariant::Double))
-        load->Qdemand = v.toFloat(); break;
-    case 4: if(v.convert(QVariant::Double))
-        load->Vss=complex<double>(v.toFloat(),load->Vss.imag()); break;
-    case 5: if(v.convert(QVariant::Double))
-        load->Vss=complex<double>(load->Vss.real(),v.toFloat()); break;
-
+//    case 2: if(v.convert(QVariant::Double))
+//        load->Pdemand = v.toFloat(); break;
+//    case 3: if(v.convert(QVariant::Double))
+//        load->Qdemand = v.toFloat(); break;
+//    case 4: if(v.convert(QVariant::Double))
+//        load->Vss=complex<double>(v.toFloat(),load->Vss.imag()); break;
+//    case 5: if(v.convert(QVariant::Double))
+//        load->Vss=complex<double>(load->Vss.real(),v.toFloat()); break;
     case 6: if(v.convert(QVariant::Double))
         load->Vexpa = v.toFloat(); break;
     case 7: if(v.convert(QVariant::Double))
@@ -337,14 +334,14 @@ QVariant TabularPowersystemInterface::headerData(int section,
     switch(section){
     case 0: return "extId";
     case 1: return "name";
-    case 2: return "Gsh";
-    case 3: return "Bsh";
-    case 4: return "baseKV";
-
-    case 5: return "P";
-    case 6: return "Q";
-    case 7: return "V";
-    case 8: return "theta";
+    case 2: return "type";
+    case 3: return "Gsh";
+    case 4: return "Bsh";
+    case 5: return "baseKV";
+    case 6: return "P";
+    case 7: return "Q";
+    case 8: return "V";
+    case 9: return "theta";
     }
     break;
   }
@@ -373,12 +370,10 @@ QVariant TabularPowersystemInterface::headerData(int section,
     case  1: return "status";
     case  2: return "name";
     case  3: return "busExtId";
-
     case  4: return "Pgen";
     case  5: return "Qgen";
     case  6: return "Vss_real";
     case  7: return "Vss_imag";
-
     case  8: return "model";
     case  9: return "xl";
     case 10: return "ra";
@@ -402,12 +397,10 @@ QVariant TabularPowersystemInterface::headerData(int section,
     switch(section){
     case 0: return "extId";
     case 1: return "busExtId";
-
     case 2: return "Pdemand";
     case 3: return "Qdemand";
     case 4: return "Vss_real";
     case 5: return "Vss_imag";
-
     case 6: return "Vexpa";
     case 7: return "Vexpb";
     case 8: return "kpf";

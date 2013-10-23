@@ -2,118 +2,64 @@
 #include "ssengine.h"
 using namespace elabtsaot;
 
-#include <boost/numeric/ublas/lu.hpp> // for matrix operations
-#include <boost/numeric/ublas/io.hpp> // for ublas::matrix '<<'
-//#include <boost/numeric/ublas/matrix.hpp> // Required for matrix operations
-namespace ublas = boost::numeric::ublas;
-
-#include <complex>
-using std::complex;
+using namespace ublas;
 using std::polar;
-#include <set>
-using std::set;
-//#include <map>
-using std::map;
-#include <vector>
-using std::vector;
-//#include <list>
-using std::list;
 
 SSEngine::SSEngine( std::string description, Logger* log ) :
   _SSdescription(description), _SSlog(log){}
 
-std::string SSEngine::getDescription() const{ return _SSdescription; }
-
+std::string SSEngine::SSDescription() const{ return _SSdescription; }
 void SSEngine::setLogger(Logger* log){ _SSlog = log; }
 
-int SSEngine::buildY( Powersystem const& pws,
-                      ublas::matrix<std::complex<double> >& Y) const{
-  return do_buildY(pws, Y);
-}
-
-int SSEngine::solvePowerFlow( Powersystem& pws ) const{
-
-  ublas::vector<double> x;
-  ublas::vector<double> F;
-  do_getInitialConditions(pws, x, F);
-
-  int ans = do_solvePowerFlow(pws, x, F);
-  if ( ans ) return 1000 + ans ;
-
-  ans = do_updatePowersystem(pws, x, F);
-  if ( ans ) return 2000 + ans;
-
+int SSEngine::solvePowerFlow(Powersystem& pws) const{
+  matrix<complex> Y;
+  vector<complex> V;
+  int ans = do_solvePowerFlow(pws,Y,V);
+  if (ans) return ans ;
+  ssengine::updatePowersystem(pws,Y,V);
   return 0;
 }
 
-void SSEngine::do_getInitialConditions( Powersystem const& pws,
-                                        ublas::vector<double>& x,
-                                        ublas::vector<double>& F ) const{
 
-  // Initialize output vectors
-  size_t n = pws.getBusSet_size();          // number of nodes
-  x.resize(2*n); x.clear();
-  F.resize(2*n); F.clear();
+////////////////////////////////////////////////////////////////////////////////
+// ssengine ////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-  for ( size_t k = 0 ; k != n ; ++k ){
-    Bus const* bus = pws.getBus(k);
-    x(  k) = bus->theta;
-    x(n+k) = bus->V;
-    F(  k) = bus->P;
-    F(n+k) = bus->Q;
-  }
-}
+#include <boost/numeric/ublas/operation.hpp> // for axpy_prod
+#include <boost/numeric/ublas/banded.hpp> // for diagonal_matrix
 
-int SSEngine::do_buildY( Powersystem const& pws,
-                         ublas::matrix<std::complex<double> >& Y) const{
-  // Resize Y to (nxn) and initialize to 0(+j0) for all values
-  size_t n = pws.getBusSet_size();
-  Y.resize(n,n);
+void ssengine::buildY(Powersystem const& pws, matrix<complex>& Y){
+  size_t N = pws.getBusCount();
+  Y.resize(N,N);
   Y.clear();
-
-  unsigned int fext, text;
-  size_t f, t;
-  double r, x, g_from, g_to, b_from, b_to, tap, th;
-  complex<double> ys, yp_from, yp_to, y11, y12, y21, y22;
-  for ( size_t k = 0 ; k != pws.getBrSet_size() ; ++k ){
+  for (size_t k=0; k!=pws.getBranchCount() ; ++k ){
     Branch const* branch = pws.getBranch(k);
-
-    // Check whether the branch is on-line
-    if (!branch->status) continue;
+    if (!branch->status) continue; // Check whether the branch is on-line
 
     // Retrieve data of the branch
-    fext = branch->fromBusExtId;
-    text = branch->toBusExtId;
-    f = pws.getBus_intId(fext);  // from bus internal index
-    t = pws.getBus_intId(text);  // to bus internal index
+    size_t f = pws.getBus_intId(branch->fromBusExtId);  // from bus internal index
+    size_t t = pws.getBus_intId(branch->toBusExtId);  // to bus internal index
 
-    r = branch->R;                     // resistance
-    x = branch->X;                     // reactance
-    ys = 1.0/(complex<double>(r,x));  // series admittance
+    complex ys = 1.0/(complex(branch->R,branch->X));  // series admittance
+    complex yp_from = complex(branch->Gfrom, branch->Bfrom); // from end shunt admittance
+    complex yp_to = complex(branch->Gto, branch->Bto); // to end shunt admittance
 
-    g_from = branch->Gfrom;           // from end shunt conductance
-    b_from = branch->Bfrom;           // from end shunt susceptance
-    yp_from = complex<double>(g_from, b_from); // from end shunt admittance
-    g_to = branch->Gto;               // to end shunt conductance
-    b_to = branch->Bto;               // to end shunt susceptance
-    yp_to = complex<double>(g_to, b_to); // to end shunt admittance
-
-    tap = branch->Xratio;              // Xformer tap ratio magnitude
-    th = branch->Xshift;               // Xformer phase shift angle
-    if(tap == 0){
-      tap = 1;                      // assuming that (tap==0) => denotes line
-      th = 0;
+    double tap = branch->Xratio;              // Xformer tap ratio magnitude
+    double th = branch->Xshift;               // Xformer phase shift angle
+    if(tap==0.){
+      tap=1.;                      // assuming that (tap==0) => denotes line
+      th=0.;
     }
 
     // Determine y-parameters
     // two-port y11-parameter
-    y11 = (ys + yp_from) / complex<double>(tap*tap , 0.0);
+    complex y11 = (ys + yp_from) / complex(tap*tap , 0.0);
     // two-port y12-parameter
-    y12 = -ys / (complex<double>(tap , 0.0) * exp(complex<double>(0.0 , -th)));
+    complex y12 = -ys / (complex(tap , 0.0) * exp(complex(0.0 , -th)));
     // two-port y21-parameter
-    y21 = -ys / (complex<double>(tap , 0.0) * exp(complex<double>(0.0 , th)));
+    complex y21 = -ys / (complex(tap , 0.0) * exp(complex(0.0 , th)));
     // two-port y22-parameter
-    y22 = ys + yp_to;
+    complex y22 = ys + yp_to;
 
     // Update admittance matrix Y
     Y(f,f) += y11;
@@ -123,42 +69,110 @@ int SSEngine::do_buildY( Powersystem const& pws,
   }
 
   // Include bus shunt admittances
-  for ( size_t k = 0 ; k != pws.getBusSet_size() ; ++k )
-    Y(k,k) += complex<double>( pws.getBus(k)->Gsh, pws.getBus(k)->Bsh );
-
-  return 0;
+  for (size_t k=0; k!=N; ++k)
+    Y(k,k) += complex(pws.getBus(k)->Gsh, pws.getBus(k)->Bsh);
 }
 
-int SSEngine::do_updatePowersystem( Powersystem& pws,
-                                    ublas::vector<double> const& x,
-                                    ublas::vector<double> const& F ) const{
+void ssengine::calculatePower(matrix<complex> const& Y,
+                              vector<complex> const& V,
+                              vector<complex>& S){
+  vector<complex> I;
+  calculateCurrent(Y,V,I);
+  S.resize(V.size());
+  S.clear();
+  noalias(S) = element_prod(V,conj(I));
+}
 
-  // Input argument validation
-  size_t n = pws.getBusSet_size();          // number of nodes
+void ssengine::calculateCurrent(matrix<complex> const& Y,
+                                vector<complex> const& V,
+                                vector<complex>& I ){
+  I.resize(V.size());
+  I.clear();
+  axpy_prod(Y,V,I,true);
+}
 
+vector<complex> ssengine::absComplex(vector<complex> const& v){
+  size_t N=v.size();
+  vector<complex> ans(N);
+  for (size_t k=0; k!=N; ++k)
+    ans(k) = complex(std::abs(v(k)),0.);
+  return ans;
+}
+
+void ssengine::calculateDSdV(matrix<complex> const& Y,
+                             vector<complex> const& V,
+                             matrix<complex>& dSdVm,
+                             matrix<complex>& dSdVa){
+  // Sparse provision
+
+  size_t N=V.size();
+  // ----- dPower against dVoltage_magnitude calculations -----
+  dSdVm.resize(N,N);
+  dSdVm.clear();
+  // step1: dSdVm = Y*diagVnorm
+  vector<complex> Vnorm(absComplex(V));
+  diagonal_matrix<complex> diagVnorm(Vnorm.size(),Vnorm.data());
+  axpy_prod(Y,diagVnorm,dSdVm,true);
+  // step2: dSdVm = conj( Y*diagVnorm )
+  dSdVm = conj(dSdVm);
+  // step3: dSdVm = diagV * conj(Y*diagVnorm)
+  diagonal_matrix<complex> diagV(V.size(),V.data());
+  dSdVm = prod(diagV,dSdVm);
+  // step4: dSdVm = diagV*conj(Y*diagVnorm) + diagconjI * diagVnorm;
+  vector<complex> I;
+  calculateCurrent(Y,V,I);
+  diagonal_matrix<complex> diagI(I.size(),I.data()); // needed in dsdVa calculations
+  I = conj(I); // now I temporarily holds conjI
+  diagonal_matrix<complex> diagconjI(I.size(),I.data());
+  axpy_prod(diagconjI,diagVnorm,dSdVm,false);
+
+  // ----- dPower against dVoltage_angle calculations -----
+  dSdVa.resize(N,N);
+  dSdVa.clear();
+  // step1: dsdVa = Y*diagV
+  axpy_prod(Y,diagV,dSdVa,true);
+  // step2: dsdVa = diagI - Y*diagV
+  dSdVa = diagI - dSdVa;
+  // step3: dsdVa = conj( diagI-Y*diagV )
+  dSdVa = conj(dSdVa);
+  // step4: dSdVa = diagV * conj(diagI-Y*diagV)
+  dSdVa = prod(diagV,dSdVa);
+  // step5: dSdVa = 1i * diagV*conj(diagI-Y*diagV)
+  dSdVa *= complex(0,1);
+}
+
+void ssengine::updatePowersystem(Powersystem& pws,
+                                 matrix<complex> const& Y,
+                                 vector<complex> const& V){
   pws.set_status( PWSSTATUS_VALID );
+
+  // Calculate power injections
+  size_t N = pws.getBusCount();
+  vector<complex> S;
+  ssengine::calculatePower(Y,V,S);
+
   // Store theta-U, P-Q results in the _busSet of the pws
-  for ( size_t k = 0 ; k != n ; ++k ){
+  for ( size_t k = 0 ; k != N ; ++k ){
     Bus* bus = pws.getBus(k);
-    bus->theta = x(  k);
-    bus->V     = x(n+k);
-    bus->P     = F(  k);
-    bus->Q     = F(n+k);
+    bus->P     = real(S(k));
+    bus->Q     = imag(S(k));
+    bus->V     =  abs(V(k));
+    bus->theta =  arg(V(k));
   }
 
   // Calculate machine steady state variables
-  for (size_t k = 0 ; k != pws.getGenSet_size() ; ++k){
+  for (size_t k = 0 ; k != pws.getGenCount() ; ++k){
     Generator* gen = pws.getGenerator(k);
     int busIntId = pws.getBus_intId(gen->busExtId);
     Bus* bus = pws.getBus(busIntId);
     gen->Pgen = bus->P;
     gen->Qgen = bus->Q;
-    gen->Vss = polar(bus->V,bus->theta);
+    gen->Vss  = polar(bus->V,bus->theta);
     gen->updateVariables();
   }
 
   // Calculate load steady state variables
-  for ( size_t k = 0 ; k != pws.getLoadSet_size() ; ++k ){
+  for ( size_t k = 0 ; k != pws.getLoadCount() ; ++k ){
     Load* load = pws.getLoad(k);
     int busIntId = pws.getBus_intId( load->busExtId );
     Bus* bus = pws.getBus(busIntId);
@@ -166,7 +180,6 @@ int SSEngine::do_updatePowersystem( Powersystem& pws,
     load->Qdemand = -bus->Q;
     load->Vss = polar(bus->V,bus->theta);
   }
-  pws.set_status( PWSSTATUS_LF );
 
-  return 0;
+  pws.set_status( PWSSTATUS_PF );
 }

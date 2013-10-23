@@ -15,14 +15,10 @@ class MoteurRenard : public SSEngine {
 
 private:
 
-  int do_solvePowerFlow( Powersystem const& pws,
-                         boost::numeric::ublas::vector<double>& x,
-                         boost::numeric::ublas::vector<double>& F ) const;
-  void _getOptions( bool& flatStart,
-                    bool& enforceQLimits,
-                    double& tolerance,
-                    size_t& maxIterCount ) const;
-
+  int do_solvePowerFlow(Powersystem const& pws,
+                        ublas::matrix<complex>& Y,
+                        ublas::vector<complex>& V) const;
+  void _getOptions(bool& flatStart, double& tolerance, size_t& maxIterCount) const;
 };
 
 } // end of namespace elabtsaot

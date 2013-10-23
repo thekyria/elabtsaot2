@@ -15,8 +15,6 @@ using namespace elabtsaot;
 
 #include <list>
 using std::list;
-//#include <complex>
-using std::complex;
 //#include <string>
 using std::string;
 //#include <vector>
@@ -125,7 +123,7 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
 
 //  cout.precision(10);
   init();
-  if ( _pwsLocal.status() != PWSSTATUS_LF )
+  if ( _pwsLocal.status() != PWSSTATUS_PF )
     return 1;
 
   PrecisionTimer timer;
@@ -135,10 +133,10 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
   _sce.sort_t();//Put the events in order
   double baseF = _pwsLocal.baseF;
 
-  _genCount = _pwsLocal.getGenSet_size();
-  _brCount = _pwsLocal.getBrSet_size();
-  _loadCount = _pwsLocal.getLoadSet_size();
-  _busCount = _pwsLocal.getBusSet_size();
+  _genCount = _pwsLocal.getGenCount();
+  _brCount = _pwsLocal.getBranchCount();
+  _loadCount = _pwsLocal.getLoadCount();
+  _busCount = _pwsLocal.getBusCount();
 
   // Initialize generator specific internal variables
   for ( size_t k = 0 ; k != _genCount ; ++k ){
@@ -161,12 +159,12 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
   }
 
   // Initial bus voltages
-  vector<complex<double> > Ubus0(_busCount);
+  vector<complex > Ubus0(_busCount);
   for ( size_t k = 0 ; k != _busCount ; ++k ){
     Bus const* bus(_pwsLocal.getBus(k));
-    Ubus0[k] = bus->V * complex<double>(cos(bus->theta), sin(bus->theta));
+    Ubus0[k] = bus->V * complex(cos(bus->theta), sin(bus->theta));
   }
-  vector<complex<double> > Ubus(Ubus0);
+  vector<complex > Ubus(Ubus0);
 
   // ----- Calculate initial state of generators -----
   // Electical power
@@ -196,11 +194,11 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
 
     if (_genModel[i] == GENMODEL_0p0) {
       // Initial machine armature currents
-//      complex<double> I0 = complex<double>( tempGen->pgen(), -tempGen->qgen() )
+//      complex I0 = complex( tempGen->pgen(), -tempGen->qgen() )
 //                               / std::conj(Ubus[_genBusIntId[i]]);
 //      // Initial steady-state internal EMF
-//      complex<double> E0 = Ubus[_genBusIntId[i]]
-//                  + I0 * complex<double>(0.0, tempGen->xd_1);
+//      complex E0 = Ubus[_genBusIntId[i]]
+//                  + I0 * complex(0.0, tempGen->xd_1);
 //      Xgen[i][0] = std::arg(E0);
 //      Xgen[i][1] = 2*M_PI*baseF;
 //      Xgen[i][2] = std::abs(E0);
@@ -213,12 +211,12 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
       // Transient saliency is not supported => xd_t = xq_t
       tempGen->xq_1 = tempGen->xd_1;
       // Initial machine armature currents
-      complex<double> Ia0 = complex<double>( tempGen->Pgen, -tempGen->Qgen )
+      complex Ia0 = complex( tempGen->Pgen, -tempGen->Qgen )
                               / std::conj(Ubus[_genBusIntId[i]]);
       double phi0 = std::arg(Ia0);
       // Initial steady-state internal EMF
-      complex<double> Eq0 = Ubus[_genBusIntId[i]]
-                  + Ia0 * complex<double>(0.0, tempGen->xq);
+      complex Eq0 = Ubus[_genBusIntId[i]]
+                  + Ia0 * complex(0.0, tempGen->xq);
       double delta0 = std::arg(Eq0);
       // Machine currents in dq frame
       Id[i] = -std::abs(Ia0) * std::sin( delta0 - phi0 );
@@ -244,7 +242,7 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
   vector<double> temp_speeds;
   vector<double> temp_eq;
   vector<double> temp_ed;
-  vector<complex<double> > temp_Ibus;
+  vector<complex > temp_Ibus;
   vector<Event> curEvents; //concurrent events at specific t
 
   // Store the step size before doing changes in order to restore i in the end
@@ -253,12 +251,12 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
   double t = _sce.startTime() - 0.02; // 0.02 without applying events
 
   // Augmented Y matrix
-  ublas::matrix<complex<double> > augY;
+  ublas::matrix<complex > augY;
   _calculateAugmentedYMatrix( Ubus, Ubus0, augY );
 
   // Factorize augmented Y matrix
   ublas::permutation_matrix<size_t> pmatrix(augY.size1());
-  ublas::matrix<complex<double> > LUaugY(augY);
+  ublas::matrix<complex > LUaugY(augY);
   BOOST_TRY {
     ublas::lu_factorize(LUaugY, pmatrix);
   } BOOST_CATCH(ublas::singular const& ex) {
@@ -325,9 +323,9 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
     }
 
     // Calculate the current injected at buses (from loads and gens)
-    ublas::vector<complex<double> > U(Ubus.size());
+    ublas::vector<complex > U(Ubus.size());
     std::copy(Ubus.begin(),Ubus.end(),U.begin());
-    ublas::vector<complex<double> > I( ublas::prod(U,LUaugY) );
+    ublas::vector<complex > I( ublas::prod(U,LUaugY) );
     temp_Ibus.resize(I.size());
     std::copy(I.begin(),I.end(),temp_Ibus.begin());
 
@@ -418,9 +416,9 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
       // Calculate machine currents
       _calculateMachineCurrents( Xgen, Ubus, _genBusIntId, Iq, Id, Pel );
       // Calculate bus current injections
-      ublas::vector<complex<double> > U( Ubus.size() );
+      ublas::vector<complex > U( Ubus.size() );
       std::copy(Ubus.begin(),Ubus.end(),U.begin());
-      ublas::vector<complex<double> > I( ublas::prod(U,LUaugY) );
+      ublas::vector<complex > I( ublas::prod(U,LUaugY) );
       temp_Ibus.resize(I.size());
       std::copy(I.begin(),I.end(),temp_Ibus.begin());
 
@@ -456,22 +454,22 @@ Powersystem const* Simulator_sw::do_getPws() const{ return _pws; }
 
 // TODO: Building Y in _calculateAugmentedYMatrix inefficient!
 int Simulator_sw::
-_calculateAugmentedYMatrix( vector<complex<double> > const& Ubus,
-                            vector<complex<double> > const& Ubus0,
-                            ublas::matrix<complex<double> >& augY ){
+_calculateAugmentedYMatrix( vector<complex> const& Ubus,
+                            vector<complex> const& Ubus0,
+                            ublas::matrix<complex>& augY ){
 
-  _sse->buildY(_pwsLocal, augY);
+  ssengine::buildY(_pwsLocal, augY);
   size_t busCount = augY.size1();
 
   // Load power
-  ublas::vector<complex<double> > loadS(_loadCount);
+  ublas::vector<complex > loadS(_loadCount);
   for (size_t l=0;l<_loadCount;++l){
     Load const* load = _pwsLocal.getLoad(l);
-    loadS.insert_element(l, complex<double>(load->Pdemand,-load->Qdemand));
+    loadS.insert_element(l, complex(load->Pdemand,-load->Qdemand));
   }
 
   // Equivvalent load admittance
-  ublas::vector <complex<double> > yload(busCount);
+  ublas::vector <complex > yload(busCount);
   unsigned int busofld;
   for (size_t l=0;l<busCount;++l){
     yload.insert_element(l,0);
@@ -494,11 +492,11 @@ _calculateAugmentedYMatrix( vector<complex<double> > const& Ubus,
   }
 
   // Equivalent generator admittance
-  vector<complex<double> > ygen( busCount, complex<double>(0.0,0.0) );
+  vector<complex > ygen( busCount, complex(0.0,0.0) );
   for ( size_t i = 0 ; i < busCount ; ++i )
     for ( size_t g = 0 ; g < _genBusIntId.size() ; g++ )
       if ( i == _genBusIntId[g] )
-        ygen[i] = 1.0/complex<double>(0.0,_pwsLocal.getGenerator(g)->xd_1);
+        ygen[i] = 1.0/complex(0.0,_pwsLocal.getGenerator(g)->xd_1);
 
   // Augmented Y matrix
   for ( size_t i = 0 ; i != busCount ; ++i)
@@ -507,25 +505,25 @@ _calculateAugmentedYMatrix( vector<complex<double> > const& Ubus,
   return 0;
 }
 
-void Simulator_sw::_solveNetwork( ublas::matrix<complex<double> > const& LUaugY,
+void Simulator_sw::_solveNetwork( ublas::matrix<complex > const& LUaugY,
                                ublas::permutation_matrix<size_t> const& pmatrix,
                                vector<vector<double> > const& Xgen,
                                vector<size_t> const& genBusIntId,
-                               vector<complex<double> >& Ubus ){
+                               vector<complex >& Ubus ){
 
-  ublas::vector<complex<double> > Ibus(pmatrix.size(),complex<double>(0.0,0.0));
+  ublas::vector<complex > Ibus(pmatrix.size(),complex(0.0,0.0));
   for ( size_t i = 0 ; i != _genCount ; ++i ){
 
-    complex<double> Vgen;
+    complex Vgen;
     if (_genModel[i]==GENMODEL_0p0){
-      Vgen = complex<double>(Xgen[i][2],0.0)
-                * std::exp(complex<double>(0.0,Xgen[i][0]));
+      Vgen = complex(Xgen[i][2],0.0)
+                * std::exp(complex(0.0,Xgen[i][0]));
     } else if (_genModel[i]==GENMODEL_1p1) {
-      Vgen = complex<double>(Xgen[i][2],Xgen[i][3])
-                * std::exp(complex<double>(0.0,Xgen[i][0]));
+      Vgen = complex(Xgen[i][2],Xgen[i][3])
+                * std::exp(complex(0.0,Xgen[i][0]));
     }
 
-    complex<double> Zgen = complex<double>(0.0, _pwsLocal.getGenerator(i)->xd_1);
+    complex Zgen = complex(0.0, _pwsLocal.getGenerator(i)->xd_1);
 
     Ibus(genBusIntId[i]) += Vgen/Zgen;
   }
@@ -536,7 +534,7 @@ void Simulator_sw::_solveNetwork( ublas::matrix<complex<double> > const& LUaugY,
 }
 
 void Simulator_sw::_calculateMachineCurrents( vector<vector<double> > const& Xgen,
-                                              vector<complex<double> > const& Ubus,
+                                              vector<complex > const& Ubus,
                                               vector<size_t> const& genBusIntId,
                                               vector<double>& Iq,
                                               vector<double>& Id,
@@ -597,7 +595,7 @@ Simulator_sw::_calculateGeneratorDynamics( vector<vector<double> > const& Xgen,
  }
 }
 
-int Simulator_sw::_rungeKutta( ublas::matrix<complex<double> > const& LUaugY,
+int Simulator_sw::_rungeKutta( ublas::matrix<complex > const& LUaugY,
                                ublas::permutation_matrix<size_t> const& pmatrix,
                                vector<size_t> const& genBusIntId,
                                double stepSize,
@@ -606,7 +604,7 @@ int Simulator_sw::_rungeKutta( ublas::matrix<complex<double> > const& LUaugY,
                                vector<double>& Efd,
                                vector<double>& Iq,
                                vector<double>& Id,
-                               vector<complex<double> >& Ubus ){
+                               vector<complex >& Ubus ){
 
   // ----- Construction of RK coefficients -----
   //   a = [ 0   0   0   0
@@ -963,7 +961,7 @@ int Simulator_sw::_parseBrFault(Event &event){
 
         Branch* newfromline = new Branch();
         unsigned int maxextidfrombr=_pwsLocal.getBr_extId(0);//Set the default first ext id
-        for (size_t m=0;m<_pwsLocal.getBrSet_size();m++){
+        for (size_t m=0;m<_pwsLocal.getBranchCount();m++){
           if(_pwsLocal.getBr_extId(m)>maxextidfrombr)
             maxextidfrombr=_pwsLocal.getBr_extId(m);
         }
@@ -987,7 +985,7 @@ int Simulator_sw::_parseBrFault(Event &event){
 //        _pws.getBranch(event.element_extId(),branchofevent);
         Branch* newtoline = new Branch();
         unsigned int maxextidtobr=_pwsLocal.getBr_extId(0);//Set the default first ext id
-        for (size_t m=0;m<_pwsLocal.getBrSet_size();m++){
+        for (size_t m=0;m<_pwsLocal.getBranchCount();m++){
           if (_pwsLocal.getBr_extId(m)>maxextidtobr)
             maxextidtobr=_pwsLocal.getBr_extId(m);
         }

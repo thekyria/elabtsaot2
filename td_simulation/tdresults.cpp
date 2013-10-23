@@ -67,7 +67,7 @@ TDResults::TDResults( Powersystem const* pws, Scenario const* sce ){
   _units.push_back( TDResultIdentifier::defaultUnits(tdri) );
 
   // Dynamic variables of generators
-  for ( size_t k = 0 ; k != pws->getGenSet_size() ; ++k ){
+  for ( size_t k = 0 ; k != pws->getGenCount() ; ++k ){
     Generator const* p_gen = pws->getGenerator( k );
     unsigned int gen_extId = p_gen->extId;
     int gen_model = p_gen->model;
@@ -184,7 +184,7 @@ TDResults::TDResults( Powersystem const* pws, Scenario const* sce ){
   }
 
   // Algebraic variables of buses
-  for ( size_t k = 0 ; k != pws->getBusSet_size() ; ++k ){
+  for ( size_t k = 0 ; k != pws->getBusCount() ; ++k ){
     Bus const* p_bus = pws->getBus(k);
     unsigned int bus_extId = p_bus->extId;
     tdri.elementType = TDRESULTS_BUS;
@@ -206,7 +206,7 @@ TDResults::TDResults( Powersystem const* pws, Scenario const* sce ){
   }
 
   // Algebraic variables for loads
-  for ( size_t k = 0 ; k != pws->getLoadSet_size() ; ++k ){
+  for ( size_t k = 0 ; k != pws->getLoadCount() ; ++k ){
     Load const* p_load = pws->getLoad( k );
     unsigned int load_extId = p_load->extId;
     tdri.elementType = TDRESULTS_LOAD;

@@ -73,7 +73,7 @@ int TDEngine::_checkStability( Scenario const& sce,
   TDResultIdentifier tempTdri;
   tempTdri.elementType = TDRESULTS_GENERATOR;
   tempTdri.variable = TDRESULTS_ANGLE;
-  for ( size_t k = 0 ; k != getPws()->getGenSet_size() ; ++k ){
+  for ( size_t k = 0 ; k != getPws()->getGenCount() ; ++k ){
     tempTdri.extId = getPws()->getGenerator(k)->extId;
     tdris.push_back( tempTdri );
   }
@@ -106,7 +106,7 @@ int TDEngine::_checkStability( Scenario const& sce,
   TDResultIdentifier tempTdri;
   tempTdri.elementType = TDRESULTS_GENERATOR;
   tempTdri.variable = TDRESULTS_ANGLE;
-  for ( size_t k = 0 ; k != getPws()->getGenSet_size() ; ++k ){
+  for ( size_t k = 0 ; k != getPws()->getGenCount() ; ++k ){
     tempTdri.extId = getPws()->getGenerator(k)->extId;
     tdris.push_back(tempTdri);
   }

@@ -326,3 +326,8 @@ CONFIG( debug, debug|release ) {
 nospies{
   DEFINES += BUILD_NOSPIES
 }
+#------------------ Boost -----------------
+CONFIG( debug, debug|release ) {
+  DEFINES += NDEBUG
+  DEFINES += BOOST_UBLAS_NDEBUG
+}

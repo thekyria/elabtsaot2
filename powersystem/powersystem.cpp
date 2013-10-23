@@ -78,7 +78,7 @@ string Powersystem::serialize() const{
 
 int Powersystem::logPowerFlowResults(ostream& ostr) const{
 
-  if ( _status != PWSSTATUS_LF )
+  if ( _status != PWSSTATUS_PF )
     return 1;
 
   // else{ // ( _status == PWSSTATUS_LF )
@@ -218,7 +218,7 @@ int Powersystem::logPowerFlowResults(ostream& ostr) const{
 
 int Powersystem::logPowerFlowResults(string const& filename) const{
 
-  if ( _status != PWSSTATUS_LF ){
+  if ( _status != PWSSTATUS_PF ){
     return 1;
   }
   // else{ // ( _status == PWSSTATUS_LF )
@@ -533,10 +533,10 @@ int Powersystem::validate(){
   return 0;
 }
 
-size_t Powersystem::getBusSet_size() const{ return _busSet.size(); }
-size_t Powersystem::getBrSet_size() const{ return _brSet.size(); }
-size_t Powersystem::getGenSet_size() const{ return _genSet.size(); }
-size_t Powersystem::getLoadSet_size() const{ return _loadSet.size(); }
+size_t Powersystem::getBusCount() const{ return _busSet.size(); }
+size_t Powersystem::getBranchCount() const{ return _brSet.size(); }
+size_t Powersystem::getGenCount() const{ return _genSet.size(); }
+size_t Powersystem::getLoadCount() const{ return _loadSet.size(); }
 unsigned int Powersystem::getBus_extId(size_t intId) const{ return _busSet[intId].extId; }
 unsigned int Powersystem::getBr_extId(size_t intId) const{ return _brSet[intId].extId; }
 unsigned int Powersystem::getGen_extId(size_t intId) const{ return _genSet[intId].extId; }

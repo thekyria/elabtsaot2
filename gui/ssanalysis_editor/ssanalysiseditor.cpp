@@ -45,10 +45,10 @@ SSAnalysisEditor::SSAnalysisEditor( Powersystem*& pws,
   ssEngineSelectBox = new QComboBox(this);
   sseToolbar->addWidget(ssEngineSelectBox);
   ssEngineSelectBox->addItem( QIcon(),
-                            QString::fromStdString(sse_mrn->getDescription()),
+                            QString::fromStdString(sse_mrn->SSDescription()),
                             QVariant(SSANL_SSE_MRN) );
   ssEngineSelectBox->addItem( QIcon(),
-                              QString::fromStdString(sse_fen->getDescription()),
+                              QString::fromStdString(sse_fen->SSDescription()),
                               QVariant(SSANL_SSE_FEN) );
   connect( ssEngineSelectBox, SIGNAL(currentIndexChanged(int)),
            this, SLOT(SSEngineSelectionSlot(int)) );
@@ -82,7 +82,7 @@ void SSAnalysisEditor::SSEngineSelectionSlot(int index){
     _sse = _sse_mrn;
     break;
   }
-  cout << "Steady state engine set to: " << _sse->getDescription() << endl;
+  cout << "Steady state engine set to: " << _sse->SSDescription() << endl;
 }
 
 void SSAnalysisEditor::SSsetOptionsSlot(){
