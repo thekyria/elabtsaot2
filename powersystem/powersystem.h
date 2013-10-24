@@ -17,17 +17,12 @@ EPFL
 #include "generator.h"
 #include "load.h"
 
-#include <iostream>
 #include <set>
 #include <string>
 #include <vector>
-#include <complex>
 
-#include <boost/numeric/ublas/matrix.hpp>
 #include <boost/bimap.hpp>
-
-//! Definition of an (uint-uint) bimap
-typedef boost::bimap<unsigned int,unsigned int> UintUintBimap;
+typedef boost::bimap<unsigned int,unsigned int> UintUintBimap; //!< (uint-uint) bimap
 
 namespace elabtsaot{
 
@@ -42,11 +37,9 @@ class Powersystem {
 
  public:
 
-  Powersystem( std::string const& name, double baseS, double baseF );
+  Powersystem(std::string const& name, double baseS, double baseF);
 
   std::string serialize() const;
-  int logPowerFlowResults(std::ostream& ostr) const;
-  int logPowerFlowResults(std::string const& filename) const;
   double getMaxX() const;
 
   void clear();

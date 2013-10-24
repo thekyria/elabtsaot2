@@ -34,8 +34,7 @@ namespace elabtsaot{
 namespace auxiliary{
 
 // ----- Functions implemented in auxiliary.cpp -----
-//! Logger for a vector (to output stream)
-/*!
+/*! Logger for a vector (to output stream)
   Pretty prints the vector argument to the specified output stream
 
   \param vec vector to be pretty printed
@@ -49,12 +48,11 @@ namespace auxiliary{
   \param str output stream
 
   \return integer exit code; 0 when successful */
-int log_vector( std::vector<uint32_t> vec,
+int log_vector( std::vector<uint32_t> const& vec,
                 int indexOffset,
                 std::string const& mode,
                 std::ostream& ostr );
-//! Logger for a vector (to file)
-/*!
+/*! Logger for a vector (to file)
   Pretty prints the vector argument to the specified output file
 
   \param vec vector to be pretty printed
@@ -69,7 +67,7 @@ int log_vector( std::vector<uint32_t> vec,
                configuration is to be written to
 
   \return integer exit code; 0 when successful */
-int log_vector( std::vector<uint32_t> vec,
+int log_vector( std::vector<uint32_t> const& vec,
                 int indexOffset,
                 std::string const& mode,
                 std::string const& fname);
@@ -119,16 +117,13 @@ inline void sleep(int microseconds) {
                   * static_cast<double>(microseconds)/1000000.0;
     __int64 stop = start + static_cast<__int64>(ceil(wait));
     do {
-        QueryPerformanceCounter((LARGE_INTEGER *)&tick);
+      QueryPerformanceCounter((LARGE_INTEGER *)&tick);
     } while(tick<stop);
 }
 
-//! Returns a string binary representation of a decimal number
-/*!
+/*! Returns a string binary representation of a decimal number
   \param n decimal number to be converted to a binary string representation
-
-  \return std::string binary representation of the decimal input argument
-*/
+  \return std::string binary representation of the decimal input argument */
 inline std::string dec2bin(unsigned int n){
   size_t const size = sizeof(n) * 8;
   char result[size];
@@ -156,24 +151,19 @@ inline int str2int (std::string const& str) {
   return n;
 }
 
-//! Symmetric rounding function;
-/*!
+/*! Symmetric rounding function;
   That's how the C99 round function works (rounding halfway numbers always away
   from zero).  e.g. The function will round -0.5 down to -1.0.
-
   You can also use floor(n + 0.5). It will round halfway numbers such as -0.5
-  up to 0.0.
-*/
+  up to 0.0. */
 inline double round(double r) {
   return (r > 0.0) ? floor(r + 0.5) : ceil(r - 0.5);
 }
 
-//! Count decimals to first non zero digit
-/*! e.g.
-  countToFirstDecimal(0.002) -> 3
-  countToFirstDecimal(0.0052) -> 3
-  countToFirstDecimal(-1.102) -> 1
-*/
+/*! Count decimals to first non zero digit
+  e.g. countToFirstDecimal(0.002) -> 3
+       countToFirstDecimal(0.0052) -> 3
+       countToFirstDecimal(-1.102) -> 1 */
 inline int countToFirstDecimal(double num){
   int count(0);
   num = std::abs(num);
@@ -185,19 +175,14 @@ inline int countToFirstDecimal(double num){
   return count;
 }
 
-//! Degrees to rad converter
-inline double deg2rad(double deg){ return deg*M_PI/180; }
-//! Rad to degrees conveter
-inline double rad2deg(double rad){ return rad*180/M_PI; }
+inline double deg2rad(double deg){ return deg*M_PI/180; } //!< Degrees to rad converter
+inline double rad2deg(double rad){ return rad*180/M_PI; } //!< Rad to degrees conveter
 
-//! Display SHA1 Message Digest array
-/*!
+/*! Display SHA1 Message Digest array
   Displays the 5 unsigned integers of a SHA1 message digest in human readable
   form
-
   \param sha1_digest SHA1 message digest of 5 unsigned ints
-  \return integer exit code; 0 when successful
-*/
+  \return integer exit code; 0 when successful */
 inline int displaySHA1(unsigned int* sha1_digest) {
 
   std::ios::fmtflags flags;
@@ -216,12 +201,10 @@ inline int displaySHA1(unsigned int* sha1_digest) {
   return 0;
 }
 
-//! Convert SHA1 message digest array to std::string
-/*!
+/*! Convert SHA1 message digest array to std::string
   \param sha1_digest SHA1 message digest of 5 unsigned ints
   \return std::string containing the 5 unsigned integers of the SHA1 message
-          digest in human readable form
-*/
+          digest in human readable form */
 inline std::string SHA1toStr( unsigned int* sha1_digest ){
 
   std::stringstream ss;

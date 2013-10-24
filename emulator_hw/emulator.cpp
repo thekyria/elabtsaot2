@@ -301,7 +301,7 @@ int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Generator c
     // the resulting DAC code would be 2/maxV = 2/2.5 = 0.8
     // and the resulting currents = maxI(0*0.8 + j 1*0.8) = 0 + j12.8 pu
     double imagI = max_I_pu *  gen.Vss.real()*ratioV / Vmaxreal;
-    double realI = max_I_pu *  gen.Vss.real()*ratioV / Vmaximag;
+    double realI = max_I_pu *  gen.Vss.imag()*ratioV / Vmaximag;
     // So into the const I load pipeline we have to insert a fake "load" that
     // results in the above currents in [pu]
     complex<double> I ( realI, imagI );

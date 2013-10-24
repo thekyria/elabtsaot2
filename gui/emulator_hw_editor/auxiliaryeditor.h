@@ -39,19 +39,22 @@ class AuxiliaryEditor : public QSplitter{
   void defaultRatiosSlot();
   void getMinMaxResistorSlot() const;
 
+  void rawReadFromDeviceSlot();
+  void rawWriteToDeviceSlot();
+
+  void encodePowersystemSlot();
+  void writeEncodingSlot();
+  void logPowersystemEncodingSlot();
+  void logGotEncodingSlot();
+
   void hardResetPressedSlot();
   void endCalibrationSlot();
   void resetEmulationSlot();
   void validateSliceAssignementSlot();
   void validateMappingSlot();
   void validateFittingSlot();
-  void encodePowersystemSlot();
-  void writeEncodingSlot();
-  void logPowersystemEncodingSlot();
   void getEmulatorHwStateSlot();
   void getEmulatorHwCalStateSlot();
-  void rawReadFromDeviceSlot();
-  void rawWriteToDeviceSlot();
 
 // signals:
 //  void mmdChanged();
@@ -71,10 +74,6 @@ class AuxiliaryEditor : public QSplitter{
   QDoubleSpinBox* ratioVForm;
   QDoubleSpinBox* ratioIForm;
   QDoubleSpinBox* maxIpuForm;
-  QPushButton* autoRatioZBut;
-  QPushButton* defaultRatiosBut;
-  QPushButton* getMaxRBut;
-
 };
 
 } // end of namespace elabtsaot

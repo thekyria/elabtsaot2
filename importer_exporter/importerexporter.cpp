@@ -23,18 +23,22 @@ using namespace elabtsaot;
 #include <string>
 using std::string;
 #include <iostream>
+using std::ostream;
+using std::ios;
 using std::cout;
 using std::endl;
 #include <limits>
 using std::numeric_limits;
+#include <fstream>
+using std::ofstream;
 
 using std::vector;
 
-int io::importProject( string filename_,
-                       string& pwsfilename,
-                       string& schfilename,
-                       string& mapfilename,
-                       string& scsfilename ){
+int io::importProject(string filename_,
+                      string& pwsfilename,
+                      string& schfilename,
+                      string& mapfilename,
+                      string& scsfilename){
   QString filename(QString::fromStdString(filename_));
   QFile file( filename );
   if ( !file.open(QFile::ReadOnly | QFile::Text) ) // open() returns true if ok
@@ -138,6 +142,164 @@ int io::importPowersystem(string filename_, Powersystem* pws){
   }
 
   return 0;
+}
+
+int io::logPowerSystem(Powersystem const& pws, ostream& ostr){
+
+  if ( ostr.bad() )
+    // Error writing to ostr!
+    return 10;
+
+  size_t k;                               // counter
+
+  ostr.precision(5);        // sets the decimal precision to be used by output
+                            // operations at 5 significant digits
+  //ostr.width(xxx);        // set field width to xxx BUT works only for the
+                            // next insertion operation; no turn around.
+  ostr.setf ( ios::fixed, ios::floatfield );  // use fixed-point notation
+  //ostr.setf ( ios::right, ios::adjustfield ); // adjust fields right (TODO!)
+
+  ostr << "========================================" ;
+  ostr << "=======================================" ;
+  ostr << endl;
+  ostr << "\tBus Data" << endl;
+  ostr << "========================================" ;
+  ostr << "=======================================" ;
+  ostr << endl;
+  ostr << endl;
+
+  ostr.width(5);
+  ostr << "Id";
+  ostr.width(9);
+  ostr << "V";
+  ostr.width(9);
+  ostr << "theta";
+  ostr.width(9);
+  ostr << "P";
+  ostr.width(9);
+  ostr << "Q" << endl;
+  for (k=0; k!=pws.getBusCount(); ++k){
+    Bus const* bus = pws.getBus(k);
+    ostr.width(5);
+    ostr << bus->extId;          // bus ext id
+    ostr.width(9);
+    ostr << bus->V;            // bus voltage magnitude
+    ostr.width(9);
+    ostr << bus->theta;           // bus voltage angle
+    ostr.width(9);
+    ostr << bus->P;            // P at bus
+    ostr.width(9);
+    ostr << bus->Q;            // Q at bus
+    ostr << endl;
+  }
+  ostr << endl;
+
+  ostr << "========================================" ;
+  ostr << "=======================================" ;
+  ostr << endl;
+  ostr << "\tBranch Data (* denotes online)" << endl;
+  ostr << "========================================" ;
+  ostr << "=======================================" ;
+  ostr << endl;
+  ostr << endl;
+
+  // TODO: fix I flows
+  ostr.width(5);
+  ostr << "Id";
+  ostr.width(5);
+  ostr << "from";
+  ostr.width(5);
+  ostr << "to";
+  ostr.width(9);
+  ostr << "P_f";
+  ostr.width(9);
+  ostr << "Q_f";
+  ostr.width(9);
+  ostr << "P_t";
+  ostr.width(9);
+  ostr << "Q_t";
+  ostr.width(9);
+  ostr << "I_f";
+  ostr.width(9);
+  ostr << "I_t";
+  ostr << endl;
+  for (k=0; k!=pws.getBranchCount(); ++k){
+    Branch const* branch = pws.getBranch(k);
+    if ( branch->status )
+      ostr << "*";
+    else
+      ostr << " ";
+    ostr.width(4);
+    ostr << branch->extId;        // branch ext id
+    ostr.width(5);
+    ostr << branch->fromBusExtId; // branch from bus ext id
+    ostr.width(5);
+    ostr << branch->toBusExtId;   // branch to bus ext id
+    ostr.width(9);
+  }
+  ostr << endl;
+
+  ostr << "========================================" ;
+  ostr << "=======================================" ;
+  ostr << endl;
+  ostr << "\tGenerator Data (* denotes online)" << endl;
+  ostr << "========================================" ;
+  ostr << "=======================================" ;
+  ostr << endl;
+  ostr << endl;
+
+  ostr.width(5);
+  ostr << "Id";
+  ostr.width(9);
+  ostr << "P";
+  ostr.width(9);
+  ostr << "Q";
+  ostr.width(9);
+  ostr << "E";
+  ostr.width(9);
+  ostr << "delta";
+  ostr << endl;
+  for (k=0; k!=pws.getGenCount(); ++k){
+    Generator const* gen = pws.getGenerator(k);
+    if (gen->status)
+      ostr << "*";
+    else
+      ostr << " ";
+    ostr.width(4);
+    ostr << gen->extId;
+    ostr.width(9);
+    ostr << gen->Pgen;
+    ostr.width(9);
+    ostr << gen->Qgen;
+    ostr.width(9);
+    ostr << gen->Ess();
+    ostr.width(9);
+    ostr << gen->deltass();
+    ostr << endl;
+  }
+  ostr << endl;
+
+  return 0;
+}
+
+int io::logPowerSystem(Powersystem const& pws, string const& filename){
+
+  // Convert string fname to char* a
+  char *a=new char[filename.size()+1];
+  a[filename.size()]=0;
+  memcpy(a,filename.c_str(),filename.size());
+
+  int ans(0);
+  ofstream ofstr;
+  ofstr.open(a, std::ios::trunc);
+  if (ofstr.is_open()){
+    ans = logPowerSystem(pws,ofstr);
+    ofstr.close();
+  } else {
+    // Error opening the file
+    return 2;
+  }
+  return ans;
 }
 
 int io::importSchematic( string filename_, PwsSchematicModel* smd ){
@@ -741,6 +903,7 @@ int io::exportScenarioSet( string filename, ScenarioSet const* scs ){
   return 0;
 }
 
+/*! \todo for large results chunks it crashes */
 int io::exportTDResults( string filename, TDResults const* res ){
 
   // Open file

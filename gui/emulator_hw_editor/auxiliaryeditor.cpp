@@ -8,6 +8,7 @@ using namespace elabtsaot;
 #include "rawreadfromdevicedialog.h"
 #include "rawwritetodevicedialog.h"
 #include "auxiliary.h"
+#include "encoder.h"
 
 #include <QFrame>
 #include <QToolBar>
@@ -81,16 +82,16 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
 
   // Auto ratioZ
   QLabel* autoRatioZLabel = new QLabel("Auto-scale RatioZ");
-  autoRatioZBut = new QPushButton("Auto-scale RatioZ");
+  QPushButton* autoRatioZBut = new QPushButton("Auto-scale RatioZ");
   globalParamsLay->addRow(autoRatioZLabel, autoRatioZBut);
 
   // Default ratios
   QLabel* defaultRatiosLabel = new QLabel("Default Ratios");
-  defaultRatiosBut = new QPushButton("Default Ratios");
+  QPushButton* defaultRatiosBut = new QPushButton("Default Ratios");
   globalParamsLay->addRow(defaultRatiosLabel, defaultRatiosBut);
 
   QLabel* getMaxRLabel = new QLabel("Get max R");
-  getMaxRBut = new QPushButton("Get max R");
+  QPushButton* getMaxRBut = new QPushButton("Get max R");
   globalParamsLay->addRow(getMaxRLabel, getMaxRBut);
 
   // ----------------- Connect signals -----------------
@@ -106,6 +107,59 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
            this, SLOT(defaultRatiosSlot()) );
   connect( getMaxRBut, SIGNAL(clicked()),
            this, SLOT(getMinMaxResistorSlot()) );
+
+  // ---------------------------------------------------------------------------
+  // ----- Raw usb operations group box -----
+  QGroupBox* rawUsbBox = new QGroupBox("Raw USB operations", this);
+  QFormLayout* rawUsbLay = new QFormLayout(rawUsbBox);
+  rawUsbBox->setLayout(rawUsbLay);
+
+  // Explicit raw read from device
+  QLabel* rawReadLabel = new QLabel("Raw read from device");
+  QPushButton* rawReadBut = new QPushButton("Raw read from device");
+  rawUsbLay->addRow(rawReadLabel,rawReadBut);
+
+  // Explicit raw write to device
+  QLabel* rawWriteLabel = new QLabel("Raw write from device");
+  QPushButton* rawWriteBut = new QPushButton("Raw write from device");
+  rawUsbLay->addRow(rawWriteLabel,rawWriteBut);
+
+  // ----------------- Connect signals -----------------
+  connect(rawReadBut, SIGNAL(clicked()), this, SLOT(rawReadFromDeviceSlot()));
+  connect(rawWriteBut, SIGNAL(clicked()), this, SLOT(rawWriteToDeviceSlot()));
+
+
+  // ---------------------------------------------------------------------------
+  // ----- Encoding operations group box -----
+  QGroupBox* encodingBox = new QGroupBox("Encoding operations", this);
+  QFormLayout* encodingLay = new QFormLayout(encodingBox);
+  encodingBox->setLayout(encodingLay);
+
+  // Encode powersystem
+  QLabel* encodePowersystemLabel = new QLabel("Encode powersystem");
+  QPushButton* encodePowersystemBut = new QPushButton("Encode powersystem");
+  encodingLay->addRow(encodePowersystemLabel,encodePowersystemBut);
+
+  // Write encoding
+  QLabel* writeEncodingLabel = new QLabel("Write encoding");
+  QPushButton* writeEncodingBut = new QPushButton("Write encoding");
+  encodingLay->addRow(writeEncodingLabel,writeEncodingBut);
+
+  // Log Emulator::_encoding
+  QLabel* logEncodingLabel = new QLabel("Log powersystem encoding");
+  QPushButton* logEncodingBut = new QPushButton("Log powersystem encoding");
+  encodingLay->addRow(logEncodingLabel,logEncodingBut);
+
+  // Log (calibrated) got encoding
+  QLabel* logGotEncodingLabel = new QLabel("Log GOT encoding");
+  QPushButton* logGotEncodingBut = new QPushButton("Log GOT encoding");
+  encodingLay->addRow(logGotEncodingLabel,logGotEncodingBut);
+
+  // ----------------- Connect signals -----------------
+  connect(encodePowersystemBut, SIGNAL(clicked()), this, SLOT(encodePowersystemSlot()));
+  connect(writeEncodingBut, SIGNAL(clicked()), this, SLOT(writeEncodingSlot()));
+  connect(logEncodingBut, SIGNAL(clicked()), this, SLOT(logPowersystemEncodingSlot()));
+  connect(logGotEncodingBut, SIGNAL(clicked()), this, SLOT(logGotEncodingSlot()));
 
 
   // ---------------------------------------------------------------------------
@@ -163,32 +217,6 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
   connect( validateFittingAct, SIGNAL(triggered()),
            this, SLOT( validateFittingSlot() ));
 
-  // Encode powersystem
-  QAction* encodePowersystemAct = new QAction( QIcon(":/images/event.png"),
-                                               "Encode powersystem",
-                                               auxiliaryEditorToolbar );
-  auxiliaryEditorToolbar->addAction( encodePowersystemAct );
-  connect( encodePowersystemAct, SIGNAL(triggered()),
-           this, SLOT( encodePowersystemSlot() ));
-
-  // Write encoding
-  QAction* writeEncodingAct = new QAction( QIcon(":/images/event.png"),
-                                           "Write encoding",
-                                           auxiliaryEditorToolbar );
-  auxiliaryEditorToolbar->addAction( writeEncodingAct );
-  connect( encodePowersystemAct, SIGNAL(triggered()),
-           this, SLOT( writeEncodingSlot()) );
-
-  auxiliaryEditorToolbar->addSeparator(); // -----
-
-  // Log Emulator::_encoding
-  QAction* logPowersystemEncodingAct = new QAction( QIcon(":/images/event.png"),
-                                               "Log powersystem encoding",
-                                               auxiliaryEditorToolbar );
-  auxiliaryEditorToolbar->addAction( logPowersystemEncodingAct );
-  connect( logPowersystemEncodingAct, SIGNAL(triggered()),
-           this, SLOT( logPowersystemEncodingSlot() ));
-
   auxiliaryEditorToolbar->addSeparator(); // -----
 
   // Get Emulator state
@@ -206,24 +234,6 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
   auxiliaryEditorToolbar->addAction( getEmulatorHwCalStateAct );
   connect( getEmulatorHwCalStateAct, SIGNAL(triggered()),
            this, SLOT(getEmulatorHwCalStateSlot()) );
-
-  auxiliaryEditorToolbar->addSeparator(); // -----
-
-  // Explicit raw read from device
-  QAction* rawReadFromDeviceAct = new QAction( QIcon(":/images/event.png"),
-                                              "Raw read from device",
-                                              auxiliaryEditorToolbar );
-  auxiliaryEditorToolbar->addAction( rawReadFromDeviceAct );
-  connect( rawReadFromDeviceAct, SIGNAL(triggered()),
-           this, SLOT(rawReadFromDeviceSlot()) );
-
-  // Explicit raw write to device
-  QAction* rawWriteToDeviceAct = new QAction( QIcon(":/images/event.png"),
-                                              "Raw write to device",
-                                              auxiliaryEditorToolbar );
-  auxiliaryEditorToolbar->addAction( rawWriteToDeviceAct );
-  connect( rawWriteToDeviceAct, SIGNAL(triggered()),
-           this, SLOT(rawWriteToDeviceSlot()) );
 }
 
 
@@ -249,104 +259,6 @@ void AuxiliaryEditor::defaultRatiosSlot(){
 }
 void AuxiliaryEditor::getMinMaxResistorSlot() const{
   cout << "Maximum achievable R: " << _emu->getMaxR() << endl;
-}
-
-void AuxiliaryEditor::hardResetPressedSlot(){
-  _emu->hardResetPressed();
-  cout << "Emulator structure notified for hard reset key press!" << endl;
-  return;
-}
-
-void AuxiliaryEditor::endCalibrationSlot(){
-  int ans = _emu->endCalibrationMode();
-  if ( ans ) cout << "Ending calibration mode failed with code " << ans << endl;
-  else cout << "Successfully ended calibration mode!" << endl;
-  return;
-}
-
-void AuxiliaryEditor::resetEmulationSlot(){
-  int ans = _tde_hwe->resetEmulation(true);
-  if ( ans ) cout << "Reset emulation failed with code " << ans << endl;
-  else cout << "Successfully reset the emulation!" << endl;
-  return;
-}
-
-void AuxiliaryEditor::validateSliceAssignementSlot(){
-  int ans = _emu->validateSliceDeviceAssignement();
-  if ( ans ) cout << "Slice-device assignement validation failed with code " <<ans<<endl;
-  else cout << "Slice-device assignement validation was successful!" << endl;
-  return;
-}
-
-void AuxiliaryEditor::validateMappingSlot(){
-  int ans = _emu->validateMapping();
-  if ( ans ) cout << "Mapping validation failed with code " << ans << endl;
-  else cout << "Mapping validation was successful!" << endl;
-  return;
-}
-
-void AuxiliaryEditor::validateFittingSlot(){
-  int ans = _emu->validateFitting();
-  if ( ans ) cout << "Validate fitting failed with code " << ans << endl;
-  else cout << "Validate fitting was successful!" << endl;
-  return;
-}
-
-void AuxiliaryEditor::encodePowersystemSlot(){
-  int ans = _emu->encodePowersystem();
-  if ( ans ) cout << "Encode powersyetem failed with code " << ans << endl;
-  else cout << "Encode powersyetem was successful!" << endl;
-  return;
-}
-
-void AuxiliaryEditor::writeEncodingSlot(){
-  int ans = _emu->writeEncoding(false);
-  if ( ans ) cout << "Write encoding failed with code " << ans << endl;
-  else cout << "Write encoding was successful!" << endl;
-  return;
-}
-
-void AuxiliaryEditor::logPowersystemEncodingSlot(){
-
-  size_t sliceCount = _emu->getHwSliceCount();
-  size_t sliceId;
-  int target;
-  string mode, fname;
-  LogEncodingDialog dialog( sliceCount, sliceId, target, mode, fname);
-  int ans = dialog.exec();
-  if ( ans ) return;
-
-  switch ( target ){
-  case LogEncodingDialogTarget_toConsole:
-    if ( _emu->encoding.size() > sliceId ){
-      vector<uint32_t> sliceEncoding = _emu->encoding.at(sliceId);
-      auxiliary::log_vector( sliceEncoding, 1, mode, cout );
-    }
-    break;
-
-  case LogEncodingDialogTarget_toFile:
-    if ( _emu->encoding.size() > sliceId ){
-      vector<uint32_t> sliceEncoding = _emu->encoding.at(sliceId);
-      auxiliary::log_vector( sliceEncoding, 1, mode, fname );
-    }
-    break;
-
-  default:
-    // Do nothing!
-    break;
-  }
-
-  return;
-}
-
-void AuxiliaryEditor::getEmulatorHwStateSlot(){
-  cout << "Emulator state: " << _emu->state() << endl;
-  return;
-}
-
-void AuxiliaryEditor::getEmulatorHwCalStateSlot(){
-  cout << "Emulator calibration state: " << _emu->state_calibration()<<endl;
-  return;
 }
 
 void AuxiliaryEditor::rawReadFromDeviceSlot(){
@@ -413,6 +325,122 @@ void AuxiliaryEditor::rawWriteToDeviceSlot(){
          << " words starting at address " << startAddress
          << " was successful!" << endl;
 
+  return;
+}
+
+void AuxiliaryEditor::encodePowersystemSlot(){
+  int ans = _emu->encodePowersystem();
+  if ( ans ) cout << "Encode powersyetem failed with code " << ans << endl;
+  else cout << "Encode powersyetem was successful!" << endl;
+  return;
+}
+
+void AuxiliaryEditor::writeEncodingSlot(){
+  int ans = _emu->writeEncoding(false);
+  if ( ans ) cout << "Write encoding failed with code " << ans << endl;
+  else cout << "Write encoding was successful!" << endl;
+  return;
+}
+
+void AuxiliaryEditor::logPowersystemEncodingSlot(){
+  // Get slice count, abort if zero
+  size_t sliceCount = _emu->getHwSliceCount();
+  if (sliceCount==0) return;
+  // Show options dialog
+  size_t sliceId;
+  int target;
+  string mode, fname;
+  LogEncodingDialog dialog( sliceCount, sliceId, target, mode, fname);
+  int ans = dialog.exec();
+  if (ans) return;
+  // Log according to options
+  if (sliceId>=_emu->encoding.size())
+    cout << "No encoding for sliceId: " << sliceId << endl;
+  else
+  switch ( target ){
+  case LogEncodingDialogTarget_toConsole:
+    auxiliary::log_vector( _emu->encoding.at(sliceId), 1, mode, cout );
+    break;
+  case LogEncodingDialogTarget_toFile:
+    auxiliary::log_vector( _emu->encoding.at(sliceId), 1, mode, fname );
+    break;
+  }
+}
+
+void AuxiliaryEditor::logGotEncodingSlot(){
+  // Get slice count, abort if zero
+  size_t sliceCount = _emu->getHwSliceCount();
+  if (sliceCount==0) return;
+  // Show options dialog
+  size_t sliceId;
+  int target;
+  string mode, fname;
+  LogEncodingDialog dialog( sliceCount, sliceId, target, mode, fname);
+  int ans = dialog.exec();
+  if (ans) return;
+  // Get atomsGot encoding that was asked for
+  vector<uint32_t> got_conf;
+  Slice const& sl(_emu->emuhw()->sliceSet[sliceId]);
+  encoder::detail::encode_atomsGot(sl,got_conf);
+  // Log according to options
+  switch ( target ){
+  case LogEncodingDialogTarget_toConsole:
+    auxiliary::log_vector( got_conf, 1, mode, cout );
+    break;
+  case LogEncodingDialogTarget_toFile:
+    auxiliary::log_vector( got_conf, 1, mode, fname );
+    break;
+  }
+}
+
+void AuxiliaryEditor::hardResetPressedSlot(){
+  _emu->hardResetPressed();
+  cout << "Emulator structure notified for hard reset key press!" << endl;
+  return;
+}
+
+void AuxiliaryEditor::endCalibrationSlot(){
+  int ans = _emu->endCalibrationMode();
+  if ( ans ) cout << "Ending calibration mode failed with code " << ans << endl;
+  else cout << "Successfully ended calibration mode!" << endl;
+  return;
+}
+
+void AuxiliaryEditor::resetEmulationSlot(){
+  int ans = _tde_hwe->resetEmulation(true);
+  if ( ans ) cout << "Reset emulation failed with code " << ans << endl;
+  else cout << "Successfully reset the emulation!" << endl;
+  return;
+}
+
+void AuxiliaryEditor::validateSliceAssignementSlot(){
+  int ans = _emu->validateSliceDeviceAssignement();
+  if ( ans ) cout << "Slice-device assignement validation failed with code " <<ans<<endl;
+  else cout << "Slice-device assignement validation was successful!" << endl;
+  return;
+}
+
+void AuxiliaryEditor::validateMappingSlot(){
+  int ans = _emu->validateMapping();
+  if ( ans ) cout << "Mapping validation failed with code " << ans << endl;
+  else cout << "Mapping validation was successful!" << endl;
+  return;
+}
+
+void AuxiliaryEditor::validateFittingSlot(){
+  int ans = _emu->validateFitting();
+  if ( ans ) cout << "Validate fitting failed with code " << ans << endl;
+  else cout << "Validate fitting was successful!" << endl;
+  return;
+}
+
+void AuxiliaryEditor::getEmulatorHwStateSlot(){
+  cout << "Emulator state: " << _emu->state() << endl;
+  return;
+}
+
+void AuxiliaryEditor::getEmulatorHwCalStateSlot(){
+  cout << "Emulator calibration state: " << _emu->state_calibration()<<endl;
   return;
 }
 

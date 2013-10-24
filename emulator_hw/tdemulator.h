@@ -69,6 +69,8 @@ class TDEmulator : public TDEngine {
                            unsigned int& stopSample,
                            bool& refittingPerformed );
   int _encodeScenario( Scenario sce );
+  void _resetDampingEncoding();
+  void _resetSpiesEncoding();
   int _encodeScenarioCCT( Scenario sce,
                           double maxFaultTime,
                           double precision,

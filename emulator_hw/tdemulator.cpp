@@ -833,6 +833,8 @@ int TDEmulator::do_simulate( Scenario const& sce, TDResults& res ){
     _emu->encoding[k][552] (cyp.add 553) = not used
     _emu->encoding[k][553] (cyp.add 554) = switchConf
   For all slices:
+    _emu->encoding[*][168] (cyp.add 169) = dampIt
+    - ... --
     _emu->encoding[*][554] (cyp.add 555) = NIOSconfirm + stopSample
     _emu->encoding[*][559] (cyp.add 560) = pertStopStart
     For spy0: attached to gen angles
@@ -2456,6 +2458,26 @@ int TDEmulator::_encodeScenario( Scenario sce ){
   return 0;
 }
 
+void TDEmulator::_resetDampingEncoding(){
+  for (size_t k(0); k!=_emu->encoding.size(); ++k)
+    _emu->encoding[k][168]=1;
+}
+
+void TDEmulator::_resetSpiesEncoding(){
+  for (size_t k(0); k!=_emu->encoding.size(); ++k){
+    // For spy0 attached to gen angles
+    _emu->encoding[k][331] = 0; // spyDirective
+    _emu->encoding[k][332] = 0; // startIt
+    _emu->encoding[k][333] = 0; // stopIt
+    _emu->encoding[k][334] = 0; // NIOSSampleRate
+    // For spy1 attached to gen speeds
+    _emu->encoding[k][335] = 0; // spyDirective
+    _emu->encoding[k][336] = 0; // startIt
+    _emu->encoding[k][337] = 0; // stopIt
+    _emu->encoding[k][338] = 0; // NIOSSampleRate
+  }
+}
+
 /* Modifies (for all boards *):
     _emu->encoding[*][551] (cyp.add 552) = maxFaultIter
     _emu->encoding[*][552] (cyp.add 553) = precisionIter
@@ -2466,25 +2488,22 @@ int TDEmulator::_encodeScenarioCCT( Scenario sce,
                                     double maxFaultTime,
                                     double precision,
                                     size_t& sceSliceId ){
+  // ----- Validation -----
   // If the state of the TDEmulator is not at least EMU_STATE_PWSENCODED
   // then the function is not executed (returns non-zero)
-  if ( _emu->state() < EMU_STATE_PWSENCODED )
+  if (_emu->state() < EMU_STATE_PWSENCODED)
     return -1;
-
   // Assert that the scenario is compatible with TDEmulator
-  if ( !isEngineCompatible(sce) )
-    return 1;
+  if (!isEngineCompatible(sce)) return 1;
 
+  // ----- Encode scenario base -----
   size_t sliceId;
-  unsigned int stopStartIter;
-  unsigned int dampIter;
-  unsigned int switchConf;
-  unsigned int stopSample;
+  unsigned int stopStartIter, dampIter, switchConf, stopSample;
   bool refittingPerformed;
   int ans = _encodeScenarioBase( sce, sliceId, stopStartIter, dampIter,
                                  switchConf, stopSample, refittingPerformed );
   if ( ans ) return 2;
-  // ---- DEBUG ----
+//  // DEBUG
 //  cout << "Scenario{"
 //       << " sliceId:" << sliceId
 //       << " stopStartIter:" << stopStartIter
@@ -2492,18 +2511,20 @@ int TDEmulator::_encodeScenarioCCT( Scenario sce,
 //       << " stopSample:" << stopSample
 //       << " refit:"<<refittingPerformed
 //       << "}" << endl;
-  // ---- DEBUG ----
   if ( refittingPerformed ){
     ans = _emu->encodePowersystem();
     if ( ans ) return 3;
   }
-//  if (_emu->getHwSliceCount()==0) return 3; // redundant
-  size_t intTimeStepOption = _getIntTStepOption();
-  double intTimeStepValue = _int_tstep_values[intTimeStepOption];
 
-  // ---- Set CCT analysis specifics
+  // ----- Reset Damping and Spies encoding -----
+  _resetDampingEncoding();
+  _resetSpiesEncoding();
+
+  // ----- Set CCT analysis specifics -----
   /* maxFaultIter : maximum CCT test time [in hw integrator iterations]
      precisionIter: precision [in hw integrator iterations] */
+  size_t intTimeStepOption = _getIntTStepOption();
+  double intTimeStepValue = _int_tstep_values[intTimeStepOption];
   uint32_t maxFaultIter(static_cast<uint32_t>(auxiliary::round(maxFaultTime/intTimeStepValue)));
   uint32_t precisionIter(static_cast<uint32_t>(auxiliary::round(precision/intTimeStepValue)));
 
@@ -2557,14 +2578,12 @@ int TDEmulator::_encodeMultiScenarios( vector<Scenario> scenarios,
                                        size_t& sceRunCount,
                                        map<size_t, size_t>& newSceIndex){
 
+  // ----- Validation -----
   // If the state of the TDEmulator is not at least EMU_STATE_PWSENCODED
   // then the function is not executed (returns non-zero)
-  if ( _emu->state() < EMU_STATE_PWSENCODED )
-    return -1;
-
+  if (_emu->state()<EMU_STATE_PWSENCODED) return -1;
   // Input argument validation
-  if ( scenarios.size() == 0 )
-    return 1;
+  if (scenarios.size()==0) return 1;
 
   // ----- Determine scenario encoding info -----
   vector<vector<size_t> > sliceScenariosIds( _emu->getHwSliceCount() );
@@ -2666,6 +2685,10 @@ int TDEmulator::_encodeMultiScenarios( vector<Scenario> scenarios,
 //    cout << "_scenariosEncoding["<<k<<"]:" << _scenariosEncoding[k] << endl;
   // ----- DEBUG -----
 
+  // ----- Reset Damping and Spies encoding -----
+  _resetDampingEncoding();
+  _resetSpiesEncoding();
+
   // ----- Modify encoding -----
   for ( size_t k = 0 ; k != _emu->getHwSliceCount() ; ++k ){
 
@@ -2722,16 +2745,13 @@ int TDEmulator::_encodeMultiCCT( vector<Scenario> const& scenarios,
                                  vector<size_t>& scePerSlice,
                                  double& maxFault,
                                  double& stopTime ){
+  // ----- Validation -----
   // If the state of the TDEmulator is not at least EMU_STATE_PWSENCODED
   // then the function is not executed (returns non-zero)
-  if ( _emu->state() < EMU_STATE_PWSENCODED )
-    return -1;
-
+  if (_emu->state()<EMU_STATE_PWSENCODED) return -1;
   // Input argument validation
-  if ( scenarios.size() == 0 )
-    return 1;
-  if ( precision < 0 )
-    return 2;
+  if ( scenarios.size() == 0 ) return 1;
+  if ( precision < 0 ) return 2;
 
   // ----- Determine precisionIt -----
   size_t intTimeStepOption = _getIntTStepOption();
@@ -2865,6 +2885,10 @@ int TDEmulator::_encodeMultiCCT( vector<Scenario> const& scenarios,
 //  for ( size_t k = 0 ; k != _scenariosEncoding.size() ; ++k )
 //    cout << "_scenariosEncoding["<<k<<"]:" << _scenariosEncoding[k] << endl;
   // ----- DEBUG -----
+
+  // ----- Reset Damping and Spies encoding -----
+  _resetDampingEncoding();
+  _resetSpiesEncoding();
 
   // ----- Modify encoding -----
   for ( size_t k = 0 ; k != _emu->getHwSliceCount() ; ++k ){

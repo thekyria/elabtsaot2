@@ -35,7 +35,7 @@ FitterSliceTab::FitterSliceTab( Slice* slc, QWidget* parent) :
 
   // Global slice parameters box
   _init_globalParamsBox(); // initializes globalParamsBox and handles connects
-  globalParamsBox->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Preferred);
+  globalParamsBox->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Preferred);
 //  globalParamsBox->setMaximumWidth( globalParamsBox->minimumSizeHint().width() );
 
   // Pipelines pane

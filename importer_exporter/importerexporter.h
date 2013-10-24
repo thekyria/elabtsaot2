@@ -27,32 +27,30 @@ class TDResults;
 namespace io{
 
 // Note: In the following, 'filename' param should be passed with its extension
-int importProject( std::string filename,
-                   std::string& pwsfilename,
-                   std::string& schfilename,
-                   std::string& mapfilename,
-                   std::string& scsfilename );
-int importPowersystem( std::string filename, Powersystem* pws );
-int importSchematic( std::string filename,
-                     PwsSchematicModel* smd );
-int importMapping( std::string filename,
-                   PwsMapperModel* mmd,
-                   EmulatorHw const* emuhw = NULL,
-                   Powersystem const* pws = NULL );
-int importScenarioSet( std::string filename, ScenarioSet* scs );
-int importTDResults( std::string filename, TDResults* res );
-int exportPowersystem( std::string filename, Powersystem const* pws );
-int exportSchematic( std::string filename, PwsSchematicModel const* smd );
-int exportMapping( std::string filename, PwsMapperModel const* mmd );
-int exportScenarioSet( std::string filename, ScenarioSet const* scs );
-//! Exports a set of TDResults
-/*! \todo for large results chunks it crashes */
-int exportTDResults( std::string filename, TDResults const* res );
+int importProject(std::string filename,
+                  std::string& pwsfilename,
+                  std::string& schfilename,
+                  std::string& mapfilename,
+                  std::string& scsfilename);
+int importPowersystem(std::string filename, Powersystem* pws);
+int logPowerSystem(Powersystem const& pws, std::ostream& ostr);
+int logPowerSystem(Powersystem const& pws, std::string const& filename);
+int importSchematic(std::string filename, PwsSchematicModel* smd);
+int importMapping(std::string filename,
+                  PwsMapperModel* mmd,
+                  EmulatorHw const* emuhw = NULL,
+                  Powersystem const* pws = NULL);
+int importScenarioSet(std::string filename, ScenarioSet* scs);
+int importTDResults(std::string filename, TDResults* res);
+int exportPowersystem(std::string filename, Powersystem const* pws);
+int exportSchematic(std::string filename, PwsSchematicModel const* smd);
+int exportMapping(std::string filename, PwsMapperModel const* mmd);
+int exportScenarioSet(std::string filename, ScenarioSet const* scs);
+int exportTDResults(std::string filename, TDResults const* res); //!< Exports a set of TDResults
 
-int validateSchema( std::string xsdPath, std::string xmlPath );
+int validateSchema(std::string xsdPath, std::string xmlPath);
 
 } // end of namespace io
-
 } // end of namespace elabtsaot
 
 #endif // IMPORTEREXPORTER_H

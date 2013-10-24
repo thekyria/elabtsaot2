@@ -15,17 +15,13 @@ QString guiauxiliary::askFileName(QString ext, bool read){
     // Get a filename for reading
     caption = QString("Open %0 file").arg(ext);
     filter = QString(".%0 files (*.%1)").arg(ext).arg(ext);
-    fileName = QFileDialog::getOpenFileName( 0, caption,
-                                             QDir::current().path(),
-                                             filter);
+    fileName = QFileDialog::getOpenFileName(0, caption, QDir::current().path(), filter);
 
   } else{
     // Get a filename for writing
     caption = QString("Save %0 file").arg(ext);
     filter = QString(".%0 files (*.%1)").arg(ext).arg(ext);
-    fileName = QFileDialog::getSaveFileName( 0, caption,
-                                             QDir::current().path(),
-                                             filter);
+    fileName = QFileDialog::getSaveFileName(0, caption, QDir::current().path(), filter);
   }
 
   return fileName;

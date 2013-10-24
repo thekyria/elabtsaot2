@@ -6,7 +6,7 @@ using namespace elabtsaot;
 #include <QLayout>
 #include <QWidget>
 
-int auxiliary::log_vector( std::vector<uint32_t> vec,
+int auxiliary::log_vector( std::vector<uint32_t> const& vec,
                            int indexOffset,
                            std::string const& mode,
                            std::ostream& ostr ){
@@ -47,7 +47,7 @@ int auxiliary::log_vector( std::vector<uint32_t> vec,
   return 0;
 }
 
-int auxiliary::log_vector( std::vector<uint32_t> vec,
+int auxiliary::log_vector( std::vector<uint32_t> const& vec,
                            int indexOffset,
                            std::string const& mode,
                            std::string const& fname) {

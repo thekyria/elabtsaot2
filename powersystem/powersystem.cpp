@@ -2,50 +2,29 @@
 #include "powersystem.h"
 using namespace elabtsaot;
 
-#include "precisiontimer.h"
 #include "graph.h"
 
-#include <boost/numeric/ublas/lu.hpp> // for matrix operations
-#include <boost/numeric/ublas/io.hpp> // for ublas::matrix '<<'
-//#include <boost/numeric/ublas/matrix.hpp> // Required for matrix operations
-namespace ublas = boost::numeric::ublas;
-
-//#include <set>
 using std::set;
-//#include <string>
 using std::string;
-//#include <vector>
 using std::vector;
-//#include <iostream>
-using std::ostream;
-using std::endl;
-using std::ios;
 #include <sstream>
 using std::stringstream;
-#include <fstream>
-using std::ofstream;
-//#include <complex>
-using std::complex;
-using std::polar;
-using std::conj;
-#include <limits>
-using std::numeric_limits;
-#include <ctime>                      // for time(), ctime()
-#include <cmath>                      // for M_PI constant
+#include <ctime> // for time(), ctime()
+#include <cmath> // for M_PI constant
 #define _USE_MATH_DEFINES
 
-typedef UintUintBimap::value_type UintPair; //!< Auxiliary definition for UintUintBimap
+typedef UintUintBimap::value_type     UintPair; //!< Auxiliary definition for UintUintBimap
 typedef UintUintBimap::const_iterator UintUintBimapConstIt; //!< Auxiliary definition for UintUintBimap
 
 //! Bus type enumeration
-enum BusType {
-  BUSTYPE_UNDEF,         //!< Undefined bus type (possibly only yet)
-  BUSTYPE_PQ,            //!< PQ bus type: P and Q injection defined at the bus
-  BUSTYPE_PV,            //!< PV bus type: P injection and voltage magnitude defined at the bus
-  BUSTYPE_SLACK          //!< Slack bus: Voltage magnitude and angle defined defined at the bus
+enum BusType{
+  BUSTYPE_UNDEF, //!< Undefined bus type (possibly only yet)
+  BUSTYPE_PQ,    //!< PQ bus type: P and Q injection defined at the bus
+  BUSTYPE_PV,    //!< PV bus type: P injection and voltage magnitude defined at the bus
+  BUSTYPE_SLACK  //!< Slack bus: Voltage magnitude and angle defined defined at the bus
 };
 
-Powersystem::Powersystem( string const& name, double baseS, double baseF) :
+Powersystem::Powersystem(string const& name, double baseS, double baseF) :
     name(name), baseS(baseS), baseF(baseF), _status(PWSSTATUS_INIT) {}
 
 string Powersystem::serialize() const{
@@ -74,172 +53,6 @@ string Powersystem::serialize() const{
        << ":_loadSet[" << k << "] ";
 
   return ss.str();
-}
-
-int Powersystem::logPowerFlowResults(ostream& ostr) const{
-
-  if ( _status != PWSSTATUS_PF )
-    return 1;
-
-  // else{ // ( _status == PWSSTATUS_LF )
-  if ( ostr.bad() )
-    // Error writing to ostr!
-    return 10;
-
-  size_t k;                               // counter
-  //size_t n = _busSet.size();              // number of nodes
-
-  ostr.precision(5);        // sets the decimal precision to be used by output
-                            // operations at 5 significant digits
-  //ostr.width(xxx);        // set field width to xxx BUT works only for the
-                            // next insertion operation; no turn around.
-  ostr.setf ( ios::fixed, ios::floatfield );  // use fixed-point notation
-  //ostr.setf ( ios::right, ios::adjustfield ); // adjust fields right (TODO!)
-
-  ostr << "========================================" ;
-  ostr << "=======================================" ;
-  ostr << endl;
-  ostr << "\tBus Data" << endl;
-  ostr << "========================================" ;
-  ostr << "=======================================" ;
-  ostr << endl;
-  ostr << endl;
-
-  ostr.width(5);
-  ostr << "Id";
-  ostr.width(9);
-  ostr << "V";
-  ostr.width(9);
-  ostr << "theta";
-  ostr.width(9);
-  ostr << "P";
-  ostr.width(9);
-  ostr << "Q" << endl;
-  for ( k = 0 ; k != _busSet.size() ; ++k ){
-    ostr.width(5);
-    ostr << _busSet[k].extId;          // bus ext id
-    ostr.width(9);
-    ostr << _busSet[k].V;            // bus voltage magnitude
-    ostr.width(9);
-    ostr << _busSet[k].theta;           // bus voltage angle
-    ostr.width(9);
-    ostr << _busSet[k].P;            // P at bus
-    ostr.width(9);
-    ostr << _busSet[k].Q;            // Q at bus
-    ostr << endl;
-  }
-  ostr << endl;
-
-  ostr << "========================================" ;
-  ostr << "=======================================" ;
-  ostr << endl;
-  ostr << "\tBranch Data (* denotes online)" << endl;
-  ostr << "========================================" ;
-  ostr << "=======================================" ;
-  ostr << endl;
-  ostr << endl;
-
-  // TODO: fix I flows
-  ostr.width(5);
-  ostr << "Id";
-  ostr.width(5);
-  ostr << "from";
-  ostr.width(5);
-  ostr << "to";
-  ostr.width(9);
-  ostr << "P_f";
-  ostr.width(9);
-  ostr << "Q_f";
-  ostr.width(9);
-  ostr << "P_t";
-  ostr.width(9);
-  ostr << "Q_t";
-  ostr.width(9);
-  ostr << "I_f";
-  ostr.width(9);
-  ostr << "I_t";
-  ostr << endl;
-  for ( k = 0 ; k != _brSet.size() ; ++k ){
-    if ( _brSet[k].status )
-      ostr << "*";
-    else
-      ostr << " ";
-    ostr.width(4);
-    ostr << _brSet[k].extId;        // branch ext id
-    ostr.width(5);
-    ostr << _brSet[k].fromBusExtId; // branch from bus ext id
-    ostr.width(5);
-    ostr << _brSet[k].toBusExtId;   // branch to bus ext id
-    ostr.width(9);
-  }
-  ostr << endl;
-
-  ostr << "========================================" ;
-  ostr << "=======================================" ;
-  ostr << endl;
-  ostr << "\tGenerator Data (* denotes online)" << endl;
-  ostr << "========================================" ;
-  ostr << "=======================================" ;
-  ostr << endl;
-  ostr << endl;
-
-  ostr.width(5);
-  ostr << "Id";
-  ostr.width(9);
-  ostr << "P";
-  ostr.width(9);
-  ostr << "Q";
-  ostr.width(9);
-  ostr << "E";
-  ostr.width(9);
-  ostr << "delta";
-  ostr << endl;
-  for ( k = 0 ; k != _genSet.size() ; ++k ){
-    if ( _genSet[k].status )
-      ostr << "*";
-    else
-      ostr << " ";
-    ostr.width(4);
-    ostr << _genSet[k].extId;
-    ostr.width(9);
-    ostr << _genSet[k].Pgen;
-    ostr.width(9);
-    ostr << _genSet[k].Qgen;
-    ostr.width(9);
-    ostr << _genSet[k].Ess();
-    ostr.width(9);
-    ostr << _genSet[k].deltass();
-    ostr << endl;
-  }
-  ostr << endl;
-
-  return 0;
-}
-
-int Powersystem::logPowerFlowResults(string const& filename) const{
-
-  if ( _status != PWSSTATUS_PF ){
-    return 1;
-  }
-  // else{ // ( _status == PWSSTATUS_LF )
-
-  // Convert string fname to char* a
-  char *a=new char[filename.size()+1];
-  a[filename.size()]=0;
-  memcpy(a,filename.c_str(),filename.size());
-
-  int ans = 0;
-  ofstream ofstr;
-  ofstr.open( a , std::ios::trunc);
-  if ( ofstr.is_open() ){
-    ans = logPowerFlowResults(ofstr);
-    ofstr.close();
-  } else{
-  // Error opening the file
-    return 2;
-  }
-
-  return ans;
 }
 
 double Powersystem::getMaxX() const{

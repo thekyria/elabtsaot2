@@ -6,6 +6,7 @@ using namespace elabtsaot;
 #include "ssengine.h"
 #include "tabularpowersystemeditor.h"
 #include "guiauxiliary.h"
+#include "importerexporter.h"
 
 #include <QAction>
 #include <QToolBar>
@@ -79,9 +80,9 @@ void PowerFlowEditor::logPowerFlowResultsSlot(){
   int ans = logPowerFlowDialog(&toConsole, filename);
 
   if ( toConsole )
-    ans = _pws->logPowerFlowResults(std::cout);
+    ans = io::logPowerSystem(*_pws,std::cout);
   else
-    ans = _pws->logPowerFlowResults(filename.toStdString());
+    ans = io::logPowerSystem(*_pws,filename.toStdString());
 
   if ( ans )
     cout << "Logging of power flow results failed! exit code " << ans << endl;
