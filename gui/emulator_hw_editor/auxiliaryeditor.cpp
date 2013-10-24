@@ -2,13 +2,16 @@
 #include "auxiliaryeditor.h"
 using namespace elabtsaot;
 
+#include "auxiliary.h"
+#include "encoder.h"
 #include "emulator.h"
 #include "tdemulator.h"
+#include "importerexporter.h"
+
 #include "logencodingdialog.h"
 #include "rawreadfromdevicedialog.h"
 #include "rawwritetodevicedialog.h"
-#include "auxiliary.h"
-#include "encoder.h"
+#include "guiauxiliary.h"
 
 #include <QFrame>
 #include <QToolBar>
@@ -155,11 +158,17 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
   QPushButton* logGotEncodingBut = new QPushButton("Log GOT encoding");
   encodingLay->addRow(logGotEncodingLabel,logGotEncodingBut);
 
+  // Import encoding
+  QLabel* importEncodingLabel = new QLabel("Import encoding");
+  QPushButton* importEncodingBut = new QPushButton("Import encoding");
+  encodingLay->addRow(importEncodingLabel,importEncodingBut);
+
   // ----------------- Connect signals -----------------
   connect(encodePowersystemBut, SIGNAL(clicked()), this, SLOT(encodePowersystemSlot()));
   connect(writeEncodingBut, SIGNAL(clicked()), this, SLOT(writeEncodingSlot()));
   connect(logEncodingBut, SIGNAL(clicked()), this, SLOT(logPowersystemEncodingSlot()));
   connect(logGotEncodingBut, SIGNAL(clicked()), this, SLOT(logGotEncodingSlot()));
+  connect(importEncodingBut, SIGNAL(clicked()), this, SLOT(importEncodingSlot()));
 
 
   // ---------------------------------------------------------------------------
@@ -393,6 +402,16 @@ void AuxiliaryEditor::logGotEncodingSlot(){
   }
 }
 
+void AuxiliaryEditor::importEncodingSlot(){
+  int sliceId(-1);
+  int ans = guiauxiliary::askInt("Select slice",sliceId,-1,_emu->encoding.size()-1);
+  if (sliceId<0) return;
+  QString filename = guiauxiliary::askFileName(QString("tep"),true);
+  ans = io::importEncoding(filename.toStdString(), sliceId , *_emu);
+  if (ans) cout << "Import encoding failed with code " << ans << endl;
+  else cout << "Sucessfully imported encoding!" << endl;
+}
+
 void AuxiliaryEditor::hardResetPressedSlot(){
   _emu->hardResetPressed();
   cout << "Emulator structure notified for hard reset key press!" << endl;
@@ -450,49 +469,4 @@ void AuxiliaryEditor::_updtGlobals(){
 //  ratioIForm->setValue( _emu->ratioI() );
   maxIpuForm->setValue( _emu->maxIpu() );
   return;
-}
-
-int AuxiliaryEditor::_rawReadFromDeviceDialog( size_t& devId,
-                                               unsigned int& startAddress,
-                                               size_t& wordCount ){
-
-  QDialog* dialog = new QDialog();
-  dialog->setWindowTitle( "Raw read from device" );
-  QVBoxLayout* mainLay = new QVBoxLayout();
-  dialog->setLayout( mainLay );
-
-  QSpinBox* devIdForm = new QSpinBox( dialog );
-  devIdForm->setRange( 0, _emu->getUSBDevicesCount()-1 );
-  QSpinBox* startAddressForm = new QSpinBox( dialog );
-  startAddressForm->setRange( 0, 4095 );
-  QSpinBox* wordCountForm = new QSpinBox( dialog );
-  wordCountForm->setRange( 0, 4095 );
-
-  QFormLayout* formLay = new QFormLayout();
-  mainLay->addLayout( formLay );
-  formLay->addRow( "Device:", devIdForm );
-  formLay->addRow( "Start address:", startAddressForm );
-  formLay->addRow( "Word count:", wordCountForm );
-
-  QHBoxLayout* buttonLay = new QHBoxLayout();
-  mainLay->addLayout( buttonLay );
-  QPushButton* okb = new QPushButton("OK");
-  buttonLay->addWidget( okb );
-  dialog->connect( okb, SIGNAL(clicked()), dialog, SLOT(accept()) );
-  QPushButton* cancelb = new QPushButton("Cancel");
-  buttonLay->addWidget( cancelb );
-  dialog->connect( cancelb, SIGNAL(clicked()), dialog, SLOT(reject()) );
-
-  if ( dialog->exec() ){
-    // Dialog executed properly
-    devId = devIdForm->value();
-    startAddress = startAddressForm->value();
-    wordCount = wordCountForm->value();
-    return 0;
-
-  } else {
-    // Dialog failed
-    return 1;
-  }
-  return 0;
 }

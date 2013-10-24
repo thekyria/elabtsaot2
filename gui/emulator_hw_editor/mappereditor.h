@@ -43,9 +43,7 @@ class MapperEditor : public QSplitter{
   void validateMappingSlot();
   void unmapComponentSlot();
   void componentSelectedSlot(int type, unsigned int extId);
-  void mappingPositionClickedSlot(int mapper_tab,
-                                  int mapper_row,
-                                  int mapper_col );
+  void mappingPositionClickedSlot(int mapper_tab, int mapper_row, int mapper_col);
  private:
 
   Emulator* _emu;

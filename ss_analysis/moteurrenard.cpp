@@ -7,7 +7,7 @@ using namespace elabtsaot;
 #include <boost/numeric/ublas/lu.hpp> // for matrix operations
 #include <boost/numeric/ublas/io.hpp> // for ublas::matrix '<<'
 using namespace ublas;
-//#include <boost/timer/timer.hpp>
+#include <boost/timer/timer.hpp>
 
 #include <complex>
 using std::polar;
@@ -58,7 +58,7 @@ int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
                                     matrix<complex>& Y,
                                     vector<complex>& V) const{
 
-//  boost::timer::auto_cpu_timer t; // when t goes out of scope it prints timing info
+  boost::timer::auto_cpu_timer t; // when t goes out of scope it prints timing info
 
   // Before entering into the power flow main routine, check that the power system
   // has been validated
@@ -225,6 +225,10 @@ int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
     if (norm_inf(F)<tolerance)
       converged = true;
   }
+  cout << "iteration count: " << iterCount << endl;
+//  cout << "final norm_inf(F): " << norm_inf(F) << endl;
+//  cout << "final V: " << V << endl;
+
   if (!converged) return 2;
   return 0;
 }

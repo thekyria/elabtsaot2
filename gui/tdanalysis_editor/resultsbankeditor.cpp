@@ -8,7 +8,7 @@ using namespace elabtsaot;
 #include "guiauxiliary.h"
 #include "tdanalysiseditordialogs.h"
 #include "resultsrequestdetailsdialog.h"
-#include "resultsrenamedialog.h"
+#include "guiauxiliary.h"
 
 #include <QToolBar>
 #include <QAction>
@@ -156,14 +156,11 @@ void ResultsBankEditor::renameResultsSlot(){
   QTableWidgetItem* titleItem = _resultsDBTable->item( _resultsDBTable->currentRow(), 0 );
   string oldTitle = titleItem->text().toStdString();
   string newTitle(oldTitle);
+  int ans = guiauxiliary::askString("Rename results",newTitle);
+  if (ans) return;
 
-  ResultsRenameDialog dialog( newTitle, this );
-  int ans = dialog.exec();
-  if ( ans )
-    return;
-
-  ans = _trb->renameResults( oldTitle, newTitle );
-  if ( ans )
+  ans = _trb->renameResults(oldTitle, newTitle);
+  if (ans)
     cout << "Error renaming results " << oldTitle << " to " << newTitle << endl;
   else
     cout << "Successfully renamed results " << oldTitle << " to " << newTitle << endl;

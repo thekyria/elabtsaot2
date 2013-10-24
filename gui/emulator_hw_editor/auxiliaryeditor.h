@@ -46,6 +46,7 @@ class AuxiliaryEditor : public QSplitter{
   void writeEncodingSlot();
   void logPowersystemEncodingSlot();
   void logGotEncodingSlot();
+  void importEncodingSlot();
 
   void hardResetPressedSlot();
   void endCalibrationSlot();
@@ -63,9 +64,6 @@ class AuxiliaryEditor : public QSplitter{
  private:
 
   void _updtGlobals();
-  int _rawReadFromDeviceDialog( size_t& devId,
-                                unsigned int& startAddress,
-                                size_t& wordCount );
 
   Emulator* _emu;
   TDEmulator* _tde_hwe; // used for _tde_hwe->resetEmulation() in resetEmulationSlot()

@@ -50,7 +50,7 @@ int LogEncodingDialog::exec(){
   sliceLay->addWidget( sliceLabel );
   QSpinBox* sliceForm = new QSpinBox();
   sliceLay->addWidget( sliceForm );
-  sliceForm->setRange( 0, _sliceCount );
+  sliceForm->setRange( 0, _sliceCount-1 );
 
   QHBoxLayout* targetLay = new QHBoxLayout();
   mainLay->addLayout( targetLay );

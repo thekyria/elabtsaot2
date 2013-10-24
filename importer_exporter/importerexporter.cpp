@@ -11,6 +11,7 @@ using namespace elabtsaot;
 #include "pwsmappermodel.h"
 #include "powersystem.h"
 #include "emulatorhw.h"
+#include "emulator.h"
 #include "scenarioset.h"
 #include "tdresults.h"
 #include "auxiliary.h"
@@ -368,11 +369,39 @@ int io::importMapping( string filename_,
   return mmd->copy( *temp_mmd );
 }
 
+int io::importEncoding(string filename_, size_t sliceId, Emulator& emu){
+  QString filename(QString::fromStdString(filename_));
+  QFile file( filename );
+  if (!file.open(QFile::ReadOnly | QFile::Text)) // open() returns true if ok
+    return 1;
+  QTextStream fin(&file);
+  fin.setCodec("UTF-8");
+
+  QString temp;
+  vector<uint32_t> tempEncoding;
+  temp = fin.readLine();
+  while (!temp.isNull()){
+    bool ok(true);
+    uint32_t tempUint = temp.toUInt(&ok,16);
+    if (!ok){
+      file.close();
+      return 2;
+    }
+    tempEncoding.push_back(tempUint);
+    temp = fin.readLine();
+  }
+  file.close(); // Close file
+
+  if (tempEncoding.size()>0)
+    emu.encoding.at(sliceId) = tempEncoding;
+
+  return 0;
+}
+
 int io::importScenarioSet(string filename_, ScenarioSet* scs){
   QString filename(QString::fromStdString(filename_));
 
-  if ( scs == NULL )
-    return -1;
+  if (scs==NULL) return -1;
 
   // Check xml's consistency according to schema
   if( validateSchema( ":/xml_schemas/scenariosset.xsd", filename_ ) ){

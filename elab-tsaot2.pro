@@ -39,7 +39,7 @@ INCLUDEPATH += \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor \
   $$ELABTSAOT2_ROOT/gui/console \
   $$CYUSB_PATH/include \
-  $$BOOST_PATH/boost_1_48_0 \
+  $$BOOST_PATH/ \
 
 DEPENDPATH += \
   $$ELABTSAOT2_ROOT/ \
@@ -167,7 +167,6 @@ SOURCES += \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/curvepropertiesdialog.cpp \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/tdanalysiseditordialogs.cpp \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/resultsrequestdialog.cpp \
-  $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/resultsrenamedialog.cpp \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/resultsrequestdetailsdialog.cpp \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/resultsvisualizationeditor.cpp \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/resultsdbbrowser.cpp \
@@ -283,7 +282,6 @@ HEADERS += \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/curvepropertiesdialog.h \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/tdanalysiseditordialogs.h \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/resultsrequestdialog.h \
-  $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/resultsrenamedialog.h \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/resultsrequestdetailsdialog.h \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/resultsvisualizationeditor.h \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/resultsdbbrowser.h \
@@ -292,7 +290,7 @@ HEADERS += \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/gtdaeditor.h \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/gtdaviewer.h \
 
-#------------------ Libraries ------------------
+#------------------ CyUSB ------------------
 CONFIG( debug, debug|release ) {
   LIBS += -L$$CYUSB_PATH/lib \
           -lCyUSBd
@@ -328,6 +326,16 @@ nospies{
 }
 #------------------ Boost -----------------
 CONFIG( debug, debug|release ) {
+  LIBS += -L$$BOOST_PATH/lib \
+          -lboost_timerd \
+          -lboost_systemd \
+          -lboost_chronod
+} else {
   DEFINES += NDEBUG
   DEFINES += BOOST_UBLAS_NDEBUG
+  DEFINES += BOOST_UBLAS_CHECK_FALSE
+  LIBS += -L$$BOOST_PATH/lib \
+          -lboost_timer \
+          -lboost_system \
+          -lboost_chrono
 }

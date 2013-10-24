@@ -54,9 +54,7 @@ class CommunicationEditor : public QSplitter{
 
   void _updateDevicesList();
   void _updateSlicesList();
-  int _deviceViewDialog( USBDevice const& devId );
-  int _slicesSetDialog( int currentSliceCount, int* sliceCount );
-  int _slicesAssignDialog( int deviceCount, int* devId );
+  int _deviceViewDialog(USBDevice const& devId);
 
   Emulator* _emu;
 

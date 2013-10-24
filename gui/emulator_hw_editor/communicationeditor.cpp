@@ -3,6 +3,7 @@
 using namespace elabtsaot;
 
 #include "emulator.h"
+#include "guiauxiliary.h"
 
 #include <QGroupBox>
 #include <QGridLayout>
@@ -154,23 +155,18 @@ void CommunicationEditor::devicesTestSlot(){
 
 void CommunicationEditor::slicesSetSlot(){
 
-  int currentSliceCount = _emu->getHwSliceCount();
-  int newSliceCount;
-  int ans = _slicesSetDialog( currentSliceCount, &newSliceCount );
-
-  // If dialog failed the exit without doing anything
+  int sliceCount = _emu->getHwSliceCount();
+  int ans = guiauxiliary::askInt("Set slice count", sliceCount, 0,4);
   if ( ans )
     return;
-  // otherwise ...
 
   // ----- Update backend components -----
-  ans = _emu->setSliceCount( newSliceCount );
-  if ( ans ){
+  ans = _emu->setSliceCount(sliceCount);
+  if (ans){
     cout << "Updating the slice count failed with code " << ans << endl;
     return;
-  } else {
-    cout << "Slice count updated successfully!" << endl;
   }
+  cout << "Slice count updated successfully!" << endl;
 
   // ----- Update frontend components -----
   emit emuChanged(true); // true to denote topological change in the emu
@@ -188,12 +184,10 @@ void CommunicationEditor::slicesAssignSlot(){
     // No slice selected; nothing to do
     return;
 
-  int devId = -1;
-  size_t deviceCount = _emu->getUSBDevices().size();
-  int ans = _slicesAssignDialog(deviceCount, &devId);
-  if ( ans )
-    // Dialog not executed properly or invalid devId selection
-    return;
+  int devId(-1);
+  int deviceCount = static_cast<int>(_emu->getUSBDevices().size());
+  int ans = guiauxiliary::askInt("Assign slice to device",devId,-1,deviceCount-1);
+  if (ans) return;
 
   ans = _emu->assignSliceToDevice( sliceId, devId );
   if ( ans ){
@@ -643,99 +637,6 @@ int CommunicationEditor::_deviceViewDialog( USBDevice const& dev ){
 //      }
     }
     return 0;
-  } else{
-    // Dialog cancelled or not executed correctly
-    return 1;
-  }
-
-  return 0;
-}
-
-int CommunicationEditor::_slicesSetDialog( int currentSliceCount,
-                                           int* sliceCount ){
-
-  QDialog* dialog = new QDialog();
-  dialog->setWindowTitle("Set slice count dialog");
-
-  // Main vertical layout
-  QVBoxLayout* layMain = new QVBoxLayout();
-  dialog->setLayout( layMain );
-
-  // Slack selection spinbox
-  QSpinBox* num = new QSpinBox();
-  num->setRange( 0 , 4 );
-  num->setValue( currentSliceCount );
-  layMain->addWidget( num );
-
-  // Horizonal button layout
-  QHBoxLayout* layButtons = new QHBoxLayout();
-  layMain->addLayout( layButtons );
-  // Ok button
-  QPushButton* ok = new QPushButton("Ok");
-  layButtons->addWidget( ok );
-  dialog->connect( ok , SIGNAL(clicked()), dialog, SLOT(accept()) );
-  // Cancel button
-  QPushButton* cancel = new QPushButton("Cancel");
-  layButtons->addWidget( cancel );
-  dialog->connect( cancel, SIGNAL(clicked()), dialog, SLOT(reject()) );
-
-  // Excecute dialog
-  if ( dialog->exec() ){
-    // Return new slice count to the output argument
-    *sliceCount = num->value();
-    return 0;
-  } else{
-    // Dialog cancelled or not executed correctly
-    return 1;
-  }
-
-  return 0;
-}
-
-int CommunicationEditor::_slicesAssignDialog( int deviceCount, int* devId ){
-
-  QDialog* dialog = new QDialog();
-  dialog->setWindowTitle( "Slices assign dialog" );
-
-  // Main vertical layout
-  QVBoxLayout* layMain = new QVBoxLayout();
-  dialog->setLayout( layMain );
-
-  QHBoxLayout* sliceLay = new QHBoxLayout();
-  layMain->addLayout( sliceLay );
-  QLabel* sliceLabel = new QLabel( "Assign slice to device" );
-  sliceLay->addWidget( sliceLabel );
-  QComboBox* sliceCombo = new QComboBox(dialog);
-  sliceLay->addWidget( sliceCombo );
-  for ( int k = 0 ; k != deviceCount ; ++k ){
-      sliceCombo->addItem( QString("%1").arg(k) );
-  }
-
-  // Horizonal button layout
-  QHBoxLayout* layButtons = new QHBoxLayout();
-  layMain->addLayout( layButtons );
-  // Ok button
-  QPushButton* ok = new QPushButton("Ok");
-  layButtons->addWidget( ok );
-  dialog->connect( ok , SIGNAL(clicked()), dialog, SLOT(accept()) );
-  // Cancel button
-  QPushButton* cancel = new QPushButton("Cancel");
-  layButtons->addWidget( cancel );
-  dialog->connect( cancel, SIGNAL(clicked()), dialog, SLOT(reject()) );
-
-  // Excecute dialog
-  if ( dialog->exec() ){
-    // Selected index
-    bool ok = true;
-    int tempDevId = sliceCombo->currentText().toInt( &ok );
-    if ( !ok ){
-      // Problem with the conversion of the combobox selected item text to int
-      return 2;
-    }
-    *devId = tempDevId;
-
-    return 0;
-
   } else{
     // Dialog cancelled or not executed correctly
     return 1;
