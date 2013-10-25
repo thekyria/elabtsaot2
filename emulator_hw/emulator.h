@@ -115,7 +115,7 @@ class Emulator {
 
   // Encoding powersystems and scenarios
   int encodePowersystem();
-  int writeEncoding( bool verify );
+  int writeEncoding(bool verify, bool force=false);
 
   // Getters
   EmulatorHw* emuhw();

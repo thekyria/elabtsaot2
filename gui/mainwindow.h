@@ -23,6 +23,7 @@ class PwsSchematicModel;
 class Emulator;
 class SSEngine;
 class MoteurRenard;
+class MoteurLapack;
 class MoteurFengtian;
 class TDEngine;
 class TDEmulator;
@@ -53,6 +54,7 @@ class MainWindow : public QMainWindow{
               Emulator* emu,
               SSEngine*& sse,
               MoteurRenard* sse_mrn,
+              MoteurLapack* sse_mlp,
               MoteurFengtian* sse_fen,
               TDEngine*& tde,
               TDEmulator* tde_hwe,

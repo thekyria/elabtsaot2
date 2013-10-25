@@ -30,25 +30,27 @@ class SSEngine : public PropertyHolder {
 
  private:
   virtual int do_solvePowerFlow(Powersystem const& pws,
-                                ublas::matrix<complex>& Y,
+                                ublas::matrix<complex,ublas::column_major>& Y,
                                 ublas::vector<complex>& V) const = 0;
 };
 
 namespace ssengine{
-  void buildY(Powersystem const& pws, ublas::matrix<complex>& Y);
-  void calculatePower(ublas::matrix<complex> const& Y,
+  void buildY(Powersystem const& pws, ublas::matrix<complex,ublas::column_major>& Y);
+  void calculatePower(ublas::matrix<complex,ublas::column_major> const& Y,
                       ublas::vector<complex> const& V,
                       ublas::vector<complex>& S);
-  void calculateCurrent(ublas::matrix<complex> const& Y,
+  void calculateCurrent(ublas::matrix<complex,ublas::column_major> const& Y,
                         ublas::vector<complex> const& V,
                         ublas::vector<complex>& I);
+  ublas::vector<double> abs(ublas::vector<complex> const& v);
   ublas::vector<complex> absComplex(ublas::vector<complex> const& v);
-  void calculateDSdV(ublas::matrix<complex> const& Y,
+  ublas::vector<complex> normComplexVec(ublas::vector<complex> const& v);
+  void calculateDSdV(ublas::matrix<complex,ublas::column_major> const& Y,
                      ublas::vector<complex> const& V,
-                     ublas::matrix<complex>& dSdVm,
-                     ublas::matrix<complex>& dSdVa);
+                     ublas::matrix<complex,ublas::column_major>& dSdVm,
+                     ublas::matrix<complex,ublas::column_major>& dSdVa);
   void updatePowersystem(Powersystem& pws,
-                         ublas::matrix<complex> const& Y,
+                         ublas::matrix<complex,ublas::column_major> const& Y,
                          ublas::vector<complex> const& V);
 } // end of namespace ssengine
 

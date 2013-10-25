@@ -6,6 +6,7 @@ using namespace elabtsaot;
 #include "powerfloweditor.h"
 //#include "ssengine.h"
 #include "moteurrenard.h"
+#include "moteurlapack.h"
 #include "moteurfengtian.h"
 
 #include <QToolBar>
@@ -21,18 +22,21 @@ using std::endl;
 
 enum AnalysisEditorTDESelection{
   SSANL_SSE_MRN,
-  SSANL_SSE_MAT,
+  SSANL_SSE_MLP,
+//  SSANL_SSE_MAT,
   SSANL_SSE_FEN
 };
 
 SSAnalysisEditor::SSAnalysisEditor( Powersystem*& pws,
                                     SSEngine*& sse,
                                     MoteurRenard* sse_mrn,
+                                    MoteurLapack* sse_mlp,
                                     MoteurFengtian* sse_fen,
                                     QWidget* parent ) :
     QSplitter(Qt::Vertical, parent),
     _sse(sse),
     _sse_mrn(sse_mrn),
+    _sse_mlp(sse_mlp),
     _sse_fen(sse_fen) {
 
   setMinimumHeight(300);
@@ -47,6 +51,9 @@ SSAnalysisEditor::SSAnalysisEditor( Powersystem*& pws,
   ssEngineSelectBox->addItem( QIcon(),
                             QString::fromStdString(sse_mrn->SSDescription()),
                             QVariant(SSANL_SSE_MRN) );
+  ssEngineSelectBox->addItem( QIcon(),
+                            QString::fromStdString(sse_mlp->SSDescription()),
+                            QVariant(SSANL_SSE_MLP) );
   ssEngineSelectBox->addItem( QIcon(),
                               QString::fromStdString(sse_fen->SSDescription()),
                               QVariant(SSANL_SSE_FEN) );
@@ -72,11 +79,12 @@ void SSAnalysisEditor::updt(){ powerFlowEditor->updt(); }
 
 void SSAnalysisEditor::SSEngineSelectionSlot(int index){
   switch ( ssEngineSelectBox->itemData(index).toInt() ){
-
+  case SSANL_SSE_MLP:
+    _sse = _sse_mlp;
+    break;
   case SSANL_SSE_FEN:
     _sse = _sse_fen;
     break;
-
   case SSANL_SSE_MRN:
   default:
     _sse = _sse_mrn;

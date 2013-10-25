@@ -22,6 +22,7 @@ class PowerFlowEditor : public QSplitter {
  public slots:
 
   void updt();
+  void resetPowersystemState();
   void calculateYSlot() const;
   void powerFlowPowersystemSlot() const;
   void logPowerFlowResultsSlot();

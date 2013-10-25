@@ -12,7 +12,7 @@ std::string SSEngine::SSDescription() const{ return _SSdescription; }
 void SSEngine::setLogger(Logger* log){ _SSlog = log; }
 
 int SSEngine::solvePowerFlow(Powersystem& pws) const{
-  matrix<complex> Y;
+  matrix<complex,column_major> Y;
   vector<complex> V;
   int ans = do_solvePowerFlow(pws,Y,V);
   if (ans) return ans ;
@@ -28,7 +28,7 @@ int SSEngine::solvePowerFlow(Powersystem& pws) const{
 #include <boost/numeric/ublas/operation.hpp> // for axpy_prod
 #include <boost/numeric/ublas/banded.hpp> // for diagonal_matrix
 
-void ssengine::buildY(Powersystem const& pws, matrix<complex>& Y){
+void ssengine::buildY(Powersystem const& pws, matrix<complex,column_major>& Y){
   size_t N = pws.getBusCount();
   Y.resize(N,N);
   Y.clear();
@@ -73,7 +73,7 @@ void ssengine::buildY(Powersystem const& pws, matrix<complex>& Y){
     Y(k,k) += complex(pws.getBus(k)->Gsh, pws.getBus(k)->Bsh);
 }
 
-void ssengine::calculatePower(matrix<complex> const& Y,
+void ssengine::calculatePower(matrix<complex,column_major> const& Y,
                               vector<complex> const& V,
                               vector<complex>& S){
   vector<complex> I;
@@ -83,12 +83,20 @@ void ssengine::calculatePower(matrix<complex> const& Y,
   noalias(S) = element_prod(V,conj(I));
 }
 
-void ssengine::calculateCurrent(matrix<complex> const& Y,
+void ssengine::calculateCurrent(matrix<complex,column_major> const& Y,
                                 vector<complex> const& V,
                                 vector<complex>& I ){
   I.resize(V.size());
   I.clear();
   axpy_prod(Y,V,I,true);
+}
+
+vector<double> ssengine::abs(vector<complex> const& v){
+  size_t N=v.size();
+  vector<double> ans(N);
+  for (size_t k=0; k!=N; ++k)
+    ans(k) = std::abs(v(k));
+  return ans;
 }
 
 vector<complex> ssengine::absComplex(vector<complex> const& v){
@@ -99,50 +107,61 @@ vector<complex> ssengine::absComplex(vector<complex> const& v){
   return ans;
 }
 
-void ssengine::calculateDSdV(matrix<complex> const& Y,
+vector<complex> ssengine::normComplexVec(vector<complex> const& v){
+  size_t N=v.size();
+  vector<complex> ans(N);
+  for (size_t k=0; k!=N; ++k)
+    ans(k) = v(k)/std::abs(v(k));
+  return ans;
+}
+
+void ssengine::calculateDSdV(matrix<complex,column_major> const& Y,
                              vector<complex> const& V,
-                             matrix<complex>& dSdVm,
-                             matrix<complex>& dSdVa){
+                             matrix<complex,column_major>& dSdVm,
+                             matrix<complex,column_major>& dSdVa){
   // Sparse provision
 
   size_t N=V.size();
+  matrix<complex,column_major> temp(N,N);
+  temp.clear();
   // ----- dPower against dVoltage_magnitude calculations -----
   dSdVm.resize(N,N);
   dSdVm.clear();
   // step1: dSdVm = Y*diagVnorm
-  vector<complex> Vnorm(absComplex(V));
-  diagonal_matrix<complex> diagVnorm(Vnorm.size(),Vnorm.data());
-  axpy_prod(Y,diagVnorm,dSdVm,true);
+  vector<complex> Vnorm(normComplexVec(V));
+  diagonal_matrix<complex,column_major> diagVnorm(Vnorm.size(),Vnorm.data());
+  axpy_prod(Y,diagVnorm,temp,true);
   // step2: dSdVm = conj( Y*diagVnorm )
-  dSdVm = conj(dSdVm);
+  temp = conj(temp);
   // step3: dSdVm = diagV * conj(Y*diagVnorm)
-  diagonal_matrix<complex> diagV(V.size(),V.data());
-  dSdVm = prod(diagV,dSdVm);
+  diagonal_matrix<complex,column_major> diagV(V.size(),V.data());
+  axpy_prod(diagV,temp,dSdVm,true); // dSdVm = prod(diagV,dSdVm);
   // step4: dSdVm = diagV*conj(Y*diagVnorm) + diagconjI * diagVnorm;
   vector<complex> I;
   calculateCurrent(Y,V,I);
-  diagonal_matrix<complex> diagI(I.size(),I.data()); // needed in dsdVa calculations
+  diagonal_matrix<complex,column_major> diagI(I.size(),I.data()); // needed in dsdVa calculations
   I = conj(I); // now I temporarily holds conjI
-  diagonal_matrix<complex> diagconjI(I.size(),I.data());
+  diagonal_matrix<complex,column_major> diagconjI(I.size(),I.data());
   axpy_prod(diagconjI,diagVnorm,dSdVm,false);
 
+  temp.clear();
   // ----- dPower against dVoltage_angle calculations -----
   dSdVa.resize(N,N);
   dSdVa.clear();
   // step1: dsdVa = Y*diagV
-  axpy_prod(Y,diagV,dSdVa,true);
+  axpy_prod(Y,diagV,temp,true);
   // step2: dsdVa = diagI - Y*diagV
-  dSdVa = diagI - dSdVa;
+  temp = diagI - temp;
   // step3: dsdVa = conj( diagI-Y*diagV )
-  dSdVa = conj(dSdVa);
+  temp = conj(temp);
   // step4: dSdVa = diagV * conj(diagI-Y*diagV)
-  dSdVa = prod(diagV,dSdVa);
+  axpy_prod(diagV,temp,dSdVa,true); //dSdVa = prod(diagV,dSdVa);
   // step5: dSdVa = 1i * diagV*conj(diagI-Y*diagV)
   dSdVa *= complex(0,1);
 }
 
 void ssengine::updatePowersystem(Powersystem& pws,
-                                 matrix<complex> const& Y,
+                                 matrix<complex,column_major> const& Y,
                                  vector<complex> const& V){
   pws.set_status( PWSSTATUS_VALID );
 

@@ -75,7 +75,7 @@ MoteurFengtian::MoteurFengtian(Emulator* emu, Logger* log) :
 }
 
 int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws,
-                                      matrix<complex>& Y,
+                                      matrix<complex,column_major>& Y,
                                       vector<complex>& V) const{
 
   // Before entering into the power flow main routine, check that the power system

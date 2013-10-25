@@ -11,6 +11,8 @@ using namespace elabtsaot;
 #include <QAction>
 #include <QToolBar>
 
+#include <boost/numeric/ublas/io.hpp>
+
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -37,6 +39,10 @@ PowerFlowEditor::PowerFlowEditor( Powersystem*& pws,
 
   pfToolbar->addSeparator(); // -- Separator
 
+  QAction* resetStateAct = new QAction(QIcon(),"Reset PWS state", pfToolbar);
+  pfToolbar->addAction(resetStateAct);
+  connect(resetStateAct,SIGNAL(triggered()), this, SLOT(resetPowersystemState()));
+
   QAction* calculateYAct = new QAction( QIcon(), "Calculate Y", pfToolbar );
   pfToolbar->addAction( calculateYAct );
   connect( calculateYAct, SIGNAL(triggered()), this, SLOT(calculateYSlot()) );
@@ -53,10 +59,13 @@ PowerFlowEditor::PowerFlowEditor( Powersystem*& pws,
 
 void PowerFlowEditor::updt(){ _tbl->updt(); }
 
-#include <boost/numeric/ublas/io.hpp>
+void PowerFlowEditor::resetPowersystemState(){
+  if ( _pws->status() == PWSSTATUS_PF )
+    _pws->set_status(PWSSTATUS_VALID);
+}
 
 void PowerFlowEditor::calculateYSlot() const{
-  ublas::matrix<complex> Y;
+  ublas::matrix<complex,ublas::column_major> Y;
   ssengine::buildY(*_pws,Y);
   cout << "Y: " << Y << endl;
 }

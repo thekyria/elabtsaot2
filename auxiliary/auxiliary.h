@@ -99,6 +99,22 @@ std::string to_string(T_ const& t) {
   return ss.str();
 }
 
+template<class E, class T, class VE>
+std::basic_ostream<E,T>& operator<<(std::basic_ostream<E,T>& os, std::vector<VE> const& v) {
+  size_t size = v.size();
+  std::basic_ostringstream<E, T, std::allocator<E> > s;
+  s.flags (os.flags());
+  s.imbue (os.getloc());
+  s.precision (os.precision());
+  s << '[' << size << "](";
+  if (size > 0)
+    s << v.at(0);
+  for (size_t i = 1; i < size; ++ i)
+    s << ',' << v.at(i);
+  s << ')';
+  return os << s.str().c_str ();
+}
+
 // ----- Functions implemented inline -----
 //! MS Windows specific function to keep the calling process alive
 inline void stayAlive(){

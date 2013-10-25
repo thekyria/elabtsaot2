@@ -345,7 +345,7 @@ void AuxiliaryEditor::encodePowersystemSlot(){
 }
 
 void AuxiliaryEditor::writeEncodingSlot(){
-  int ans = _emu->writeEncoding(false);
+  int ans = _emu->writeEncoding(false,true);
   if ( ans ) cout << "Write encoding failed with code " << ans << endl;
   else cout << "Write encoding was successful!" << endl;
   return;
@@ -404,10 +404,11 @@ void AuxiliaryEditor::logGotEncodingSlot(){
 
 void AuxiliaryEditor::importEncodingSlot(){
   int sliceId(-1);
-  int ans = guiauxiliary::askInt("Select slice",sliceId,-1,_emu->encoding.size()-1);
+//  int ans = guiauxiliary::askInt("Select slice",sliceId,-1,_emu->encoding.size()-1);
+  int ans = guiauxiliary::askInt("Select slice",sliceId,-1,_emu->getHwSliceCount()-1);
   if (sliceId<0) return;
   QString filename = guiauxiliary::askFileName(QString("tep"),true);
-  ans = io::importEncoding(filename.toStdString(), sliceId , *_emu);
+  ans = io::importEncoding(filename.toStdString(), sliceId , *_emu, true);
   if (ans) cout << "Import encoding failed with code " << ans << endl;
   else cout << "Sucessfully imported encoding!" << endl;
 }

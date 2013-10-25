@@ -53,10 +53,8 @@ class SliceAnalog{
   int reset(bool complete);
   void size(size_t& ver, size_t& hor) const;
 
-  //! Get the minimum over the maximum achievable R on atoms of the slice
-  double getMinMaxAchievableR() const;
-  //! calculates the Y matrix according to the current configuration of the hardware
-  ublas::matrix<std::complex<double> > calculate_Y_matrix();
+  double getMinMaxAchievableR() const; //!< Get min over max achievable R of the slice
+//  ublas::matrix<std::complex<double> > calculate_Y_matrix();
   void calibrate(SliceAnalog const& cal_sl);
 
   int nodeCurrentSource(size_t id_ver, size_t id_hor, double seriesR, double shuntR);

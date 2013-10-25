@@ -19,6 +19,7 @@ namespace elabtsaot{
 class Powersystem;
 class SSEngine;
 class MoteurRenard;
+class MoteurLapack;
 class MoteurFengtian;
 
 class PowerFlowEditor;
@@ -32,6 +33,7 @@ class SSAnalysisEditor : public QSplitter {
   SSAnalysisEditor( Powersystem*& pws,
                     SSEngine*& sse,
                     MoteurRenard* sse_mrn,
+                    MoteurLapack* sse_mlp,
                     MoteurFengtian* sse_fen,
                     QWidget* parent = 0 );
   ~SSAnalysisEditor(){}
@@ -46,6 +48,7 @@ class SSAnalysisEditor : public QSplitter {
 
   SSEngine*& _sse;
   MoteurRenard* _sse_mrn;
+  MoteurLapack* _sse_mlp;
   MoteurFengtian* _sse_fen;
 
   // GUI widgets

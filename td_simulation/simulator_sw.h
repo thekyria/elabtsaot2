@@ -45,8 +45,8 @@ class Simulator_sw : public TDEngine {
 
   int _calculateAugmentedYMatrix( std::vector<std::complex<double> > const& Ubus,
                                   std::vector<std::complex<double> > const& Ubus0,
-                                  ublas::matrix<std::complex<double> >& augY );
-  void _solveNetwork( ublas::matrix<std::complex<double> > const& LUaugY,
+                                  ublas::matrix<std::complex<double>,ublas::column_major>& augY );
+  void _solveNetwork( ublas::matrix<std::complex<double>,ublas::column_major> const& LUaugY,
                       ublas::permutation_matrix<size_t> const& pmatrix,
                       std::vector<std::vector<double> > const& Xgen,
                       std::vector<size_t> const& genBusIntId,
@@ -63,7 +63,7 @@ class Simulator_sw : public TDEngine {
                                     std::vector<double> const& Iq,
                                     std::vector<double> const& Id,
                                     std::vector<std::vector<double> >& dXgen);
-  int _rungeKutta( ublas::matrix<std::complex<double> > const& LUaugY,
+  int _rungeKutta( ublas::matrix<std::complex<double>,ublas::column_major> const& LUaugY,
                    ublas::permutation_matrix<size_t> const& pmatrix,
                    std::vector<size_t> const& genBusIntId,
                    double stepSize,

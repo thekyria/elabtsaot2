@@ -41,7 +41,7 @@ int importMapping(std::string filename,
                   PwsMapperModel* mmd,
                   EmulatorHw const* emuhw = NULL,
                   Powersystem const* pws = NULL);
-int importEncoding(std::string filename, size_t sliceId, Emulator& emu);
+int importEncoding(std::string filename, size_t sliceId, Emulator& emu, bool force);
 int importScenarioSet(std::string filename, ScenarioSet* scs);
 int importTDResults(std::string filename, TDResults* res);
 int exportPowersystem(std::string filename, Powersystem const* pws);

@@ -2,10 +2,7 @@
 #include "sliceanalog.h"
 using namespace elabtsaot;
 
-//#include <vector>
 using std::vector;
-#include <complex>
-using std::complex;
 #include <limits>
 using std::numeric_limits;
 
@@ -61,110 +58,110 @@ double SliceAnalog::getMinMaxAchievableR() const{
   return minMaxR;
 }
 
-ublas::matrix<complex<double> > SliceAnalog::calculate_Y_matrix(){
-  // TODO for proper emulator branches (EMBRPOS_ R, UR, U) take into account the
-  // case when mid grounding switch is closed
-  ublas::matrix<complex<double> > Y_hw;
-  size_t n = _atomSet.size() * _atomSet[0].size();
-  Y_hw.resize(n,n);
-  Y_hw.clear();
+//ublas::matrix<complex<double>,ublas::column_major> SliceAnalog::calculate_Y_matrix(){
+//  // TODO for proper emulator branches (EMBRPOS_ R, UR, U) take into account the
+//  // case when mid grounding switch is closed
+//  ublas::matrix<complex<double>,ublas::column_major> Y_hw;
+//  size_t n = _atomSet.size() * _atomSet[0].size();
+//  Y_hw.resize(n,n);
+//  Y_hw.clear();
 
-  size_t k, m;
-  size_t a_n = 0; // a_tom n_umber
-  double temp_y = 0;
+//  size_t k, m;
+//  size_t a_n = 0; // a_tom n_umber
+//  double temp_y = 0;
 
-  for ( k = 0 ; k != _atomSet.size() ; ++k ){
-    for ( m = 0 ; m != _atomSet[k].size() ; ++m ){
+//  for ( k = 0 ; k != _atomSet.size() ; ++k ){
+//    for ( m = 0 ; m != _atomSet[k].size() ; ++m ){
 
-      // --- For the atom node ---
-      temp_y = 0;
+//      // --- For the atom node ---
+//      temp_y = 0;
 
-      // Resistance to ground switch is closed
-      if ( _atomSet[k][m].node_real_sw_resistance() ){
-        // Resistance to ground potentiometer internal switch is closed
-        if ( _atomSet[k][m].node_real_pot_resistance_sw() ){
-          temp_y += 1/ ( _atomSet[k][m].node_real_pot_resistance_r() );
-        }
-      }
-      // Add node admittance to element (a_n,a_n)
-      Y_hw(a_n,a_n) += complex<double>(0, temp_y);
+//      // Resistance to ground switch is closed
+//      if ( _atomSet[k][m].node_real_sw_resistance() ){
+//        // Resistance to ground potentiometer internal switch is closed
+//        if ( _atomSet[k][m].node_real_pot_resistance_sw() ){
+//          temp_y += 1/ ( _atomSet[k][m].node_real_pot_resistance_r() );
+//        }
+//      }
+//      // Add node admittance to element (a_n,a_n)
+//      Y_hw(a_n,a_n) += complex<double>(0, temp_y);
 
-      // --- For branch EMBRPOS_R ---
-      temp_y = 0;
-      assert( _atomSet[k][m].embr_exist(EMBRPOS_R) ); // Embr phys exists
+//      // --- For branch EMBRPOS_R ---
+//      temp_y = 0;
+//      assert( _atomSet[k][m].embr_exist(EMBRPOS_R) ); // Embr phys exists
 
-      // Proper emulator branch (near and far end potentiometers)
-      if ( _atomSet[k][m].embr_real_pot_near_sw(EMBRPOS_R) &&
-           _atomSet[k][m].embr_real_pot_far_sw(EMBRPOS_R)){
-        // Near and far end potentiometer internal switch is closed
-        temp_y += 1/( _atomSet[k][m].embr_real_pot_near_r(EMBRPOS_R) +
-                      _atomSet[k][m].embr_real_pot_far_r(EMBRPOS_R) );
-      }
-      // Branch short circuit switch
-      if ( _atomSet[k][m].embr_real_sw_sc(EMBRPOS_R) ){
-        // Branch short circuit switch is closed
-        temp_y += 1.0 / 2.5; // 2.5 Ohm is the typical value of the sc switch cl
-      }
-      // Add emulator branch admittance ..
-      // .. to element (a_n,a_n) and  ..
-      Y_hw(a_n,a_n) += complex<double>(0, temp_y);
-      // to element (a_n,a_n+1) unless we are at the last column of the atom set
-      if ( m != (_atomSet[k].size()-1) )
-        Y_hw(a_n,a_n+1) -= complex<double>(0, temp_y);
+//      // Proper emulator branch (near and far end potentiometers)
+//      if ( _atomSet[k][m].embr_real_pot_near_sw(EMBRPOS_R) &&
+//           _atomSet[k][m].embr_real_pot_far_sw(EMBRPOS_R)){
+//        // Near and far end potentiometer internal switch is closed
+//        temp_y += 1/( _atomSet[k][m].embr_real_pot_near_r(EMBRPOS_R) +
+//                      _atomSet[k][m].embr_real_pot_far_r(EMBRPOS_R) );
+//      }
+//      // Branch short circuit switch
+//      if ( _atomSet[k][m].embr_real_sw_sc(EMBRPOS_R) ){
+//        // Branch short circuit switch is closed
+//        temp_y += 1.0 / 2.5; // 2.5 Ohm is the typical value of the sc switch cl
+//      }
+//      // Add emulator branch admittance ..
+//      // .. to element (a_n,a_n) and  ..
+//      Y_hw(a_n,a_n) += complex<double>(0, temp_y);
+//      // to element (a_n,a_n+1) unless we are at the last column of the atom set
+//      if ( m != (_atomSet[k].size()-1) )
+//        Y_hw(a_n,a_n+1) -= complex<double>(0, temp_y);
 
-      // --- For branch EMBRPOS_UR ---
-      temp_y = 0;
-      assert( _atomSet[k][m].embr_exist(EMBRPOS_UR) ); // Embr phys exists
+//      // --- For branch EMBRPOS_UR ---
+//      temp_y = 0;
+//      assert( _atomSet[k][m].embr_exist(EMBRPOS_UR) ); // Embr phys exists
 
-      // Proper emulator branch (near and far end potentiometers)
-      if ( _atomSet[k][m].embr_real_pot_near_sw(EMBRPOS_UR) &&
-           _atomSet[k][m].embr_real_pot_far_sw(EMBRPOS_UR)){
-        // Near and far end potentiometer internal switch is closed
-        temp_y += 1/( _atomSet[k][m].embr_real_pot_near_r(EMBRPOS_UR) +
-                      _atomSet[k][m].embr_real_pot_far_r(EMBRPOS_UR) );
-      }
-      // Branch short circuit switch
-      if ( _atomSet[k][m].embr_real_sw_sc(EMBRPOS_UR) ){
-        // Branch short circuit switch is closed
-        temp_y += 1.0 / 2.5; // 2.5 Ohm is the typical value of the sc sw closed
-      }
-      // Add emulator branch admittance ..
-      // .. to element (a_n,a_n) and  ..
-      Y_hw(a_n,a_n) += complex<double>(0, temp_y);
-      // .. to element (a_n+1,a_n+1) unless we are at either the last column
-      // or the last row of the atom set
-      if ( ( k != (_atomSet.size()-1) ) && ( m != (_atomSet[k].size()-1) ) )
-        Y_hw(a_n+1,a_n+1) -= complex<double>(0, temp_y);
+//      // Proper emulator branch (near and far end potentiometers)
+//      if ( _atomSet[k][m].embr_real_pot_near_sw(EMBRPOS_UR) &&
+//           _atomSet[k][m].embr_real_pot_far_sw(EMBRPOS_UR)){
+//        // Near and far end potentiometer internal switch is closed
+//        temp_y += 1/( _atomSet[k][m].embr_real_pot_near_r(EMBRPOS_UR) +
+//                      _atomSet[k][m].embr_real_pot_far_r(EMBRPOS_UR) );
+//      }
+//      // Branch short circuit switch
+//      if ( _atomSet[k][m].embr_real_sw_sc(EMBRPOS_UR) ){
+//        // Branch short circuit switch is closed
+//        temp_y += 1.0 / 2.5; // 2.5 Ohm is the typical value of the sc sw closed
+//      }
+//      // Add emulator branch admittance ..
+//      // .. to element (a_n,a_n) and  ..
+//      Y_hw(a_n,a_n) += complex<double>(0, temp_y);
+//      // .. to element (a_n+1,a_n+1) unless we are at either the last column
+//      // or the last row of the atom set
+//      if ( ( k != (_atomSet.size()-1) ) && ( m != (_atomSet[k].size()-1) ) )
+//        Y_hw(a_n+1,a_n+1) -= complex<double>(0, temp_y);
 
-      // --- For branch EMBRPOS_U ---
-      temp_y = 0;
-      assert( _atomSet[k][m].embr_exist(EMBRPOS_U) ); // Embr phys exists
+//      // --- For branch EMBRPOS_U ---
+//      temp_y = 0;
+//      assert( _atomSet[k][m].embr_exist(EMBRPOS_U) ); // Embr phys exists
 
-      // Proper emulator branch (near and far end potentiometers)
-      if ( _atomSet[k][m].embr_real_pot_near_sw(EMBRPOS_U) &&
-           _atomSet[k][m].embr_real_pot_far_sw(EMBRPOS_U)){
-        // Near and far end potentiometer internal switch is closed
-        temp_y += 1/( _atomSet[k][m].embr_real_pot_near_r(EMBRPOS_U) +
-                      _atomSet[k][m].embr_real_pot_far_r(EMBRPOS_U) );
-      }
-      // Branch short circuit switch
-      if ( _atomSet[k][m].embr_real_sw_sc(EMBRPOS_U) ){
-        // Branch short circuit switch is closed
-        temp_y += 1.0 / 2.5; // 2.5 Ohm is the typical value of the sc sw closed
-      }
-      // Add emulator branch admittance ..
-      // .. to element (a_n,a_n) and  ..
-      Y_hw(a_n,a_n) += complex<double>(0, temp_y);
-      // to element (a_n+1,a_n) unless we are at the last row of the atom set
-      if ( k != (_atomSet.size()-1) )
-        Y_hw(a_n+1,a_n) -= complex<double>(0, temp_y);
+//      // Proper emulator branch (near and far end potentiometers)
+//      if ( _atomSet[k][m].embr_real_pot_near_sw(EMBRPOS_U) &&
+//           _atomSet[k][m].embr_real_pot_far_sw(EMBRPOS_U)){
+//        // Near and far end potentiometer internal switch is closed
+//        temp_y += 1/( _atomSet[k][m].embr_real_pot_near_r(EMBRPOS_U) +
+//                      _atomSet[k][m].embr_real_pot_far_r(EMBRPOS_U) );
+//      }
+//      // Branch short circuit switch
+//      if ( _atomSet[k][m].embr_real_sw_sc(EMBRPOS_U) ){
+//        // Branch short circuit switch is closed
+//        temp_y += 1.0 / 2.5; // 2.5 Ohm is the typical value of the sc sw closed
+//      }
+//      // Add emulator branch admittance ..
+//      // .. to element (a_n,a_n) and  ..
+//      Y_hw(a_n,a_n) += complex<double>(0, temp_y);
+//      // to element (a_n+1,a_n) unless we are at the last row of the atom set
+//      if ( k != (_atomSet.size()-1) )
+//        Y_hw(a_n+1,a_n) -= complex<double>(0, temp_y);
 
-      ++a_n; // increase atom number
-    }
-  }
+//      ++a_n; // increase atom number
+//    }
+//  }
 
-  return Y_hw;
-}
+//  return Y_hw;
+//}
 
 void SliceAnalog::calibrate(SliceAnalog const& cal_sl){
   size_t ver, hor;

@@ -1049,14 +1049,15 @@ int Emulator::encodePowersystem(){
 }
 
 // Simply writes encoding to slices
-int Emulator::writeEncoding( bool verify ){
+int Emulator::writeEncoding(bool verify, bool force){
 
   PrecisionTimer timer; // counts in seconds
   timer.Start();
 
   // If the state of the Emulator is not at least EMU_STATE_PWSENCODED
   // then the function is not executed (returns non-zero)
-  if ( _state < EMU_STATE_PWSENCODED )
+  if (!force)
+  if (_state<EMU_STATE_PWSENCODED)
     return -1;
 
   int ans;

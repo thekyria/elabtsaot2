@@ -60,6 +60,7 @@ MainWindow::MainWindow( Powersystem*& pws,
                         Emulator* emu,
                         SSEngine*& sse,
                         MoteurRenard* sse_mrn,
+                        MoteurLapack* sse_mlp,
                         MoteurFengtian* sse_fen,
                         TDEngine*& tde,
                         TDEmulator* tde_hwe,
@@ -99,7 +100,7 @@ MainWindow::MainWindow( Powersystem*& pws,
            this, SLOT(showAuxiliary()) );
   _net = new PowersystemEditor( _pws, _emu->mmd(), this );
   _net->init();
-  _SSanl = new SSAnalysisEditor( _pws, sse, sse_mrn, sse_fen, this );
+  _SSanl = new SSAnalysisEditor( _pws, sse, sse_mrn, sse_mlp, sse_fen, this );
   _sce = new ScenarioEditor( _scs, _pws, this );
   _TDanl = new TDAnalysisEditor( _net->smd(), _scs, tde, tde_hwe, tde_swe, trb, this );
 //  connect( _anl, SIGNAL(mmdChanged()),

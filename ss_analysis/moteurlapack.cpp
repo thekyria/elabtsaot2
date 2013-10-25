@@ -1,12 +1,18 @@
 
-#include "moteurrenard.h"
+#include "moteurlapack.h"
 using namespace elabtsaot;
 
 #include "logger.h"
+#include "auxiliary.h"
+using auxiliary::operator<<;
 
-#include <boost/numeric/ublas/lu.hpp> // for matrix operations
-#include <boost/numeric/ublas/io.hpp> // for ublas::matrix '<<'
+#include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
 using namespace ublas;
+#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
+#include <boost/numeric/bindings/traits/ublas_vector2.hpp>
+#include <boost/numeric/bindings/lapack/gesv.hpp>
+namespace lapack = boost::numeric::bindings::lapack;
 #include <boost/timer/timer.hpp>
 
 #include <complex>
@@ -17,25 +23,25 @@ using std::polar;
 using std::cout;
 using std::endl;
 
-enum MoteurRenardProperties{
-  SSEMRN_PROPERTY_FLATSTART,
-  SSEMRN_PROPERTY_TOL,
-  SSEMRN_PROPERTY_MAXIT
+enum MoteurLapackProperties{
+  SSEMLP_PROPERTY_FLATSTART,
+  SSEMLP_PROPERTY_TOL,
+  SSEMLP_PROPERTY_MAXIT
 };
 
-MoteurRenard::MoteurRenard(Logger* log):
-    SSEngine("MoteurRenard s.s. engine", log){
+MoteurLapack::MoteurLapack(Logger* log):
+    SSEngine("MoteurLapack s.s. engine", log){
 
   // ----- Prepare properties -----
   property_type tempPt;
-  tempPt.key = SSEMRN_PROPERTY_FLATSTART;
+  tempPt.key = SSEMLP_PROPERTY_FLATSTART;
   tempPt.dataType = PROPERTYT_DTYPE_BOOL;
   tempPt.name = "Flat start";
   tempPt.description = "Start power flow computation from a flat point, ie. |V|=1 ang(V)=0 for all buses";
   tempPt.defaultValue = true;
   _properties[tempPt] = tempPt.defaultValue;
 
-  tempPt.key = SSEMRN_PROPERTY_TOL;
+  tempPt.key = SSEMLP_PROPERTY_TOL;
   tempPt.dataType = PROPERTYT_DTYPE_DOUBLE;
   tempPt.name = "Convergeance tolerance";
   tempPt.description = "Termination tolerance on per unit P & Q mismatch";
@@ -44,7 +50,7 @@ MoteurRenard::MoteurRenard(Logger* log):
   tempPt.maxValue = 1e-3;
   _properties[tempPt] = tempPt.defaultValue;
 
-  tempPt.key = SSEMRN_PROPERTY_MAXIT;
+  tempPt.key = SSEMLP_PROPERTY_MAXIT;
   tempPt.dataType = PROPERTYT_DTYPE_INT;
   tempPt.name = "Maximum iteration count";
   tempPt.description = "Maximum number of iteration of the algorithm";
@@ -54,7 +60,7 @@ MoteurRenard::MoteurRenard(Logger* log):
   _properties[tempPt] = tempPt.defaultValue;
 }
 
-int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
+int MoteurLapack::do_solvePowerFlow(Powersystem const& pws,
                                     matrix<complex,column_major>& Y,
                                     vector<complex>& V) const{
 
@@ -111,6 +117,8 @@ int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
       pq.push_back(k);
     }
   }
+//  cout << "pv: " << pv << endl;
+//  cout << "pq: " << pq << endl;
 //  cout << "Sset: " << Sset << endl;
 
   // Evaluate F(x0)
@@ -135,7 +143,7 @@ int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
   // do Newton iterations
   while (!converged && iterCount<maxIterCount){
     ++iterCount;
-//    cout << "itercount: " << iterCount << endl;
+//    cout << "iterCount: " << iterCount << endl;
 
     // Evaluate Jacobian
     matrix<complex,column_major> dSdVm(N,N), dSdVa(N,N);
@@ -181,22 +189,9 @@ int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
 //    cout << "J: " << J << endl;
 
     // Compute update step
-    permutation_matrix<size_t>* pm = new permutation_matrix<size_t>(J.size1());
-    vector<double> dx = F;
-    BOOST_TRY{
-      int ans = lu_factorize(J,*pm);
-      if (ans) return ans;
-      lu_substitute(J,*pm,dx);
-    }BOOST_CATCH(ublas::singular const& ex){
-      cout << "Singularity likely!" << endl;
-      cout << "Exception message: " << ex.what() << endl;
-    }BOOST_CATCH(std::exception const& ex){
-      cout << "Other exception caught!" << endl;
-      cout << "Exception message: " << ex.what() << endl;
-    }BOOST_CATCH(...){
-      cout << "Operation failed!" << endl;
-    }BOOST_CATCH_END
-    dx = -dx;
+    vector<double> dx = -F;
+    int ans = lapack::gesv(J,dx);
+    if (ans) return 1000+ans;
 //    cout << "dx: " << dx << endl;
 
     // Update voltage
@@ -211,14 +206,11 @@ int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
       Vm(k) = std::abs(V(k)); // Update Vm & Va in case
       Va(k) = std::arg(V(k)); // we wrapped around the angle
     }
-//    cout << "Vm: " << Vm << endl;
-//    cout << "Va: " << Va << endl;
-    delete pm;
+//    cout << "V" << V << endl;
 
     // Evaluate F
     ssengine::calculatePower(Y,V,Smis); // temporarily Smis holds actual power at current V
     Smis -= Sset; // now it holds the power mismatch
-//    cout << "Smis: " << Smis << endl;
     for (size_t k=0; k!=Npv; ++k)
       F(k)         = real(Smis(pv[k]));
     for (size_t k=0; k!=Npq; ++k){
@@ -239,11 +231,11 @@ int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
   return 0;
 }
 
-void MoteurRenard::_getOptions( bool& flatStart, double& tolerance, size_t& maxIterCount ) const{
+void MoteurLapack::_getOptions( bool& flatStart, double& tolerance, size_t& maxIterCount ) const{
   // Retrieve boost::any properties
-  boost::any anyFlatStart = _getPropertyValueFromKey(SSEMRN_PROPERTY_FLATSTART);
-  boost::any anyTolerance = _getPropertyValueFromKey(SSEMRN_PROPERTY_TOL);
-  boost::any anyMaxIterCount = _getPropertyValueFromKey(SSEMRN_PROPERTY_MAXIT);
+  boost::any anyFlatStart = _getPropertyValueFromKey(SSEMLP_PROPERTY_FLATSTART);
+  boost::any anyTolerance = _getPropertyValueFromKey(SSEMLP_PROPERTY_TOL);
+  boost::any anyMaxIterCount = _getPropertyValueFromKey(SSEMLP_PROPERTY_MAXIT);
   // Store them in output arguments
   flatStart = boost::any_cast<bool>( anyFlatStart );
   tolerance = boost::any_cast<double>( anyTolerance );

@@ -1,17 +1,16 @@
-
-#ifndef MOTEURRENARD_H
-#define MOTEURRENARD_H
+#ifndef MOTEURLAPACK_H
+#define MOTEURLAPACK_H
 
 #include "ssengine.h"
 
 namespace elabtsaot{
 
-class MoteurRenard : public SSEngine {
+class MoteurLapack : public SSEngine {
 
  public:
 
-  MoteurRenard(Logger* log = NULL);
-  virtual ~MoteurRenard(){}
+  MoteurLapack(Logger* log = NULL);
+  virtual ~MoteurLapack(){}
 
 private:
 
@@ -23,4 +22,4 @@ private:
 
 } // end of namespace elabtsaot
 
-#endif // MOTEURRENARD_H
+#endif // MOTEURLAPACK_H

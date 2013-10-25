@@ -6,6 +6,7 @@
 
 #include "ssengine.h"
 #include "moteurrenard.h"
+#include "moteurlapack.h"
 #include "moteurfengtian.h"
 
 #include "tdengine.h"
@@ -38,12 +39,13 @@ int main(int argc, char *argv[]){
   // Steady state engines
   qDebug() << "Creating SSEngine 'MoteurRenard' ... ";
   MoteurRenard* sse_mrn( new MoteurRenard() );
-
+  qDebug() << "Creating SSEngine 'MoteurLapack' ... ";
+  MoteurLapack* sse_mlp( new MoteurLapack() );
   qDebug() << "Creating SSEngine 'MoteurFengtian' ... ";
   MoteurFengtian* sse_fen( new MoteurFengtian(emu, NULL) );
 
   qDebug() << "Setting SSEngine ptr ... ";
-  SSEngine* sse( sse_mrn );
+  SSEngine* sse(sse_mrn);
 
   // Time domain engines
   qDebug() << "Creating TDEngine 'TDEmulator' ... ";
@@ -72,7 +74,7 @@ int main(int argc, char *argv[]){
   app.setApplicationName("elab-tsaot");
   // Create an application object and show it
   MainWindow* mainWindow(new MainWindow(pws, emu,
-                                        sse, sse_mrn, sse_fen,
+                                        sse, sse_mrn, sse_mlp, sse_fen,
                                         tde, tde_hwe, tde_swe, scs, trb));
   mainWindow->show();
 
@@ -83,6 +85,7 @@ int main(int argc, char *argv[]){
   delete pws;
   delete emu;
   delete sse_mrn;
+  delete sse_mlp;
   delete sse_fen;
   delete tde_hwe;
   delete tde_swe;

@@ -1,6 +1,7 @@
 
 #------------------ General ------------------
-include( elabtsaot2config.pri )
+include(elabtsaot2config.pri)
+
 
 #------------------ Version ------------------
 VER_MAJ = 2
@@ -8,12 +9,14 @@ VER_MIN = 0
 VER_PAT = 0
 VERSION = $${VER_MAJ}.$${VER_MIN}.$${VER_PAT}
 
+
 #----------------- Resources -----------------
 # Platform dependend application icon resource
 win32:RC_FILE = \
   $$ELABTSAOT2_ROOT/resources/elab-tsaot2.rc
 RESOURCES += \
   $$ELABTSAOT2_ROOT/resources/elab-tsaot2.qrc
+
 
 #----------------- Include paths -----------------
 INCLUDEPATH += \
@@ -40,6 +43,8 @@ INCLUDEPATH += \
   $$ELABTSAOT2_ROOT/gui/console \
   $$CYUSB_PATH/include \
   $$BOOST_PATH/ \
+  $$BOOST_NUMERIC_BINDINGS_PATH/ \
+
 
 DEPENDPATH += \
   $$ELABTSAOT2_ROOT/ \
@@ -64,6 +69,7 @@ DEPENDPATH += \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor \
   $$ELABTSAOT2_ROOT/gui/console \
 
+
 #------------------ Source files -----------------
 SOURCES += \
   $$ELABTSAOT2_ROOT/main.cpp \
@@ -87,6 +93,7 @@ SOURCES += \
   \
   $$ELABTSAOT2_ROOT/ss_analysis/ssengine.cpp \
   $$ELABTSAOT2_ROOT/ss_analysis/moteurrenard.cpp \
+  $$ELABTSAOT2_ROOT/ss_analysis/moteurlapack.cpp \
   \
   $$ELABTSAOT2_ROOT/td_simulation/tdengine.cpp \
   $$ELABTSAOT2_ROOT/td_simulation/tdresults.cpp \
@@ -174,6 +181,7 @@ SOURCES += \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/gtdaeditor.cpp \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/gtdaviewer.cpp \
 
+
 #------------------ Header files -----------------
 HEADERS += \
   $$ELABTSAOT2_ROOT/mainpage.h \
@@ -202,6 +210,7 @@ HEADERS += \
   \
   $$ELABTSAOT2_ROOT/ss_analysis/ssengine.h \
   $$ELABTSAOT2_ROOT/ss_analysis/moteurrenard.h \
+  $$ELABTSAOT2_ROOT/ss_analysis/moteurlapack.h \
   \
   $$ELABTSAOT2_ROOT/td_simulation/tdengine.h \
   $$ELABTSAOT2_ROOT/td_simulation/tdresults.h \
@@ -290,7 +299,9 @@ HEADERS += \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/gtdaeditor.h \
   $$ELABTSAOT2_ROOT/gui/tdanalysis_editor/gtdaviewer.h \
 
-#------------------ CyUSB ------------------
+
+#------------------ LIBRARIES ------------------
+# CyUSB ------------------
 CONFIG( debug, debug|release ) {
   LIBS += -L$$CYUSB_PATH/lib \
           -lCyUSBd
@@ -299,7 +310,7 @@ CONFIG( debug, debug|release ) {
           -lCyUSB
 }
 
-#------------------ Qwt ------------------
+# Qwt ------------------
 QWT_CONFIG += QwtDll QwtPlot QwtWidgets QwtSvg QwtOpenGL
 # Taken from qwt.prf
 contains(QWT_CONFIG, QwtDll) {
@@ -320,11 +331,8 @@ CONFIG( debug, debug|release ) {
   LIBS += -L$$QWT_PATH/qwt-$$QWT_VERSION/lib/ \
           -lqwt
 }
-#------------------ Disable spies ------------------
-nospies{
-  DEFINES += BUILD_NOSPIES
-}
-#------------------ Boost -----------------
+
+# Boost -----------------
 CONFIG( debug, debug|release ) {
   LIBS += -L$$BOOST_PATH/lib \
           -lboost_timerd \
@@ -338,4 +346,22 @@ CONFIG( debug, debug|release ) {
           -lboost_timer \
           -lboost_system \
           -lboost_chrono
+}
+
+# LAPACK -----------------
+CONFIG( debug, debug|release ) {
+  LIBS += -L$$LAPACK_PATH/lib \
+          -llibblas \
+          -lliblapack
+} else {
+  LIBS += -L$$LAPACK_PATH/lib \
+          -llibblas \
+          -lliblapack
+}
+
+
+#------------------  EXTRA CONFIGURATION ------------------
+# Disable spies
+nospies{
+  DEFINES += BUILD_NOSPIES
 }

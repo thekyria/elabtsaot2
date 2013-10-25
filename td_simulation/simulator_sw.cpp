@@ -40,8 +40,8 @@ using std::endl;
 //#include <boost/numeric/ublas/lu.hpp>
 namespace ublas = boost::numeric::ublas;
 
-#define DBL_EPSILON 0.0000000001
-#define DOUBLE_EQ(x,v) (((v - DBL_EPSILON) < x) && (x <( v + DBL_EPSILON)))
+#define DBL_E 0.0000000001
+#define DOUBLE_EQ(x,v) (((v - DBL_E) < x) && (x <( v + DBL_E)))
 
 Simulator_sw::Simulator_sw( Powersystem const* pws,
                             SSEngine const* const& sse,
@@ -251,12 +251,12 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
   double t = _sce.startTime() - 0.02; // 0.02 without applying events
 
   // Augmented Y matrix
-  ublas::matrix<complex > augY;
+  ublas::matrix<complex,ublas::column_major> augY;
   _calculateAugmentedYMatrix( Ubus, Ubus0, augY );
 
   // Factorize augmented Y matrix
   ublas::permutation_matrix<size_t> pmatrix(augY.size1());
-  ublas::matrix<complex > LUaugY(augY);
+  ublas::matrix<complex,ublas::column_major> LUaugY(augY);
   BOOST_TRY {
     ublas::lu_factorize(LUaugY, pmatrix);
   } BOOST_CATCH(ublas::singular const& ex) {
@@ -456,7 +456,7 @@ Powersystem const* Simulator_sw::do_getPws() const{ return _pws; }
 int Simulator_sw::
 _calculateAugmentedYMatrix( vector<complex> const& Ubus,
                             vector<complex> const& Ubus0,
-                            ublas::matrix<complex>& augY ){
+                            ublas::matrix<complex,ublas::column_major>& augY ){
 
   ssengine::buildY(_pwsLocal, augY);
   size_t busCount = augY.size1();
@@ -505,7 +505,7 @@ _calculateAugmentedYMatrix( vector<complex> const& Ubus,
   return 0;
 }
 
-void Simulator_sw::_solveNetwork( ublas::matrix<complex > const& LUaugY,
+void Simulator_sw::_solveNetwork( ublas::matrix<complex,ublas::column_major> const& LUaugY,
                                ublas::permutation_matrix<size_t> const& pmatrix,
                                vector<vector<double> > const& Xgen,
                                vector<size_t> const& genBusIntId,
@@ -595,7 +595,7 @@ Simulator_sw::_calculateGeneratorDynamics( vector<vector<double> > const& Xgen,
  }
 }
 
-int Simulator_sw::_rungeKutta( ublas::matrix<complex > const& LUaugY,
+int Simulator_sw::_rungeKutta( ublas::matrix<complex,ublas::column_major> const& LUaugY,
                                ublas::permutation_matrix<size_t> const& pmatrix,
                                vector<size_t> const& genBusIntId,
                                double stepSize,

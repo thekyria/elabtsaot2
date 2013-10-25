@@ -369,7 +369,7 @@ int io::importMapping( string filename_,
   return mmd->copy( *temp_mmd );
 }
 
-int io::importEncoding(string filename_, size_t sliceId, Emulator& emu){
+int io::importEncoding(string filename_, size_t sliceId, Emulator& emu, bool force){
   QString filename(QString::fromStdString(filename_));
   QFile file( filename );
   if (!file.open(QFile::ReadOnly | QFile::Text)) // open() returns true if ok
@@ -391,6 +391,11 @@ int io::importEncoding(string filename_, size_t sliceId, Emulator& emu){
     temp = fin.readLine();
   }
   file.close(); // Close file
+
+  // If force set, then emu.encoding is resized to accomodate the imported bitstream
+  if (force)
+    if (emu.encoding.size()<=sliceId)
+      emu.encoding.resize(sliceId+1);
 
   if (tempEncoding.size()>0)
     emu.encoding.at(sliceId) = tempEncoding;
