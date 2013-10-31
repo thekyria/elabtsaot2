@@ -47,7 +47,7 @@ class ConstILoadPipeline : public Pipeline {
       \param hor_dim Horizontal dimension of the emulator the pipeline is
                      instantiated for */
   ConstILoadPipeline(size_t element_capacity, size_t ver_dim, size_t hor_dim);
-  int reset();          //!< Resets the pipeline
+  void reset();          //!< Resets the pipeline
 
   //! An element is inserted at the pipeline
   int insert_element(size_t ver_pos, size_t hor_pos, Load const& el, bool overwrite);

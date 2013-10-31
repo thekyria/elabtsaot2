@@ -12,17 +12,26 @@ EPFL
 #ifndef SLACKPIPELINE_H
 #define SLACKPIPELINE_H
 
+#include <complex>
+
 #include "pipeline.h" // includes <string>, <vector>, <utility>
 
 namespace elabtsaot{
 
-//! Constant current load pipeline class
+class Bus;
+
 class SlackPipeline : public Pipeline {
 
  public:
 
   SlackPipeline(size_t element_capacity, size_t ver_dim, size_t hor_dim);
-  // TODO
+  virtual ~SlackPipeline(){}
+  void reset();
+
+  int insert_element(size_t ver_pos, size_t hor_pos, Bus const& el, bool overwrite);
+  int remove_element(size_t ver_pos, size_t hor_pos);
+
+  std::vector<std::complex<double> > I0; //!< Initial current flow [p.u.]
 
 };
 

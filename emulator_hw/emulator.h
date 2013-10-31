@@ -53,29 +53,33 @@ enum EmulatorCalState{
   EMU_CALSTATE_NO   // Emulator is not in calibration
 };
 
+enum EmulatorOpType{
+  EMU_OPTYPE_PF, // Operation concerning Guillaume's Power Flow
+  EMU_OPTYPE_TD  // Operation concerning TD simulation
+};
+
 class Emulator {
 
  public:
 
-  Emulator( Powersystem const* pws );
+  Emulator(Powersystem const* pws);
   virtual ~Emulator();
 
-  int init( Powersystem const* pws = NULL );
-  int set_pws( Powersystem const* pws );
+  int init(Powersystem const* pws = NULL);
+  int set_pws(Powersystem const* pws);
   void hardResetPressed();
-
-  int preconditionEmulator();
+  int preconditionEmulator(EmulatorOpType opType);
 
   // EmulatorHw
   int setSliceCount(size_t val);
-  int resetEmulator( bool complete );
+  int resetEmulator(bool complete);
   size_t getHwSliceCount() const;
-  int node_set( size_t id_tab, size_t id_ver, size_t id_hor, Generator const& gen,
-                double ratioZ, double ratioV, double ratioI, double maxIpu );
-  int node_set( size_t id_tab, size_t id_ver, size_t id_hor, Load const& load,
-                          double ratioI, double maxIpu );
-  int embr_set(size_t id_tab, size_t id_ver, size_t id_hor, size_t pos,
-               Branch const& br, double ratioZ, double distanceOfGndFromNearEnd);
+  // EmulatorHw-Mapping related
+  int nodeSetPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus, bool slack);
+  int nodeSetTD(size_t id_tab, size_t id_ver, size_t id_hor, Generator const& gen);
+  int nodeSetTD(size_t id_tab, size_t id_ver, size_t id_hor, Load const& load);
+  int embrSet(size_t id_tab, size_t id_ver, size_t id_hor, size_t pos, Branch const& br,
+              double distanceOfGndFromNearEnd);
 
   // USB
   int initializeUSB();
@@ -83,38 +87,35 @@ class Emulator {
   int assignSliceToDevice( size_t sliceId, int devId );
   int autoAssignSlicesToDevices();
   int validateSliceDeviceAssignement();
-  int usbWrite( size_t devId,
-                size_t starting_cypress_address,
-                std::vector<uint32_t> data );
-  int usbRead( size_t devId,
-               size_t starting_cypress_address,
-               size_t words_to_read,
-               std::vector<uint32_t>& read_buffer );
+  int usbWrite(size_t devId, size_t starting_cypress_address, std::vector<uint32_t> data);
+  int usbRead(size_t devId, size_t starting_cypress_address, size_t words_to_read,
+              std::vector<uint32_t>& read_buffer);
 
   // Calibration
-  int resetCalibration( size_t devId );
+  int resetCalibration(size_t devId);
   int endCalibrationMode(); // ends calibration to all devices
 
-  // Powersystem model - mapping & fitting
+  // Powersystem model - mapping
   void set_ratioZ(double val); //!< sets _ratioZ [Ohms/pu]; sets _ratioI=_ratioV/_ratioZ;
   void set_ratioV(double val); //!< sets _ratioZ [Volt/pu]; sets _ratioI=_ratioV/_ratioZ;
   void set_maxIpu(double val);
-  int resetMapping();
-  void cleaMappingHints();
-  void hintComponent( int type, unsigned int extId);
-  int mapComponent( int type, unsigned int extId,
-                    int mapper_tab, int mapper_row, int mapper_col );
-  int unmapComponent( int type, unsigned int extId);
-  int autoMapping();
-  int validateMapping();
   void autoRatioZ();
   double getMaxR() const;
   void defaultRatios();
-  int autoFitting(std::vector<std::string>* outputMsg = 0);
-  int validateFitting();
+  int resetMapping();
+  void cleaMappingHints();
+  void hintComponent(int type, unsigned int extId);
+  int mapComponent(int type, unsigned int extId, int map_tab,int map_row,int map_col);
+  int unmapComponent(int type, unsigned int extId);
+  int autoMapping();
+  int validateMapping();
+
+  // Powersystem model - fitting TD
+  int autoFitting(EmulatorOpType opType, std::vector<std::string>* outputMsg = 0);
+  int validateFitting(EmulatorOpType opType);
 
   // Encoding powersystems and scenarios
-  int encodePowersystem();
+  int encodePowersystem(EmulatorOpType opType);
   int writeEncoding(bool verify, bool force=false);
 
   // Getters
@@ -137,15 +138,20 @@ class Emulator {
 
  private:
 
-  // ---------- Function ----------
+  // ---------- Functions ----------
   // Calibration
-  int _precalibrateSlice( size_t sliceId, bool toDefaultVoltage );
+  int _precalibrateSlice(size_t sliceId, bool toDefaultVoltage);
   std::vector<bool> _isAtCalibrationMode();
   int _endCalibrationMode( size_t devId );
+  // Fitting
+  int _fitBranches(std::vector<std::string>* outputMsg = 0);
+  int _fitBusesPF(std::vector<std::string>* outputMsg = 0);
+  int _fitGeneratorsTD(std::vector<std::string>* outputMsg = 0);
+  int _fitLoadsTD(std::vector<std::string>* outputMsg =0);
   // Encoding functions
   int _verifyEncoding();
 
-  // ---------- Variables----------
+  // ---------- Variables ----------
   EmulatorHw* _emuhw;
   Powersystem const* _pws;
   PwsMapperModel* _mmd;
@@ -157,7 +163,7 @@ class Emulator {
   double _ratioZ;   //!< emulator_Z / physical_Z [Ohm/pu]
   double _ratioV;   //!< emulator_V / physical_V [V/pu]
   double _ratioI;   //!< emulator_I/physical_I [A/pu]: calculated as _ratioV/Z
-  double _maxIpu; //!< Maximum current [p.u.] output by a pipeline
+  double _maxIpu;   //!< Maximum current [p.u.] output by a pipeline
   std::map<size_t, int> _sliceDeviceMap;
   // Internal state machine variables
   int _state;

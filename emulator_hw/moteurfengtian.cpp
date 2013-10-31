@@ -7,6 +7,8 @@ using namespace boost::numeric::ublas;
 #include "emulator.h"
 #include "precisiontimer.h"
 
+#include <boost/timer/timer.hpp>
+
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -74,17 +76,17 @@ MoteurFengtian::MoteurFengtian(Emulator* emu, Logger* log) :
   _properties[tempPt] = tempPt.defaultValue;
 }
 
-int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws,
-                                      matrix<complex,column_major>& Y,
-                                      vector<complex>& V) const{
+int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, vector<complex>& V) const{
+
+  boost::timer::auto_cpu_timer t; // when t goes out of scope it prints timing info
 
   // Before entering into the power flow main routine, check that the power system
   // has been validated
   if ( pws.status() != PWSSTATUS_VALID && pws.status() != PWSSTATUS_PF )
     return 1;
-  if ( pws.status() == PWSSTATUS_PF )
-    // Nothing to do!
-    return 0;
+//  if ( pws.status() == PWSSTATUS_PF )
+//    // Nothing to do!
+//    return 0;
 
   // ----- Retrieve options -----
   /* beta1       :
@@ -99,33 +101,11 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws,
   size_t maxIterCount;
   _getOptions(beta1, beta2, Ptolerance, Qtolerance, maxIterCount);
 
-  // ----- Start timer -----
-  PrecisionTimer timer;
-  timer.Start();
-  time_t rawtime;
-  time ( &rawtime );
-  string time_string = ctime( &rawtime );
-
+  bool converged(false);
   // TODO!!!!
 
-  // ----- End timer -----
-  double elapsed_time = timer.Stop();
-  bool converged(false);
-
-  if (!converged){
-    // Not convergence case
-    cout << "Power flow (Guillaume method) did not converge!" << endl;
-    return 2;
-  }
-
-  else {
-    cout << "Power flow (Guillaume method) started at: ";
-    cout << time_string << endl;
-    cout << "Power flow converged in " << elapsed_time << " seconds " <<endl;
-    return 0;
-  }
-
-  return 3;
+  if (!converged) return 2;
+  return 0;
 }
 
 void MoteurFengtian::_getOptions( double& beta1,

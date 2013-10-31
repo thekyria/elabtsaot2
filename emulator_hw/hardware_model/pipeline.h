@@ -72,17 +72,17 @@ class Pipeline {
     The function is declared virtual as, for child classes of Pipeline, a
     specialized implementation should be provided.
   */
-  virtual int reset();
+  virtual void reset();
 
   //! An element at a certain position is searched for
   /*!
-    \param ver_pos vertical positioning of the searched for element
-    \param hor_pos horizontal positioning of the searched for element
+    \param row vertical positioning of the searched for element
+    \param col horizontal positioning of the searched for element
 
     \return array index of element in the _position array if search successful;
             -1 otherwise
   */
-  int search_element(size_t ver_pos, size_t hor_pos) const;
+  int search_element(size_t row, size_t col) const;
 
   std::vector<std::string> stages() const;            //!< getter for _stages
   size_t element_count_max() const;             //!< getter for _element_count_max
@@ -90,6 +90,8 @@ class Pipeline {
   size_t ver_id_max() const;                    //!< getter for _ver_id_max
   size_t hor_id_max() const;                    //!< getter for _hor_id_max
   std::vector<std::pair<int, int> > position() const; //!< getter for _position
+
+  size_t calculate_pseudo_id(size_t row,size_t col) const;
 
  protected:
 
@@ -102,17 +104,16 @@ class Pipeline {
     to (0,hor_id_max-1) then (1,0) [yielding a pseudo_id = hor_id_max] (1,1)
     and so on.
 
-    \param ver_pos vertical positioning of the pseudo id to be calculated
-    \param hor_pos horizontal positioning of the pseudo id to be calculated
+    \param row vertical positioning of the pseudo id to be calculated
+    \param col horizontal positioning of the pseudo id to be calculated
 
     \return pseudo id resulting from the input arguments */
-  size_t calculate_pseudo_id( size_t ver_pos, size_t hor_pos ) const;
 
   std::vector<std::string> _stages; //!< Names of the pipeline stages
-  size_t _element_count_max;  //!< Maximum element count in this pipeline
-  size_t _element_count;      //!< Current element count in this pipeline
-  size_t _ver_id_max;         //!< Maximum number of rows (topology)
-  size_t _hor_id_max;         //!< Maximum number of columns (topology)
+  size_t _elementCountMax; //!< Maximum element count in this pipeline
+  size_t _elementCount;    //!< Current element count in this pipeline
+  size_t _verIdMax;        //!< Maximum number of rows (topology)
+  size_t _horIdMax;        //!< Maximum number of columns (topology)
 
   //! Position of the pipeline elements on the analog grid of the hw emulator
   /*! position[x] = (vertical pos, horizontal pos)

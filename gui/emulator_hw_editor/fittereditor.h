@@ -40,12 +40,11 @@ class FitterEditor : public QSplitter{
 
   void updt();
   void resetFittingSlot();
-  void autoFittingSlot();
-  void validateFittingSlot();
-  void fittingPositionClickedSlot( int emulator_tab,
-                                   int emulator_row,
-                                   int emulator_col,
-                                   int emulator_elm );
+  void autoFittingPFSlot();
+  void autoFittingTDSlot();
+  void validateFittingPFSlot();
+  void validateFittingTDSlot();
+  void fittingPositionClickedSlot(int emu_tab, int emu_row, int emu_col, int emu_elm );
 
  private:
 

@@ -30,14 +30,14 @@ class SliceDigital{
   int remove(size_t ver, size_t hor); //!< Remove all (ver,hor) pipeline entries
 
   // PF specific pipelines
-  PQPipeline pipe_PQ;
-  SlackPipeline pipe_slack;
+  PQPipeline pipe_PFPQ;
+  SlackPipeline pipe_PFslack;
 
   // TD specific pipelines
-  GeneratorPipeline pipe_gen;
-  ConstZLoadPipeline pipe_zload;
-  ConstILoadPipeline pipe_iload;
-  ConstPLoadPipeline pipe_pload;
+  GeneratorPipeline pipe_TDgen;
+  ConstZLoadPipeline pipe_TDzload;
+  ConstILoadPipeline pipe_TDiload;
+  ConstPLoadPipeline pipe_TDpload;
 };
 
 } // end of namespace elabtsaot

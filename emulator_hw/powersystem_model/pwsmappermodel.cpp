@@ -1683,7 +1683,7 @@ void PwsMapperModel::_hintBus( int mdlId ){
 
       // If maximum number of generators has already been reached invalidate
       // the whole slice
-      if ( slice_gens >= _emuhw->sliceSet[k].dig.pipe_gen.element_count_max() ){
+      if (slice_gens >= _emuhw->sliceSet[k].dig.pipe_TDgen.element_count_max()){
         _setMask( MAPHINT_ACTIVEVALID);
         for ( size_t m = 0 ; m != _rows ; ++m )
           for ( size_t n = 0 ; n != _cols ; ++n )

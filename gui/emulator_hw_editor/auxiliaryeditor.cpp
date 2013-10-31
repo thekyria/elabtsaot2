@@ -138,10 +138,15 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
   QFormLayout* encodingLay = new QFormLayout(encodingBox);
   encodingBox->setLayout(encodingLay);
 
-  // Encode powersystem
-  QLabel* encodePowersystemLabel = new QLabel("Encode powersystem");
-  QPushButton* encodePowersystemBut = new QPushButton("Encode powersystem");
-  encodingLay->addRow(encodePowersystemLabel,encodePowersystemBut);
+  // Encode (PF) powersystem
+  QLabel* encodePowersystemPFLabel = new QLabel("Encode (PF) powersystem");
+  QPushButton* encodePowersystemPFBut = new QPushButton("Encode powersystem");
+  encodingLay->addRow(encodePowersystemPFLabel,encodePowersystemPFBut);
+
+  // Encode (TD) powersystem
+  QLabel* encodePowersystemTDLabel = new QLabel("Encode (TD) powersystem");
+  QPushButton* encodePowersystemTDBut = new QPushButton("Encode powersystem");
+  encodingLay->addRow(encodePowersystemTDLabel,encodePowersystemTDBut);
 
   // Write encoding
   QLabel* writeEncodingLabel = new QLabel("Write encoding");
@@ -164,7 +169,8 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
   encodingLay->addRow(importEncodingLabel,importEncodingBut);
 
   // ----------------- Connect signals -----------------
-  connect(encodePowersystemBut, SIGNAL(clicked()), this, SLOT(encodePowersystemSlot()));
+  connect(encodePowersystemPFBut, SIGNAL(clicked()), this, SLOT(encodePowersystemPFSlot()));
+  connect(encodePowersystemTDBut, SIGNAL(clicked()), this, SLOT(encodePowersystemTDSlot()));
   connect(writeEncodingBut, SIGNAL(clicked()), this, SLOT(writeEncodingSlot()));
   connect(logEncodingBut, SIGNAL(clicked()), this, SLOT(logPowersystemEncodingSlot()));
   connect(logGotEncodingBut, SIGNAL(clicked()), this, SLOT(logGotEncodingSlot()));
@@ -218,13 +224,19 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
   connect( validateMappingAct, SIGNAL(triggered()),
            this, SLOT( validateMappingSlot() ));
 
-  // Validate fitting
-  QAction* validateFittingAct = new QAction( QIcon(":/images/event.png"),
-                                             "Validate fitting",
-                                             auxiliaryEditorToolbar );
-  auxiliaryEditorToolbar->addAction( validateFittingAct );
-  connect( validateFittingAct, SIGNAL(triggered()),
-           this, SLOT( validateFittingSlot() ));
+  // Validate fitting (PF)
+  QAction* validateFittingPFAct = new QAction(QIcon(":/images/event.png"),
+                                              "Validate fitting",
+                                              auxiliaryEditorToolbar);
+  auxiliaryEditorToolbar->addAction(validateFittingPFAct);
+  connect(validateFittingPFAct, SIGNAL(triggered()), this, SLOT(validateFittingPFSlot()));
+
+  // Validate fitting (TD)
+  QAction* validateFittingTDAct = new QAction(QIcon(":/images/event.png"),
+                                              "Validate fitting",
+                                              auxiliaryEditorToolbar);
+  auxiliaryEditorToolbar->addAction(validateFittingTDAct);
+  connect(validateFittingTDAct, SIGNAL(triggered()), this, SLOT(validateFittingTDSlot()));
 
   auxiliaryEditorToolbar->addSeparator(); // -----
 
@@ -337,9 +349,16 @@ void AuxiliaryEditor::rawWriteToDeviceSlot(){
   return;
 }
 
-void AuxiliaryEditor::encodePowersystemSlot(){
-  int ans = _emu->encodePowersystem();
-  if ( ans ) cout << "Encode powersyetem failed with code " << ans << endl;
+void AuxiliaryEditor::encodePowersystemPFSlot(){
+  int ans = _emu->encodePowersystem(EMU_OPTYPE_PF);
+  if ( ans ) cout << "Encode (PF) powersyetem failed with code " << ans << endl;
+  else cout << "Encode powersyetem was successful!" << endl;
+  return;
+}
+
+void AuxiliaryEditor::encodePowersystemTDSlot(){
+  int ans = _emu->encodePowersystem(EMU_OPTYPE_TD);
+  if ( ans ) cout << "Encode (TD) powersyetem failed with code " << ans << endl;
   else cout << "Encode powersyetem was successful!" << endl;
   return;
 }
@@ -416,52 +435,50 @@ void AuxiliaryEditor::importEncodingSlot(){
 void AuxiliaryEditor::hardResetPressedSlot(){
   _emu->hardResetPressed();
   cout << "Emulator structure notified for hard reset key press!" << endl;
-  return;
 }
 
 void AuxiliaryEditor::endCalibrationSlot(){
   int ans = _emu->endCalibrationMode();
   if ( ans ) cout << "Ending calibration mode failed with code " << ans << endl;
   else cout << "Successfully ended calibration mode!" << endl;
-  return;
 }
 
 void AuxiliaryEditor::resetEmulationSlot(){
   int ans = _tde_hwe->resetEmulation(true);
   if ( ans ) cout << "Reset emulation failed with code " << ans << endl;
   else cout << "Successfully reset the emulation!" << endl;
-  return;
 }
 
 void AuxiliaryEditor::validateSliceAssignementSlot(){
   int ans = _emu->validateSliceDeviceAssignement();
   if ( ans ) cout << "Slice-device assignement validation failed with code " <<ans<<endl;
   else cout << "Slice-device assignement validation was successful!" << endl;
-  return;
 }
 
 void AuxiliaryEditor::validateMappingSlot(){
   int ans = _emu->validateMapping();
   if ( ans ) cout << "Mapping validation failed with code " << ans << endl;
   else cout << "Mapping validation was successful!" << endl;
-  return;
 }
 
-void AuxiliaryEditor::validateFittingSlot(){
-  int ans = _emu->validateFitting();
-  if ( ans ) cout << "Validate fitting failed with code " << ans << endl;
+void AuxiliaryEditor::validateFittingPFSlot(){
+  int ans = _emu->validateFitting(EMU_OPTYPE_PF);
+  if ( ans ) cout << "Validate fitting (PF) failed with code " << ans << endl;
   else cout << "Validate fitting was successful!" << endl;
-  return;
+}
+
+void AuxiliaryEditor::validateFittingTDSlot(){
+  int ans = _emu->validateFitting(EMU_OPTYPE_TD);
+  if ( ans ) cout << "Validate fitting (TD) failed with code " << ans << endl;
+  else cout << "Validate fitting was successful!" << endl;
 }
 
 void AuxiliaryEditor::getEmulatorHwStateSlot(){
   cout << "Emulator state: " << _emu->state() << endl;
-  return;
 }
 
 void AuxiliaryEditor::getEmulatorHwCalStateSlot(){
   cout << "Emulator calibration state: " << _emu->state_calibration()<<endl;
-  return;
 }
 
 void AuxiliaryEditor::_updtGlobals(){
@@ -469,5 +486,4 @@ void AuxiliaryEditor::_updtGlobals(){
   ratioVForm->setValue( _emu->ratioV() );
 //  ratioIForm->setValue( _emu->ratioI() );
   maxIpuForm->setValue( _emu->maxIpu() );
-  return;
 }

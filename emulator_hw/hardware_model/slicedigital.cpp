@@ -12,33 +12,33 @@ using namespace elabtsaot;
 #define MAXPLOADS 24              //!< Default max number of ploads in pipeline
 
 SliceDigital::SliceDigital():
-  pipe_PQ(MAXPQNODES, VERTICALNUMBEROFATOMS, HORIZONTALNUMBEROFATOMS),
-  pipe_slack(MAXSLACKNODES, VERTICALNUMBEROFATOMS, HORIZONTALNUMBEROFATOMS),
-  pipe_gen(MAXGENERATORS, VERTICALNUMBEROFATOMS, HORIZONTALNUMBEROFATOMS),
-  pipe_zload(MAXILOADS, VERTICALNUMBEROFATOMS, HORIZONTALNUMBEROFATOMS),
-  pipe_iload(MAXILOADS, VERTICALNUMBEROFATOMS, HORIZONTALNUMBEROFATOMS),
-  pipe_pload(MAXPLOADS, VERTICALNUMBEROFATOMS, HORIZONTALNUMBEROFATOMS) {}
+  pipe_PFPQ(MAXPQNODES, VERTICALNUMBEROFATOMS, HORIZONTALNUMBEROFATOMS),
+  pipe_PFslack(MAXSLACKNODES, VERTICALNUMBEROFATOMS, HORIZONTALNUMBEROFATOMS),
+  pipe_TDgen(MAXGENERATORS, VERTICALNUMBEROFATOMS, HORIZONTALNUMBEROFATOMS),
+  pipe_TDzload(MAXILOADS, VERTICALNUMBEROFATOMS, HORIZONTALNUMBEROFATOMS),
+  pipe_TDiload(MAXILOADS, VERTICALNUMBEROFATOMS, HORIZONTALNUMBEROFATOMS),
+  pipe_TDpload(MAXPLOADS, VERTICALNUMBEROFATOMS, HORIZONTALNUMBEROFATOMS) {}
 
 void SliceDigital::reset(){
   // Reset PF pipelines
-  pipe_PQ.reset();
-  pipe_slack.reset();
+  pipe_PFPQ.reset();
+  pipe_PFslack.reset();
   // Reset TD pipelines
-  pipe_gen.reset();
-  pipe_zload.reset();
-  pipe_iload.reset();
-  pipe_pload.reset();
+  pipe_TDgen.reset();
+  pipe_TDzload.reset();
+  pipe_TDiload.reset();
+  pipe_TDpload.reset();
 }
 
 int SliceDigital::remove(size_t ver, size_t hor){
   int ans = 0;
   // remove PF pipelines
-//  ans |= pipe_PQ.remove_element(ver, hor);
-//  ans |= pipe_slack.remove_element(ver, hor);
+  ans |= pipe_PFPQ.remove_element(ver, hor);
+  ans |= pipe_PFslack.remove_element(ver, hor);
   // remove TD pipelines
-  ans |= pipe_gen.remove_element(ver, hor);
-  ans |= pipe_zload.remove_element(ver, hor);
-  ans |= pipe_iload.remove_element(ver, hor);
-  ans |= pipe_pload.remove_element(ver, hor);
+  ans |= pipe_TDgen.remove_element(ver, hor);
+  ans |= pipe_TDzload.remove_element(ver, hor);
+  ans |= pipe_TDiload.remove_element(ver, hor);
+  ans |= pipe_TDpload.remove_element(ver, hor);
   return ans;
 }

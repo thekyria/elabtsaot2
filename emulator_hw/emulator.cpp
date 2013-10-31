@@ -14,6 +14,7 @@ using std::wstring;
 using std::vector;
 //#include <complex>
 using std::complex;
+using std::polar;
 //#include <map>
 using std::map;
 using std::pair;
@@ -141,7 +142,7 @@ void Emulator::hardResetPressed(){
   return;
 }
 
-int Emulator::preconditionEmulator(){
+int Emulator::preconditionEmulator(EmulatorOpType opType){
 
   PrecisionTimer timer; // counts in seconds
   timer.Start();
@@ -172,19 +173,20 @@ int Emulator::preconditionEmulator(){
     cout << "Emulator::_preconditionEmulator(): ";
     cout << "validate mapping " << timer.Stop() << " s" << endl;
     timer.Start();
+
   case EMU_STATE_MAPOK:
-    ans = autoFitting();
+    ans = autoFitting(opType);
     if ( ans ) return 14;
     cout << "Emulator::_preconditionEmulator(): ";
     cout << "auto fitting " << timer.Stop() << " s" << endl;
     timer.Start();
-    ans = validateFitting(); // would change _state to EMU_STATE_FITOK
+    ans = validateFitting(opType);
     if ( ans ) return 15;
     cout << "Emulator::_preconditionEmulator(): ";
     cout << "validate fitting " << timer.Stop() << " s" << endl;
     timer.Start();
   case EMU_STATE_FITOK:
-    ans = encodePowersystem();
+    ans = encodePowersystem(opType);
     if ( ans ) return 16; // would change _state to EMU_STATE_PWSENCODED
     cout << "Emulator::_preconditionEmulator(): ";
     cout << "encode powersystem " << timer.Stop() << " s" << endl;
@@ -262,26 +264,67 @@ int Emulator::resetEmulator( bool complete ){
 
 size_t Emulator::getHwSliceCount() const{ return _emuhw->sliceSet.size(); }
 
-int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Generator const& gen,
-                        double ratioZ, double ratioV, double ratioI, double max_I_pu ){
+int Emulator::nodeSetPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus, bool slack){
   int ans = 0;
   Slice* slc = &_emuhw->sliceSet[id_tab];
 
   // Disconnect everything from the node
   ans |= slc->dig.remove(id_ver,id_hor);
-  ans |= slc->ana.nodeDisconnect(id_ver,id_hor);
+  if (ans) return 21;
+  slc->ana.nodeDisconnect(id_ver,id_hor);
+
+  double Vmaxreal = slc->ana.real_voltage_ref_val_max()- slc->ana.real_voltage_ref_val();
+  double Vmaximag = slc->ana.imag_voltage_ref_val_max()- slc->ana.imag_voltage_ref_val();
+  // Normal PQ (non-slack) bus
+  if (!slack){
+    // Normal (non-slack) bus inserted into PQ pipeline
+    ans = slc->dig.pipe_PFPQ.insert_element(id_ver,id_hor,bus,true);
+    if (ans) return 22;
+    // Connect analog node as current source
+    double Vmax = std::min(Vmaxreal,Vmaximag);
+    double seriesR = Vmax/(_maxIpu*_ratioI);
+    slc->ana.nodeCurrentSource(id_ver,id_hor, seriesR, -1);
+  }
+
+  // Slack bus
+  else {
+    // Adjust bus.P & .Q accordingly
+    complex<double> V(polar(bus.V,bus.theta));
+    double imagI = _maxIpu *  V.real()*_ratioV / Vmaxreal;
+    double realI = _maxIpu *  V.imag()*_ratioV / Vmaximag;
+    complex<double> I(realI,imagI);
+    complex<double> S = V*conj(I);
+    bus.P = S.real();
+    bus.Q = S.imag();
+    // Slack bus inserted into Slack pipeline
+    ans = slc->dig.pipe_PFslack.insert_element(id_ver,id_hor,bus,true);
+    if (ans) return 31;
+    // Connect analog node as voltage source
+    ans = slc->ana.nodeVoltageSource(id_ver, id_hor, -1);
+    if (ans) return 32;
+  }
+  return 0;
+}
+
+int Emulator::nodeSetTD(size_t id_tab, size_t id_ver, size_t id_hor, Generator const& gen){
+  int ans = 0;
+  Slice* slc = &_emuhw->sliceSet[id_tab];
+
+  // Disconnect everything from the node
+  ans |= slc->dig.remove(id_ver,id_hor);
+  slc->ana.nodeDisconnect(id_ver,id_hor);
 
   double Vmaxreal = slc->ana.real_voltage_ref_val_max()- slc->ana.real_voltage_ref_val();
   double Vmaximag = slc->ana.imag_voltage_ref_val_max()- slc->ana.imag_voltage_ref_val();
   if ( gen.M < GEN_MECHSTARTTIME_THRESHOLD ){
     // Normal (non-slack) generator inserted into generator pipeline
     // Configure dig.pipe_gen
-    if ( slc->dig.pipe_gen.insert_element(id_ver, id_hor, gen, true) )
+    if ( slc->dig.pipe_TDgen.insert_element(id_ver, id_hor, gen, true) )
       return 25;
 
-    double shuntR = gen.xd_1 * ratioZ;
+    double shuntR = gen.xd_1 * _ratioZ;
     double Vmax = std::min(Vmaxreal,Vmaximag);
-    double seriesR = Vmax/(max_I_pu*ratioI);
+    double seriesR = Vmax/(_maxIpu*_ratioI);
     if ( slc->ana.nodeCurrentSource(id_ver,id_hor, seriesR, shuntR) )
       return 27;
   } else { // ( gen.M() >= GEN_MECHSTARTTIME_THRESHOLD )
@@ -300,8 +343,8 @@ int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Generator c
     // for desired Voltage = 1 + j0 [u] -> 2 + j0 [V]
     // the resulting DAC code would be 2/maxV = 2/2.5 = 0.8
     // and the resulting currents = maxI(0*0.8 + j 1*0.8) = 0 + j12.8 pu
-    double imagI = max_I_pu *  gen.Vss.real()*ratioV / Vmaxreal;
-    double realI = max_I_pu *  gen.Vss.imag()*ratioV / Vmaximag;
+    double imagI = _maxIpu *  gen.Vss.real()*_ratioV / Vmaxreal;
+    double realI = _maxIpu *  gen.Vss.imag()*_ratioV / Vmaximag;
     // So into the const I load pipeline we have to insert a fake "load" that
     // results in the above currents in [pu]
     complex<double> I ( realI, imagI );
@@ -311,7 +354,7 @@ int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Generator c
     temp_iload.Qdemand = imag(S);
     temp_iload.setType(LOADTYPE_CONSTI);
     // Configure dig.pipe_iload
-    if ( slc->dig.pipe_iload.insert_element(id_ver,id_hor,temp_iload,true) )
+    if ( slc->dig.pipe_TDiload.insert_element(id_ver,id_hor,temp_iload,true) )
       return 26;
     // Notice: in ConstILoadPipeline::insert_element, temp_iload.pdemand/qdemand
     // are translated (again) to I = realI + j*imagI that was determined above.
@@ -321,36 +364,34 @@ int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Generator c
     if ( slc->ana.nodeVoltageSource(id_ver, id_hor, -1) )
       return 27;
   }
-
   return 0;
 }
 
-int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Load const& load,
-                        double ratioI, double max_I_pu ){
+int Emulator::nodeSetTD(size_t id_tab, size_t id_ver, size_t id_hor, Load const& load){
   int ans = 0;
   Slice* slc = &_emuhw->sliceSet[id_tab];
 
   // Disconnect everything from the node
   ans |= slc->dig.remove(id_ver,id_hor);
-  ans |= slc->ana.nodeDisconnect(id_ver,id_hor);
+  slc->ana.nodeDisconnect(id_ver,id_hor);
 
   if ( (load.Vexpa==2) && (load.Vexpb==2) ){
     // ------- Const Z load -------
     // Configure dig.pipe_zload
-    if ( slc->dig.pipe_zload.insert_element(id_ver, id_hor, load, true) )
+    if ( slc->dig.pipe_TDzload.insert_element(id_ver, id_hor, load, true) )
       return 24;
 
   } else if ( (load.Vexpa==1) && (load.Vexpb==0) ){
     // ------- Const P load -------
     // Configure dig.pipe_pload
-    if ( slc->dig.pipe_pload.insert_element(id_ver, id_hor, load, true) )
+    if ( slc->dig.pipe_TDpload.insert_element(id_ver, id_hor, load, true) )
       return 25;
 
   } else { // ( (load.Vexpa==1) && (load.Vexpb==1) )
     // ------- Const I load -------
     // ------- OR Unknown load type (assume const I load) -------
     // Configure dig.pipe_iload
-    if ( slc->dig.pipe_iload.insert_element(id_ver, id_hor, load, true) )
+    if ( slc->dig.pipe_TDiload.insert_element(id_ver, id_hor, load, true) )
       return 26;
   }
 
@@ -358,7 +399,7 @@ int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Load const&
   double Vmaxreal = slc->ana.real_voltage_ref_val_max()- slc->ana.real_voltage_ref_val();
   double Vmaximag = slc->ana.imag_voltage_ref_val_max()- slc->ana.imag_voltage_ref_val();
   double Vmax = std::min(Vmaxreal,Vmaximag);
-  double seriesR = Vmax/(max_I_pu*ratioI);
+  double seriesR = Vmax/(_maxIpu*_ratioI);
   ans |= slc->ana.nodeCurrentSource(id_ver,id_hor, seriesR, -1);
 
   return ans;
@@ -371,11 +412,11 @@ int Emulator::node_set( size_t id_tab, size_t id_ver, size_t id_hor, Load const&
   |                 |         |
                    ---
                     -  grounding  */
-int Emulator::embr_set(size_t id_tab, size_t id_ver, size_t id_hor, size_t pos,
-                       Branch const& br, double ratioZ, double distanceOfGndFromNearEnd){
+int Emulator::embrSet(size_t id_tab, size_t id_ver, size_t id_hor, size_t pos,
+                       Branch const& br, double distanceOfGndFromNearEnd){
   Slice* slc = &_emuhw->sliceSet[id_tab];
-  double r_near = br.X * ratioZ * distanceOfGndFromNearEnd;
-  double r_far  = br.X * ratioZ * (1 - distanceOfGndFromNearEnd);
+  double r_near = br.X * _ratioZ * distanceOfGndFromNearEnd;
+  double r_far  = br.X * _ratioZ * (1 - distanceOfGndFromNearEnd);
   if (br.status)
     return slc->ana.embrConnect(id_ver,id_hor,pos,r_near,r_far);
   else
@@ -651,6 +692,24 @@ void Emulator::set_ratioV(double val){
 }
 void Emulator::set_maxIpu(double val){ _maxIpu = val; }
 
+void Emulator::autoRatioZ(){
+  double maxX = _pws->getMaxX();
+  // the following cannot be 2 * POTENTIOMETER_RAB, as generator xd_1's have to
+  // be taken into account
+  double maxAchievableR = _emuhw->getMinMaxAchievableR();
+  double newRatioZ = maxAchievableR / maxX;
+  set_ratioZ( newRatioZ );
+}
+
+double Emulator::getMaxR() const{ return _emuhw->getMinMaxAchievableR(); }
+
+void Emulator::defaultRatios(){
+  _ratioZ = static_cast<double>(DEFRATIOZ);
+  _ratioV = static_cast<double>(DEFRATIOV);
+  _ratioI = static_cast<double>(_ratioV/_ratioZ);
+  _maxIpu = static_cast<double>(DEFMAXIPU);
+}
+
 int Emulator::resetMapping(){
 
   // Calling resetMapping() downsets the state of the Emulator to
@@ -728,276 +787,38 @@ int Emulator::validateMapping(){
   return 0;
 }
 
-void Emulator::autoRatioZ(){
-  double maxX = _pws->getMaxX();
-  // the following cannot be 2 * POTENTIOMETER_RAB, as generator xd_1's have to
-  // be taken into account
-  double maxAchievableR = _emuhw->getMinMaxAchievableR();
-  double newRatioZ = maxAchievableR / maxX;
-  set_ratioZ( newRatioZ );
-}
-
-void Emulator::defaultRatios(){
-  _ratioZ = static_cast<double>(DEFRATIOZ);
-  _ratioV = static_cast<double>(DEFRATIOV);
-  _ratioI = static_cast<double>(_ratioV/_ratioZ);
-  _maxIpu = static_cast<double>(DEFMAXIPU);
-}
-
-double Emulator::getMaxR() const{ return _emuhw->getMinMaxAchievableR(); }
-
-int Emulator::autoFitting(vector<string>* outputMsg){
-
-  // Calling autoFitting() downsets the state of the Emulator to
-  // EMU_STATE_MAPOK
-  if ( _state > EMU_STATE_MAPOK )
-    _state = EMU_STATE_MAPOK;
+int Emulator::autoFitting(EmulatorOpType opType, vector<string>* outputMsg){
+  // Calling autoFitting() downsets the state of the Emulator to EMU_STATE_MAPOK
+  if (_state>EMU_STATE_MAPOK) _state = EMU_STATE_MAPOK;
   // Else if the state of the Emulator is not at least
   // EMU_STATE_MAPOK the function is not executed (returns non-zero)
-  else if ( _state < EMU_STATE_MAPOK )
-    return -1;
-
-//  if ( _pws->status() != PWSSTATUS_LF ){
-//    // Power flow must be solved before fitting onto the emulator!
-//    return 10;
-//  }
-//  if ( _mmd->status() != PWSMODELSTATUS_VALID )
-//    // Mapping must be validated before fitting onto the emulator!
-//    return 11;
-//  if ( _emuhw->sliceSet.size() <= 0 )
-//    // Cannot perform auto-fitting on an emulator with no slices!
-//    return 12;
-
-  size_t k;           // counter
-  int ans;            // result
-  size_t fit_tab;     // tab where the component is to be fitted to
-  size_t fit_row;     // row where the component is to be fitted to
-  size_t fit_col;     // column where the component is to be fitted to
-
-//  // ----- Reset fitting before autoFitting again -----
-//  ans =_emuhw->reset(false);
-//  if ( ans ) return 20;
-
-//  // ----- Fit buses (maybe redundant) -----
-//  PwsMapperModelElement const* cdBus;
-//  for ( k = 0 ; k != _mmd->busElements_size() ; ++k ){
-//    cdBus = _mmd->elementByIndex( PWSMODELELEMENTTYPE_BUS, k );
-//    if (!cdBus->mapped)
-//      // Normally should never be reached!
-//      // Bus with ext id cdBus->extId is unmapped!
-//      return 30;
-//
-//    // Fitting position
-//    fit_tab = static_cast<size_t>(cdBus->tab) / 2;
-//    fit_row = static_cast<size_t>(cdBus->row) / 2;
-//    fit_col = static_cast<size_t>(cdBus->col) / 2;
-//
-//    // Fit
-//    ans = _emuhw->sliceSet.at(fit_tab).node_set(fit_row,fit_col);
-//    if ( ans ){
-//      string msg( "Fitting bus with ext id " + auxiliary::to_string(cdBus->extId)
-//                  + " failed with code " + auxiliary::to_string(ans) );
-//      if ( outputMsg )
-//        outputMsg->push_back(msg);
-//    }
-//  }
+  else if (_state<EMU_STATE_MAPOK) return -1;
 
   // ----- Fit branches -----
-  PwsMapperModelElement const* cdBr;
-  Branch const* pBr;
-  size_t fit_embrpos;
-  size_t rows, cols;
-  for ( k = 0 ; k != _mmd->branchElements_size() ; ++k ){
-    cdBr = _mmd->elementByIndex( PWSMODELELEMENTTYPE_BR, k );
-    if (!cdBr->mapped )
-      // Normally should never be reached!
-      // Branch with ext id cdBr->extId is unmapped!
-      return 40;
+  int ans = _fitBranches(outputMsg);
+  if (ans) return ans;
 
-    // Determine fitting position
-    bool onTab = (cdBr->tab%2 == 0);
-    bool onRow = (cdBr->row%2 == 0);
-    bool onCol = (cdBr->col%2 == 0);
-    _emuhw->sliceSet[0].ana.size( rows, cols);
-
-    if ( onTab & onRow & !onCol ){
-      // Intratab - horizontal branch
-      fit_tab = static_cast<size_t>(cdBr->tab)/2;
-      fit_row = static_cast<size_t>(cdBr->row)/2;
-      fit_col = (static_cast<size_t>(cdBr->col)-1)/2;
-      fit_embrpos = EMBRPOS_R;
-
-    } else if ( onTab & !onRow & onCol ){
-      // Intratab - vertical branch
-      fit_tab = static_cast<size_t>(cdBr->tab)/2;
-      fit_row = (static_cast<size_t>(cdBr->row)-1)/2;
-      fit_col = static_cast<size_t>(cdBr->col)/2;
-      fit_embrpos = EMBRPOS_U;
-
-    } else if ( onTab & !onRow & !onCol ){
-      // Intratab - diagonal branch
-      // Intratab diagonal branches can only be in the following sense:
-      // bottom-left -> top-right
-      fit_tab = static_cast<size_t>(cdBr->tab)/2;
-      fit_row = (static_cast<size_t>(cdBr->row)-1)/2;
-      fit_col = (static_cast<size_t>(cdBr->col)-1)/2;
-      fit_embrpos = EMBRPOS_UR;
-
-    } else if ( !onTab & onRow & onCol ){
-      // Intertab branch - exactly vertical
-      fit_tab = (static_cast<size_t>(cdBr->tab)-1)/2;
-      fit_row = static_cast<size_t>(cdBr->row)/2;
-      fit_col = static_cast<size_t>(cdBr->col)/2;
-      if ( fit_row == (rows-1) ){
-        // Top-row vertical intertab branches correspond to U embr pos
-        fit_embrpos = EMBRPOS_U;
-      } else if ( fit_col == (cols-1) ){
-        // Last-column vertical intertab branches correspond to R embr pos
-        fit_embrpos = EMBRPOS_R;
-      } else if ( fit_col == 0 ){ // && fit_row != rows
-        // First-column vertical intertab branches correspond to L embr pos
-        fit_embrpos = EMBRPOS_L;
-      } else if ( fit_row == 0 ){ // && fit_col != 0 && fit_col != cols
-        // Bottom-row vertical intertab branches correspond to D embr pos
-        fit_embrpos = EMBRPOS_D;
-      } else {
-        // Weird mapping!
-        // Branch with ext id cdBr->extId mapped on invalid position:
-        // [cdBr->tab,cdBr->row,cdBr->col] = [mapper_tab,row,col]
-        return 41;
-      }
-
-    } else if ( !onTab & onRow & !onCol ){
-      // Intertab branch - diagonal in the column sense
-      // Corresponds to the diagonal intertab branches on the top of the
-      // emulator grid
-      fit_tab = (static_cast<size_t>(cdBr->tab)-1)/2;
-      fit_row = static_cast<size_t>(cdBr->row)/2;
-      fit_col = (static_cast<size_t>(cdBr->col)-1)/2;
-      if ( fit_row == (rows-1) ){
-        // Top-row diagonal (col. sense) intertab branches correspond to UR embr
-        // pos
-        fit_embrpos = EMBRPOS_UR;
-      } else {
-        // Weird mapping!
-        // Branch with ext id cdBr->extId mapped on invalid position:
-        // [cdBr->tab,cdBr->row,cdBr->col] = [mapper_tab,row,col]
-        return 42;
-      }
-
-    } else if ( !onTab & !onRow & onCol ){
-      // Intertab branch - diagonal in the row sense
-      // Corresponds to the diagonal intertab branches on the right side of
-      // the emulator grid
-      fit_tab = (static_cast<size_t>(cdBr->tab)-1)/2;
-      fit_row = (static_cast<size_t>(cdBr->row)-1)/2;
-      fit_col = static_cast<size_t>(cdBr->col)/2;
-      if ( fit_col == (cols-1) ){
-        // Last-column diagonal (row sense) intertab branches correspond to UR
-        // embr pos
-        fit_embrpos = EMBRPOS_UR;
-      } else {
-        // Weird mapping!
-        // Branch with ext id cdBr->extId mapped on invalid position:
-        // [cdBr->tab,cdBr->row,cdBr->col] = [mapper_tab,row,col]
-        return 43;
-      }
-
-
-    } else{ // ( !onTab & !onRow & !onCol )
-      // Intertab branch
-      // Warning! No such intertab branch is possible on the current version
-      // of the emulator hardware! Nov 2011
-      // Branch with ext id cdBr->extId mapped on invalid position:
-      // [cdBr->tab,cdBr->row,cdBr->col] = [mapper_tab,row,col]
-      return 44;
-    }
-
-    // Retrieve branch to be fitted
-    ans = _pws->getBranch( cdBr->extId, pBr );
-    if ( ans )
-      // Branch with ext id cdBr->extId cannot be retrieved!
-      return 45;
-
-    // Fit
-    ans = embr_set(fit_tab, fit_row, fit_col, fit_embrpos, *pBr, _ratioZ, 0.5);
-    if ( ans ){
-      string msg( "Fitting branch with ext id " + auxiliary::to_string(cdBr->extId)
-                  + " failed with code " + auxiliary::to_string(ans) );
-      if ( outputMsg )
-        outputMsg->push_back(msg);
-    }
-  }
-
-  // ----- Fit generators -----
-  PwsMapperModelElement const* cdGen;
-  Generator const* pGen;
-  for ( k = 0 ; k != _mmd->genElements_size() ; ++k ){
-    cdGen = _mmd->elementByIndex( PWSMODELELEMENTTYPE_GEN, k );
-    if (!cdGen->mapped )
-      // Normally should never be reached!
-      // Gen with ext id cdGen->extId is unmapped!
-      return 50;
-
-    // Determine fitting position
-    fit_tab = static_cast<size_t>(cdGen->tab) / 2;
-    fit_row = static_cast<size_t>(cdGen->row) / 2;
-    fit_col = static_cast<size_t>(cdGen->col) / 2;
-
-    // Retrieve generator to be fitted
-    ans = _pws->getGenerator( cdGen->extId, pGen );
-    if ( ans )
-      // Generator with ext id cdGen->extId cannot be retrieved!
-      return 51;
-
-    // Fit
-    ans = node_set(fit_tab,fit_row,fit_col, *pGen, _ratioZ,_ratioV,_ratioI,_maxIpu);
-    if ( ans ){
-      string msg( "Fitting generator with ext id " + auxiliary::to_string(cdGen->extId)
-                  + " failed with code " + auxiliary::to_string(ans) );
-      if ( outputMsg )
-        outputMsg->push_back(msg);
-    }
-  }
-
-  // ----- Fit loads -----
-  PwsMapperModelElement const* cdLoad;
-  Load const* pLoad;
-  for ( k = 0 ; k != _mmd->loadElements_size() ; ++k ){
-    cdLoad = _mmd->elementByIndex( PWSMODELELEMENTTYPE_LOAD, k );
-    if (!cdLoad->mapped )
-      // Normally should never be reached!
-      // Load with ext id cdLoad->extId is unmapped!
-      return 52;
-
-    // Determine fitting position
-    fit_tab = static_cast<size_t>(cdLoad->tab) / 2;
-    fit_row = static_cast<size_t>(cdLoad->row) / 2;
-    fit_col = static_cast<size_t>(cdLoad->col) / 2;
-
-    // Retrieve load to be fitted
-    ans = _pws->getLoad( cdLoad->extId, pLoad );
-    if (ans)
-      // Load with ext id cdLoad->extId cannot be retrieved!
-      return 53;
-
-    // Fit
-    ans = node_set(fit_tab,fit_row,fit_col, *pLoad, _ratioI,_maxIpu);
-    if ( ans ){
-      string msg( "Fitting load with ext id "
-                  + auxiliary::to_string(cdLoad->extId)
-                  + " failed with code " + auxiliary::to_string(ans) );
-      if ( outputMsg )
-        outputMsg->push_back(msg);
-    }
+  switch (opType){
+  case EMU_OPTYPE_PF:
+    // ----- Fit buses -----
+    ans = _fitBusesPF(outputMsg);
+    if (ans) return ans;
+    break;
+  case EMU_OPTYPE_TD:
+    // ----- Fit generators -----
+    ans = _fitGeneratorsTD(outputMsg);
+    if (ans) return ans;
+    // ----- Fit loads -----
+    ans = _fitLoadsTD(outputMsg);
+    if (ans) return ans;
+    break;
   }
 
   return 0;
 }
 
-int Emulator::validateFitting(){
-
-  // Calling autoFitting() downsets the state of the Emulator to
+int Emulator::validateFitting(EmulatorOpType opType){
+  // Calling validateFittingTD() downsets the state of the Emulator to
   // EMU_STATE_MAPOK
   if ( _state > EMU_STATE_MAPOK )
     _state = EMU_STATE_MAPOK;
@@ -1006,23 +827,24 @@ int Emulator::validateFitting(){
   else if ( _state < EMU_STATE_MAPOK )
     return -1;
 
-//  if ( _pws->status() != PWSSTATUS_LF ){
-//    // Power flow must be solved before fitting onto the emulator!
-//    return 10;
-//  }
 
   // validateFitting() does really nothing. It simply updates the state machine
   // to EMU_STATE_FITOK
   // TODO REALLY IMPLEMENT validateFitting()
+  switch (opType){
+  case EMU_OPTYPE_PF:
+    /* TODO: PF */ break;
+  case EMU_OPTYPE_TD:
+    /* TODO: TD */ break;
+  }
 
   // If the function executed properly, the state of Emulator changes
   // implementing the EMU_STATE_MAPOK -> EMU_STATE_FITOK transition
   _state = EMU_STATE_FITOK;
-
   return 0;
 }
 
-int Emulator::encodePowersystem(){
+int Emulator::encodePowersystem(EmulatorOpType opType){
 
   // Calling autoFitting() downsets the state of the Emulator to
   // EMU_STATE_FITOK
@@ -1037,8 +859,14 @@ int Emulator::encodePowersystem(){
   encoding.resize( _emuhw->sliceSet.size() );
 
   for( size_t k = 0 ; k != _emuhw->sliceSet.size(); ++k ){
-    if ( encoder::encodeSliceTD( _emuhw->sliceSet[k], encoding[k] ) )
-      return k;
+    int ans(0);
+    switch (opType){
+    case EMU_OPTYPE_PF:
+      ans = encoder::encodeSlicePF( _emuhw->sliceSet[k],encoding[k]); break;
+    case EMU_OPTYPE_TD:
+      ans = encoder::encodeSliceTD( _emuhw->sliceSet[k],encoding[k]); break;
+    }
+    if (ans) return k;
   }
 
   // If the function executed properly, the state of Emulator changes
@@ -1187,6 +1015,219 @@ int Emulator::_endCalibrationMode( size_t devId ){
   if ( ans )
     return 1;
 
+  return 0;
+}
+
+int Emulator::_fitBranches(vector<string>* outputMsg){
+  size_t fit_embrpos;
+  size_t fit_tab;     // tab where the component is to be fitted to
+  size_t fit_row;     // row where the component is to be fitted to
+  size_t fit_col;     // column where the component is to be fitted to
+  for (size_t k=0; k!=_mmd->branchElements_size(); ++k){
+    PwsMapperModelElement const* cdBr=_mmd->elementByIndex(PWSMODELELEMENTTYPE_BR,k);
+    if (!cdBr->mapped )
+      // Normally should never be reached!
+      // Branch with ext id cdBr->extId is unmapped!
+      return 40;
+
+    // Determine fitting position
+    bool onTab = (cdBr->tab%2 == 0);
+    bool onRow = (cdBr->row%2 == 0);
+    bool onCol = (cdBr->col%2 == 0);
+    size_t rows, cols;
+    _emuhw->sliceSet[0].ana.size( rows, cols);
+
+    if ( onTab & onRow & !onCol ){
+      // Intratab - horizontal branch
+      fit_tab = static_cast<size_t>(cdBr->tab)/2;
+      fit_row = static_cast<size_t>(cdBr->row)/2;
+      fit_col = (static_cast<size_t>(cdBr->col)-1)/2;
+      fit_embrpos = EMBRPOS_R;
+
+    } else if ( onTab & !onRow & onCol ){
+      // Intratab - vertical branch
+      fit_tab = static_cast<size_t>(cdBr->tab)/2;
+      fit_row = (static_cast<size_t>(cdBr->row)-1)/2;
+      fit_col = static_cast<size_t>(cdBr->col)/2;
+      fit_embrpos = EMBRPOS_U;
+
+    } else if ( onTab & !onRow & !onCol ){
+      // Intratab - diagonal branch
+      // Intratab diagonal branches can only be in the following sense:
+      // bottom-left -> top-right
+      fit_tab = static_cast<size_t>(cdBr->tab)/2;
+      fit_row = (static_cast<size_t>(cdBr->row)-1)/2;
+      fit_col = (static_cast<size_t>(cdBr->col)-1)/2;
+      fit_embrpos = EMBRPOS_UR;
+
+    } else if ( !onTab & onRow & onCol ){
+      // Intertab branch - exactly vertical
+      fit_tab = (static_cast<size_t>(cdBr->tab)-1)/2;
+      fit_row = static_cast<size_t>(cdBr->row)/2;
+      fit_col = static_cast<size_t>(cdBr->col)/2;
+      if ( fit_row == (rows-1) ){
+        // Top-row vertical intertab branches correspond to U embr pos
+        fit_embrpos = EMBRPOS_U;
+      } else if ( fit_col == (cols-1) ){
+        // Last-column vertical intertab branches correspond to R embr pos
+        fit_embrpos = EMBRPOS_R;
+      } else if ( fit_col == 0 ){ // && fit_row != rows
+        // First-column vertical intertab branches correspond to L embr pos
+        fit_embrpos = EMBRPOS_L;
+      } else if ( fit_row == 0 ){ // && fit_col != 0 && fit_col != cols
+        // Bottom-row vertical intertab branches correspond to D embr pos
+        fit_embrpos = EMBRPOS_D;
+      } else {
+        // Weird mapping!
+        // Branch with ext id cdBr->extId mapped on invalid position:
+        // [cdBr->tab,cdBr->row,cdBr->col] = [mapper_tab,row,col]
+        return 41;
+      }
+
+    } else if ( !onTab & onRow & !onCol ){
+      // Intertab branch - diagonal in the column sense
+      // Corresponds to the diagonal intertab branches on the top of the
+      // emulator grid
+      fit_tab = (static_cast<size_t>(cdBr->tab)-1)/2;
+      fit_row = static_cast<size_t>(cdBr->row)/2;
+      fit_col = (static_cast<size_t>(cdBr->col)-1)/2;
+      if ( fit_row == (rows-1) ){
+        // Top-row diagonal (col. sense) intertab branches correspond to UR embr
+        // pos
+        fit_embrpos = EMBRPOS_UR;
+      } else {
+        // Weird mapping!
+        // Branch with ext id cdBr->extId mapped on invalid position:
+        // [cdBr->tab,cdBr->row,cdBr->col] = [mapper_tab,row,col]
+        return 42;
+      }
+
+    } else if ( !onTab & !onRow & onCol ){
+      // Intertab branch - diagonal in the row sense
+      // Corresponds to the diagonal intertab branches on the right side of
+      // the emulator grid
+      fit_tab = (static_cast<size_t>(cdBr->tab)-1)/2;
+      fit_row = (static_cast<size_t>(cdBr->row)-1)/2;
+      fit_col = static_cast<size_t>(cdBr->col)/2;
+      if ( fit_col == (cols-1) ){
+        // Last-column diagonal (row sense) intertab branches correspond to UR
+        // embr pos
+        fit_embrpos = EMBRPOS_UR;
+      } else {
+        // Weird mapping!
+        // Branch with ext id cdBr->extId mapped on invalid position:
+        // [cdBr->tab,cdBr->row,cdBr->col] = [mapper_tab,row,col]
+        return 43;
+      }
+
+
+    } else{ // ( !onTab & !onRow & !onCol )
+      // Intertab branch
+      // Warning! No such intertab branch is possible on the current version
+      // of the emulator hardware! Nov 2011
+      // Branch with ext id cdBr->extId mapped on invalid position:
+      // [cdBr->tab,cdBr->row,cdBr->col] = [mapper_tab,row,col]
+      return 44;
+    }
+
+    // Retrieve branch to be fitted
+    Branch const* pBr;
+    int ans = _pws->getBranch( cdBr->extId, pBr );
+    if (ans) return 45;
+
+    // Fit
+    ans = embrSet(fit_tab, fit_row, fit_col, fit_embrpos, *pBr, 0.5);
+    if (ans){
+      string msg( "Fitting branch with ext id " + auxiliary::to_string(cdBr->extId)
+                  + " failed with code " + auxiliary::to_string(ans) );
+      if ( outputMsg )
+        outputMsg->push_back(msg);
+    }
+  }
+  return 0;
+}
+
+int Emulator::_fitBusesPF(vector<string>* outputMsg){
+  for (size_t k=0; k!=_mmd->busElements_size(); ++k){
+    PwsMapperModelElement const* cdBus = _mmd->elementByIndex(PWSMODELELEMENTTYPE_BUS,k);
+    if (!cdBus->mapped) return 60;
+
+    // Determine fitting position
+    size_t fit_tab = static_cast<size_t>(cdBus->tab) / 2;
+    size_t fit_row = static_cast<size_t>(cdBus->row) / 2;
+    size_t fit_col = static_cast<size_t>(cdBus->col) / 2;
+
+    // Retrieve bus to be fitted
+    Bus const* pBus;
+    int ans = _pws->getBus(cdBus->extId,pBus);
+    if (ans) return 61;
+
+    // Fit
+    ans = nodeSetPF(fit_tab,fit_row,fit_col, *pBus, pBus->type==BUSTYPE_SLACK);
+    if (ans){
+      string msg( "Fitting but with ext id " + auxiliary::to_string(cdBus->extId)
+                  + " failed with code " + auxiliary::to_string(ans) );
+      if (outputMsg) outputMsg->push_back(msg);
+    }
+  }
+  return 0;
+}
+
+int Emulator::_fitGeneratorsTD(vector<string>* outputMsg){
+  for (size_t k=0 ; k!=_mmd->genElements_size() ; ++k){
+    PwsMapperModelElement const* cdGen = _mmd->elementByIndex(PWSMODELELEMENTTYPE_GEN,k);
+    // Normally should never be reached: Gen with ext id cdGen->extId is unmapped!
+    if (!cdGen->mapped) return 50;
+
+    // Determine fitting position
+    size_t fit_tab = static_cast<size_t>(cdGen->tab) / 2;
+    size_t fit_row = static_cast<size_t>(cdGen->row) / 2;
+    size_t fit_col = static_cast<size_t>(cdGen->col) / 2;
+
+    // Retrieve generator to be fitted
+    Generator const* pGen;
+    int ans = _pws->getGenerator( cdGen->extId, pGen );
+    if (ans) return 51;
+
+    // Fit
+    ans = nodeSetTD(fit_tab,fit_row,fit_col, *pGen);
+    if (ans){
+      string msg( "Fitting generator with ext id " + auxiliary::to_string(cdGen->extId)
+                  + " failed with code " + auxiliary::to_string(ans) );
+      if (outputMsg) outputMsg->push_back(msg);
+    }
+  }
+  return 0;
+}
+
+int Emulator::_fitLoadsTD(vector<string>* outputMsg){
+  for (size_t k=0; k!=_mmd->loadElements_size(); ++k){
+    PwsMapperModelElement const* cdLoad = _mmd->elementByIndex( PWSMODELELEMENTTYPE_LOAD, k );
+    // Normally should never be reached: Load with ext id cdLoad->extId is unmapped!
+    if (!cdLoad->mapped) return 52;
+
+    // Determine fitting position
+    size_t fit_tab = static_cast<size_t>(cdLoad->tab) / 2;
+    size_t fit_row = static_cast<size_t>(cdLoad->row) / 2;
+    size_t fit_col = static_cast<size_t>(cdLoad->col) / 2;
+
+    // Retrieve load to be fitted
+    Load const* pLoad;
+    int ans = _pws->getLoad( cdLoad->extId, pLoad );
+    if (ans)
+      // Load with ext id cdLoad->extId cannot be retrieved!
+      return 53;
+
+    // Fit
+    ans = nodeSetTD(fit_tab,fit_row,fit_col, *pLoad);
+    if ( ans ){
+      string msg( "Fitting load with ext id "
+                  + auxiliary::to_string(cdLoad->extId)
+                  + " failed with code " + auxiliary::to_string(ans) );
+      if ( outputMsg )
+        outputMsg->push_back(msg);
+    }
+  }
   return 0;
 }
 

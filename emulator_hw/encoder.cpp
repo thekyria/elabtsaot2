@@ -37,7 +37,7 @@ int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
 
   // Vector        | vec.add | cyp.add [num.of.words] corresponing func.
   //---------------|---------|-------------------------------------------------
-  // ggot_conf     |   0: 47 |   1: 48 [ 48] detail::encode_ggot
+  // got_conf      |   0: 47 |   1: 48 [ 48] detail::encode_got
   //  none         |  48:338 |  49:339 [291]  none
   // pos_conf      | 339:354 | 340:343 [  4] detail::encode_PFpositions
   //  none         | 343:350 | 344:351 [  8]  none
@@ -56,7 +56,7 @@ int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
   // ipol_conf     | 579:602 | 580:603 [ 24] detail::encode_iinit
   //  none         | 603:608 | 604:609 [  6]  none
 
-  vector<uint32_t> ggot_conf;
+  vector<uint32_t> got_conf;
   vector<uint32_t> none;
   vector<uint32_t> pos_conf;
   vector<uint32_t> slpos_conf;
@@ -72,18 +72,17 @@ int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
   vector<uint32_t> beta_conf;
   vector<uint32_t> opt2_conf;
 
-  ans |= detail::encode_ggot( sl, ggot_conf );
-  ans |= detail::encode_PFpositions( sl, pos_conf, slpos_conf );
-  ans |= detail::encode_PFauxiliary( conf_conf, starter_conf );
-  ans |= detail::encode_vref( sl, vref_conf );
-  ans |= detail::encode_iinit( sl, icar_conf, ipol_conf );
-  ans |= detail::encode_resistors( sl, res_conf, res_tcon_conf );
-  ans |= detail::encode_switches( sl, switches_conf );
-  ans |= detail::encode_PQsetpoints( sl, pqset_conf );
-  if (ans)
-    return ans;
+  ans |= detail::encode_PFgot(sl, got_conf);
+  ans |= detail::encode_PFpositions(sl, pos_conf, slpos_conf);
+  ans |= detail::encode_PFauxiliary(conf_conf, starter_conf);
+  ans |= detail::encode_vref(sl, vref_conf);
+  detail::encode_PFIinit(sl, icar_conf, ipol_conf);
+  ans |= detail::encode_resistors(sl, res_conf, res_tcon_conf );
+  ans |= detail::encode_switches(sl, switches_conf);
+  detail::encode_PQsetpoints(sl, pqset_conf);
+  if (ans) return ans;
 
-  sliceConf.insert(sliceConf.end(), ggot_conf.begin(), ggot_conf.end() );
+  sliceConf.insert(sliceConf.end(), got_conf.begin(), got_conf.end() );
   none.resize(291,0);
   sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
   sliceConf.insert(sliceConf.end(), pos_conf.begin(), pos_conf.end() );
@@ -1030,13 +1029,13 @@ int encoder::detail::encode_switches( Slice const& sl, vector<uint32_t>& switche
   return 0;
 }
 
-int encoder::detail::encode_ggot( Slice const& sl, vector<uint32_t>& ggot_conf ){
-  ggot_conf.clear();
+int encoder::detail::encode_PFgot( Slice const& sl, vector<uint32_t>& got_conf ){
+  got_conf.clear();
 
   size_t k;
   int32_t tempMSB, tempLSB, temp;
 
-  // ***** ggot_conf *****
+  // ***** got_conf *****
   // ----------- GOT gain -----------
   // 31  26 25        13 12         0
   // 000000 [Q3.10 imag] [Q3.10 real]
@@ -1046,12 +1045,12 @@ int encoder::detail::encode_ggot( Slice const& sl, vector<uint32_t>& ggot_conf )
   size_t rows, cols;
   sl.ana.size(rows,cols);
   size_t atomCount = rows*cols;
-  vector<pair<int,int> > pos = sl.dig.pipe_gen.position();
+  vector<pair<int,int> > pos = sl.dig.pipe_PFPQ.position();
   double real_gain, imag_gain;
-  for ( k = 0 ; k != atomCount ; ++k ){
+  for (k=0 ; k!=atomCount; ++k){
     Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
 
-    if ( k < sl.dig.pipe_gen.element_count() ){
+    if (k < sl.dig.pipe_TDgen.element_count()){
       imag_gain = sl.ana.got_gain() * am->node_imag_adc_gain_corr();
       real_gain = sl.ana.got_gain() * am->node_real_adc_gain_corr();
     } else { // k >= sl.dig.pipe_gen.element_count()
@@ -1060,10 +1059,10 @@ int encoder::detail::encode_ggot( Slice const& sl, vector<uint32_t>& ggot_conf )
     }
 
     temp = 0;
-    detail::form_word( imag_gain, 13, 10, true, &tempMSB );
-    detail::form_word( real_gain, 13, 10, true, &tempLSB);
+    detail::form_word(imag_gain, 13, 10, true, &tempMSB);
+    detail::form_word(real_gain, 13, 10, true, &tempLSB);
     temp = (tempMSB << 13) | (tempLSB);
-    ggot_conf.push_back( static_cast<uint32_t>(temp) );
+    got_conf.push_back(static_cast<uint32_t>(temp));
   }
 
   // --------- GOT offset ---------
@@ -1077,7 +1076,7 @@ int encoder::detail::encode_ggot( Slice const& sl, vector<uint32_t>& ggot_conf )
   for ( k = 0 ; k != atomCount ; ++k ){
     Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
 
-    if ( k < sl.dig.pipe_gen.element_count() ){
+    if ( k < sl.dig.pipe_TDgen.element_count() ){
       imag_offset = sl.ana.got_offset() + am->node_imag_adc_offset_corr();
       real_offset = sl.ana.got_offset() + am->node_real_adc_offset_corr();
     } else { // k >= sl.dig.pipe_gen.element_count()
@@ -1091,7 +1090,7 @@ int encoder::detail::encode_ggot( Slice const& sl, vector<uint32_t>& ggot_conf )
     tempLSB = static_cast<int32_t>( auxiliary::round(real_offset/DAC_DEF_OUTMAX*pow(2,12)) );
     tempLSB &= mask12;
     temp = (tempMSB << 12) | (tempLSB);
-    ggot_conf.push_back( static_cast<uint32_t>(temp) );
+    got_conf.push_back( static_cast<uint32_t>(temp) );
   }
 
   return 0;
@@ -1103,20 +1102,18 @@ int encoder::detail::encode_PFpositions( Slice const& sl,
   pos_conf.clear();
   slpos_conf.clear();
 
-  size_t k;
   int32_t temp = 0;
   int32_t temp5bit = 0;
   int32_t mask5bit = (1<<5)-1;  // 0b00000000000000000000000000011111
 
-  // ***** generator positions *****
-  for ( k = 0 ; k != 18 ; ++k ){
-
+  // ***** PQ nodes positions *****
+  for (size_t k=0; k!=18; ++k){ // for some weird reason 18 positions are needed
     // update position for k'th gen (5 bits: [0 unused] 1 - 24 [-31 unused])
     temp5bit = 0;
-    if ( k < sl.dig.pipe_PQ.element_count() )
+    if ( k < sl.dig.pipe_PFPQ.element_count() )
       temp5bit = static_cast<int32_t>(
-          sl.dig.pipe_PQ.position()[k].first * sl.dig.pipe_PQ.hor_id_max() +
-          sl.dig.pipe_PQ.position()[k].second + 1 );
+          sl.dig.pipe_PFPQ.position()[k].first * sl.dig.pipe_PFPQ.hor_id_max() +
+          sl.dig.pipe_PFPQ.position()[k].second + 1 );
     temp5bit &= mask5bit;
 
     // update position word with the position of the k'th gen (if any) - else 0
@@ -1131,7 +1128,7 @@ int encoder::detail::encode_PFpositions( Slice const& sl,
   // ***** nodes number *****
   temp = 0;
   // number of PQ nodes
-  temp5bit = static_cast<int32_t>( sl.dig.pipe_PQ.element_count() );
+  temp5bit = static_cast<int32_t>( sl.dig.pipe_PFPQ.element_count() );
   temp5bit &= mask5bit;
   temp |= ( temp5bit << 0*5 );
   // zero
@@ -1151,8 +1148,8 @@ int encoder::detail::encode_PFpositions( Slice const& sl,
 
 
   // ***** slack (represented as const I load) positions *****
-  temp =  sl.dig.pipe_slack.position()[0].first * sl.dig.pipe_slack.hor_id_max()
-          + sl.dig.pipe_slack.position()[0].second + 1;
+  temp =  sl.dig.pipe_PFslack.position()[0].first * sl.dig.pipe_PFslack.hor_id_max()
+          + sl.dig.pipe_PFslack.position()[0].second + 1;
   temp &= mask5bit;
   slpos_conf.push_back(static_cast<uint32_t>(temp));
 
@@ -1175,16 +1172,85 @@ int encoder::detail::encode_PFauxiliary( vector<uint32_t>& conf_conf,
   return 0;
 }
 
-int encoder::detail::encode_iinit( Slice const& sl,
-                                   vector<uint32_t>& icar_conf,
-                                   vector<uint32_t>& ipol_conf ){
-  // TODO
-  return 1;
+void encoder::detail::encode_PFIinit( Slice const& sl,
+                                      vector<uint32_t>& icar_conf,
+                                      vector<uint32_t>& ipol_conf ){
+  size_t rows, cols;
+  sl.ana.size(rows, cols);
+  size_t atomCount = rows*cols;
+
+  icar_conf.resize(atomCount,0);
+  ipol_conf.resize(atomCount,0);
+
+  int32_t tempMSB, tempLSB, temp;
+  size_t nodeId;
+  complex<double> I0;
+  // --------- Icartesian ---------
+  // 31    24 23      12 11       0
+  // 00000000 [12b imag] [12b real]
+  // 00000000 [tempMSB ] [tempLSB ]
+  // 00000000 [       temp        ]
+  // ------------------------------
+  //
+  // --------- Ipolar --------------
+  // 31           16 15            0
+  // [Q5.11  arg(I)] [Q5.11  abs(I)]
+  // [  tempMBS    ] [  tempLSB    ]
+  // [            temp             ]
+  // -------------------------------
+  PQPipeline const& pipePQ(sl.dig.pipe_PFPQ);
+  vector<pair<int,int> > pos = pipePQ.position();
+  for (size_t k=0; k!=pipePQ.element_count(); ++k){
+    I0 = pipePQ.I0[k];
+    // Cartesian ///////////////////////////////////////////////////////////////
+    nodeId = pipePQ.calculate_pseudo_id(pos[k].first,pos[k].second);
+    detail::form_word( I0.real() , 12, 7, true, &tempLSB );
+    detail::form_word(-I0.imag() , 12, 7, true, &tempMSB );
+    temp = (tempMSB<<12)|(tempLSB);
+    icar_conf[nodeId] = static_cast<uint32_t>(temp);
+
+    // Polar ///////////////////////////////////////////////////////////////////
+    detail::form_word(std::abs(I0) , 16, 10, true, &tempLSB);
+    detail::form_word(std::arg(I0) , 16, 10, true, &tempMSB);
+    temp = (tempMSB<<16)|(tempLSB);
+    ipol_conf[k] = static_cast<uint32_t>(temp);
+  }
+
+  // Include the slack in the cartesian configuration
+  I0 = sl.dig.pipe_PFslack.I0[0];
+  pair<int,int> posSl =  sl.dig.pipe_PFslack.position()[0];
+  nodeId = pipePQ.calculate_pseudo_id(posSl.first,posSl.second);
+  detail::form_word( I0.real() , 12, 7, true, &tempLSB );
+  detail::form_word(-I0.imag() , 12, 7, true, &tempMSB );
+  temp = (tempMSB<<12)|(tempLSB);
+  icar_conf[nodeId] = static_cast<uint32_t>(temp);
+
+  // Stamp confirm
+  stamp_NIOS_confirm(icar_conf.back());
 }
 
-int encoder::detail::encode_PQsetpoints( Slice const& sl, vector<uint32_t>& pqset_conf ){
-  // TODO
-  return 1;
+void encoder::detail::encode_PQsetpoints(Slice const& sl, vector<uint32_t>& pqset_conf){
+  size_t rows, cols;
+  sl.ana.size(rows, cols);
+  size_t atomCount = rows*cols;
+
+  pqset_conf.resize(atomCount,0);
+  int32_t tempMSB, tempLSB, temp;
+  complex<double> S;
+  // --------- S setpoint ----------
+  // 31           16 15            0
+  // [Q5.11      Q ] [Q5.11      P ]
+  // [  tempMBS    ] [  tempLSB    ]
+  // [            temp             ]
+  // -------------------------------
+  PQPipeline const& pipePQ(sl.dig.pipe_PFPQ);
+  for (size_t k=0; k!=pipePQ.element_count(); ++k){
+    S = pipePQ.Sset[k];
+    detail::form_word(S.real(), 16, 10, true, &tempLSB);
+    detail::form_word(S.imag(), 16, 10, true, &tempMSB);
+    temp = (tempMSB<<16)|(tempLSB);
+    pqset_conf[k] = static_cast<uint32_t>(temp);
+  }
 }
 
 int encoder::detail::encode_TDgenerators( Slice const& sl,
@@ -1192,7 +1258,6 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
                                           vector<uint32_t>& gen_conf1,
                                           vector<uint32_t>& gen_conf2,
                                           vector<uint32_t>& gen_conf3 ){
-
   ggot_conf.clear();
   gen_conf1.clear();
   gen_conf2.clear();
@@ -1209,11 +1274,11 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   // 000000 [         temp          ]
   // --------------------------------
   size_t rows, cols; sl.ana.size(rows,cols); size_t atomCount = rows*cols;
-  vector<pair<int,int> > pos = sl.dig.pipe_gen.position();
+  vector<pair<int,int> > pos = sl.dig.pipe_TDgen.position();
   double real_gain, imag_gain;
   for ( k = 0 ; k != atomCount ; ++k ){
 
-    if ( k < sl.dig.pipe_gen.element_count() ){
+    if ( k < sl.dig.pipe_TDgen.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_gain = sl.ana.got_gain() * am->node_imag_adc_gain_corr();
       real_gain = sl.ana.got_gain() * am->node_real_adc_gain_corr();
@@ -1239,7 +1304,7 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   int32_t mask12 = (1 << 12) - 1;
   for ( k = 0 ; k != atomCount ; ++k ){
 
-    if ( k < sl.dig.pipe_gen.element_count() ){
+    if ( k < sl.dig.pipe_TDgen.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_offset = sl.ana.got_offset() + am->node_imag_adc_offset_corr();
       real_offset = sl.ana.got_offset() + am->node_real_adc_offset_corr();
@@ -1260,9 +1325,9 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
 
   // ********** gen_conf1 **********
   // Inverse of the impedance Q9.7
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.xd1inverse[k], 16, 7, false, &temp );
+    detail::form_word( sl.dig.pipe_TDgen.xd1inverse[k], 16, 7, false, &temp );
     gen_conf1.push_back( static_cast<uint32_t>(temp) );
   }
 
@@ -1271,62 +1336,62 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   // [Q5.11 imag_I] [Q5.11 real_I]
   // [  tempMBS   ] [  tempLSB   ]
   // [           temp            ]
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.I0[k].imag(), 16, 11, true, &tempMSB );
-    detail::form_word( sl.dig.pipe_gen.I0[k].real(), 16, 11, true, &tempLSB );
+    detail::form_word( sl.dig.pipe_TDgen.I0[k].imag(), 16, 11, true, &tempMSB );
+    detail::form_word( sl.dig.pipe_TDgen.I0[k].real(), 16, 11, true, &tempLSB );
     temp = (tempMSB << 16) | (tempLSB);
     gen_conf1.push_back( static_cast<uint32_t>(temp) );
   }
 
   // Mechanical power Q5.13
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.pMechanical[k], 18, 13, true, &temp );
+    detail::form_word( sl.dig.pipe_TDgen.pMechanical[k], 18, 13, true, &temp );
     gen_conf1.push_back( static_cast<uint32_t>(temp) );
   }
 
 
   // ********** gen_conf2 **********
   // Gain 1 Q8.10
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.gain1[k], 18, 10, true, &temp );
+    detail::form_word( sl.dig.pipe_TDgen.gain1[k], 18, 10, true, &temp );
     gen_conf2.push_back( static_cast<uint32_t>(temp) );
   }
 
   // Gain 2 Q6.8
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.gain2[k], 14, 8, true, &temp );
+    detail::form_word( sl.dig.pipe_TDgen.gain2[k], 14, 8, true, &temp );
     gen_conf2.push_back( static_cast<uint32_t>(temp) );
   }
 
   // Gain 3 Q6.8
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.gain3[k], 14, 8, true, &temp );
+    detail::form_word( sl.dig.pipe_TDgen.gain3[k], 14, 8, true, &temp );
     gen_conf2.push_back( static_cast<uint32_t>(temp) );
   }
 
   // Gain 4 Q5.11
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.gain4[k], 16, 11, true, &temp );
+    detail::form_word( sl.dig.pipe_TDgen.gain4[k], 16, 11, true, &temp );
     gen_conf2.push_back( static_cast<uint32_t>(temp) );
   }
 
   // Gain 5 Q5.11
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.gain5[k], 16, 11, true, &temp );
+    detail::form_word( sl.dig.pipe_TDgen.gain5[k], 16, 11, true, &temp );
     gen_conf2.push_back( static_cast<uint32_t>(temp) );
   }
 
   // Gain 6 Q5.13
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
     temp = 0;
-    detail::form_word( sl.dig.pipe_gen.gain6[k], 18, 13, true, &temp );
+    detail::form_word( sl.dig.pipe_TDgen.gain6[k], 18, 13, true, &temp );
     gen_conf2.push_back( static_cast<uint32_t>(temp) );
   }
 
@@ -1336,10 +1401,10 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   int64_t mask32 = (1LL << 32) - 1;
 //  cout << "mask32 = " << mask32 << endl;
   // IG1 Past input values for generators: Accelerating power
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
 //    cout << "******** Gen no " << k+1 << endl;
     temp64 = 0;
-    detail::form_word( sl.dig.pipe_gen.pa0[k], 36, 23, true, &temp64 );
+    detail::form_word( sl.dig.pipe_TDgen.pa0[k], 36, 23, true, &temp64 );
     tempLSB = static_cast<int32_t>( temp64 & mask32 );
     tempMSB = static_cast<int32_t>( (temp64 >> 32) & mask32 );
 //    cout << "tempLSB = " << tempLSB << endl;
@@ -1350,9 +1415,9 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   }
 
   // IG1 Past output values for generators: Omega
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
     temp64 = 0LL;
-    detail::form_word( sl.dig.pipe_gen.omega0[k], 46, 44, true, &temp64 );
+    detail::form_word( sl.dig.pipe_TDgen.omega0[k], 46, 44, true, &temp64 );
     tempLSB = static_cast<int32_t>( temp64 & mask32 );
     tempMSB = static_cast<int32_t>( (temp64 >> 32) & mask32 );
     gen_conf3.push_back( static_cast<uint32_t>(tempLSB) );
@@ -1360,9 +1425,9 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   }
 
   // IG2 Past input values for generators: Omega
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
     temp64 = 0LL;
-    detail::form_word( sl.dig.pipe_gen.omega0[k], 46, 44, true, &temp64 );
+    detail::form_word( sl.dig.pipe_TDgen.omega0[k], 46, 44, true, &temp64 );
     tempLSB = static_cast<int32_t>( temp64 & mask32 );
     tempMSB = static_cast<int32_t>( (temp64 >> 32) & mask32 );
     gen_conf3.push_back( static_cast<uint32_t>(tempLSB) );
@@ -1370,9 +1435,9 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
   }
 
   // IG2 Past output values for generators: Delta
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count_max() ; ++k ){
     temp64 = 0LL;
-    detail::form_word( sl.dig.pipe_gen.delta0[k]*2/M_PI, 54, 52, true, &temp64 );
+    detail::form_word( sl.dig.pipe_TDgen.delta0[k]*2/M_PI, 54, 52, true, &temp64 );
     tempLSB = static_cast<int32_t>( temp64 & mask32 );
     tempMSB = static_cast<int32_t>( (temp64 >> 32) & mask32 );
     gen_conf3.push_back( static_cast<uint32_t>(tempLSB) );
@@ -1402,11 +1467,11 @@ int encoder::detail::encode_TDzloads( Slice const& sl,
   size_t rows, cols;
   sl.ana.size(rows,cols);
   size_t atomCount = rows*cols;
-  vector<pair<int,int> > pos = sl.dig.pipe_zload.position();
+  vector<pair<int,int> > pos = sl.dig.pipe_TDzload.position();
   double real_gain, imag_gain;
   for ( k = 0 ; k != atomCount ; ++k ){
 
-    if ( k < sl.dig.pipe_zload.element_count() ){
+    if ( k < sl.dig.pipe_TDzload.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_gain = sl.ana.got_gain() * am->node_imag_adc_gain_corr();
       real_gain = sl.ana.got_gain() * am->node_real_adc_gain_corr();
@@ -1431,7 +1496,7 @@ int encoder::detail::encode_TDzloads( Slice const& sl,
   int32_t mask12 = (1 << 12) - 1;
   for ( k = 0 ; k != atomCount ; ++k ){
 
-    if ( k < sl.dig.pipe_zload.element_count() ){
+    if ( k < sl.dig.pipe_TDzload.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_offset = sl.ana.got_offset() + am->node_imag_adc_offset_corr();
       real_offset = sl.ana.got_offset() + am->node_real_adc_offset_corr();
@@ -1454,9 +1519,9 @@ int encoder::detail::encode_TDzloads( Slice const& sl,
   // [Q3.13 imag_Y] [Q3.13 real_Y]
   // [  tempMBS   ] [  tempLSB   ]
   // [           temp            ]
-  for ( k = 0 ; k != sl.dig.pipe_zload.element_count() ; ++k ){
-    detail::form_word( sl.dig.pipe_zload.Yconst[k].real(), 16, 13, true, &tempLSB );
-    detail::form_word( sl.dig.pipe_zload.Yconst[k].imag(), 16, 13, true, &tempMSB );
+  for ( k = 0 ; k != sl.dig.pipe_TDzload.element_count() ; ++k ){
+    detail::form_word( sl.dig.pipe_TDzload.Yconst[k].real(), 16, 13, true, &tempLSB );
+    detail::form_word( sl.dig.pipe_TDzload.Yconst[k].imag(), 16, 13, true, &tempMSB );
     temp = (tempMSB << 16) | (tempLSB);
     zloads_conf.push_back( static_cast<uint32_t>(temp) );
 #ifdef VERBOSE_ENC
@@ -1467,8 +1532,8 @@ int encoder::detail::encode_TDzloads( Slice const& sl,
     cout << "temp (MSB+LSB) = " << temp << endl;
 #endif // VERBOSE_ENC
   }
-  for ( k = sl.dig.pipe_zload.element_count();
-        k != sl.dig.pipe_zload.element_count_max() ; ++k )
+  for ( k = sl.dig.pipe_TDzload.element_count();
+        k != sl.dig.pipe_TDzload.element_count_max() ; ++k )
     zloads_conf.push_back( static_cast<uint32_t>(0) );
 
   return 0;
@@ -1494,11 +1559,11 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
   size_t rows, cols;
   sl.ana.size(rows,cols);
   size_t atomCount = rows*cols;
-  vector<pair<int,int> > pos = sl.dig.pipe_iload.position();
+  vector<pair<int,int> > pos = sl.dig.pipe_TDiload.position();
   double real_gain, imag_gain;
   for ( k = 0 ; k != atomCount ; ++k ){
 
-    if ( k < sl.dig.pipe_iload.element_count() ){
+    if ( k < sl.dig.pipe_TDiload.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_gain = sl.ana.got_gain() * am->node_imag_adc_gain_corr();
       real_gain = sl.ana.got_gain() * am->node_real_adc_gain_corr();
@@ -1523,7 +1588,7 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
   int32_t mask12 = (1 << 12) - 1;
   for ( k = 0 ; k != atomCount ; ++k ){
 
-    if ( k < sl.dig.pipe_iload.element_count() ){
+    if ( k < sl.dig.pipe_TDiload.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_offset = sl.ana.got_offset() + am->node_imag_adc_offset_corr();
       real_offset = sl.ana.got_offset() + am->node_real_adc_offset_corr();
@@ -1550,7 +1615,7 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
   // iteration of the emulation. So, ideally this would be good to correspond to
   // the steady state current [pu] in the powersystem. This applies to ANY
   // element, be it an iload, a gen, or whatever
-  iloads_conf.resize( sl.dig.pipe_iload.element_count_max(), 0 );
+  iloads_conf.resize( sl.dig.pipe_TDiload.element_count_max(), 0 );
 
   // Note 1: for xloads the pipe_xload convention is that there is a flow INTO
   // the loads, whereas for the real emulator DAC, the convention is that there
@@ -1564,44 +1629,44 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
   //   (1/X) * V_R = -I_I
 
   // --- Initial currents of the generators ---
-  for ( k = 0 ; k != sl.dig.pipe_gen.element_count() ; ++k ){
-    pseudo_id = static_cast<size_t>(sl.dig.pipe_gen.position()[k].first) *
-                sl.dig.pipe_gen.hor_id_max() +
-                static_cast<size_t>(sl.dig.pipe_gen.position()[k].second);
-    detail::form_word(   sl.dig.pipe_gen.I0[k].real()  , 12, 7, true, &tempLSB );
-    detail::form_word(  -sl.dig.pipe_gen.I0[k].imag()  , 12, 7, true, &tempMSB );
+  for ( k = 0 ; k != sl.dig.pipe_TDgen.element_count() ; ++k ){
+    pseudo_id = static_cast<size_t>(sl.dig.pipe_TDgen.position()[k].first) *
+                sl.dig.pipe_TDgen.hor_id_max() +
+                static_cast<size_t>(sl.dig.pipe_TDgen.position()[k].second);
+    detail::form_word(   sl.dig.pipe_TDgen.I0[k].real()  , 12, 7, true, &tempLSB );
+    detail::form_word(  -sl.dig.pipe_TDgen.I0[k].imag()  , 12, 7, true, &tempMSB );
     temp = (tempMSB << 12) | (tempLSB);
     iloads_conf[pseudo_id] = static_cast<uint32_t>(temp);
   }
 
   // --- Initial currents of the constant current loads (iloads) ---
-  for ( k = 0 ; k != sl.dig.pipe_iload.element_count() ; ++k ){
-    pseudo_id = static_cast<size_t>(sl.dig.pipe_iload.position()[k].first) *
-                sl.dig.pipe_iload.hor_id_max() +
-                static_cast<size_t>(sl.dig.pipe_iload.position()[k].second);
-    detail::form_word(    -sl.dig.pipe_iload.Iconst[k].real()   , 12, 7, true, &tempLSB );
-    detail::form_word(  -(-sl.dig.pipe_iload.Iconst[k].imag())  , 12, 7, true, &tempMSB );
+  for ( k = 0 ; k != sl.dig.pipe_TDiload.element_count() ; ++k ){
+    pseudo_id = static_cast<size_t>(sl.dig.pipe_TDiload.position()[k].first) *
+                sl.dig.pipe_TDiload.hor_id_max() +
+                static_cast<size_t>(sl.dig.pipe_TDiload.position()[k].second);
+    detail::form_word(    -sl.dig.pipe_TDiload.Iconst[k].real()   , 12, 7, true, &tempLSB );
+    detail::form_word(  -(-sl.dig.pipe_TDiload.Iconst[k].imag())  , 12, 7, true, &tempMSB );
     temp = (tempMSB << 12) | (tempLSB);
     iloads_conf[pseudo_id] = static_cast<uint32_t>(temp);
   }
 
   // --- Initial currents of the constant impedance loads (zloads) ---
-  for ( k = 0 ; k != sl.dig.pipe_zload.element_count() ; ++k ){
-    pseudo_id = static_cast<size_t>(sl.dig.pipe_zload.position()[k].first) *
-                sl.dig.pipe_zload.hor_id_max() +
-                static_cast<size_t>(sl.dig.pipe_zload.position()[k].second);
-    detail::form_word(    -sl.dig.pipe_zload.I0[k].real()   , 12, 7, true, &tempLSB );
-    detail::form_word(  -(-sl.dig.pipe_zload.I0[k].imag())  , 12, 7, true, &tempMSB );
+  for ( k = 0 ; k != sl.dig.pipe_TDzload.element_count() ; ++k ){
+    pseudo_id = static_cast<size_t>(sl.dig.pipe_TDzload.position()[k].first) *
+                sl.dig.pipe_TDzload.hor_id_max() +
+                static_cast<size_t>(sl.dig.pipe_TDzload.position()[k].second);
+    detail::form_word(    -sl.dig.pipe_TDzload.I0[k].real()   , 12, 7, true, &tempLSB );
+    detail::form_word(  -(-sl.dig.pipe_TDzload.I0[k].imag())  , 12, 7, true, &tempMSB );
     temp = (tempMSB << 12) | (tempLSB);
     iloads_conf[pseudo_id] = static_cast<uint32_t>(temp);
   }
   // --- Initial currents of the constant power loads (ploads) ---
-  for ( k = 0 ; k != sl.dig.pipe_pload.element_count() ; ++k ){
-    pseudo_id = static_cast<size_t>(sl.dig.pipe_pload.position()[k].first) *
-                sl.dig.pipe_pload.hor_id_max() +
-                static_cast<size_t>(sl.dig.pipe_pload.position()[k].second);
-    detail::form_word(    -sl.dig.pipe_pload.I0[k].real()   , 12, 7, true, &tempLSB );
-    detail::form_word(  -(-sl.dig.pipe_pload.I0[k].imag())  , 12, 7, true, &tempMSB );
+  for ( k = 0 ; k != sl.dig.pipe_TDpload.element_count() ; ++k ){
+    pseudo_id = static_cast<size_t>(sl.dig.pipe_TDpload.position()[k].first) *
+                sl.dig.pipe_TDpload.hor_id_max() +
+                static_cast<size_t>(sl.dig.pipe_TDpload.position()[k].second);
+    detail::form_word(    -sl.dig.pipe_TDpload.I0[k].real()   , 12, 7, true, &tempLSB );
+    detail::form_word(  -(-sl.dig.pipe_TDpload.I0[k].imag())  , 12, 7, true, &tempMSB );
     temp = (tempMSB << 12) | (tempLSB);
     iloads_conf[pseudo_id] = static_cast<uint32_t>(temp);
   }
@@ -1624,9 +1689,9 @@ int encoder::detail::encode_TDploads( Slice const& sl, vector<uint32_t>& ploads_
   // [Q2.14     Q ] [Q2.14     P ]
   // [  tempMBS   ] [  tempLSB   ]
   // [           temp            ]
-  for ( k = 0 ; k != sl.dig.pipe_pload.element_count() ; ++k ){
-    detail::form_word( sl.dig.pipe_pload.Sconst[k].real(), 16, 14, true, &tempLSB );
-    detail::form_word( sl.dig.pipe_pload.Sconst[k].imag(), 16, 14, true, &tempMSB );
+  for ( k = 0 ; k != sl.dig.pipe_TDpload.element_count() ; ++k ){
+    detail::form_word( sl.dig.pipe_TDpload.Sconst[k].real(), 16, 14, true, &tempLSB );
+    detail::form_word( sl.dig.pipe_TDpload.Sconst[k].imag(), 16, 14, true, &tempMSB );
     temp = (tempMSB << 16) | (tempLSB);
     ploads_conf.push_back( static_cast<uint32_t>(temp) );
 #ifdef VERBOSE_ENC
@@ -1637,8 +1702,8 @@ int encoder::detail::encode_TDploads( Slice const& sl, vector<uint32_t>& ploads_
     cout << "temp (MSB+LSB) = " << temp << endl;
 #endif // VERBOSE_ENC
   }
-  for ( k = sl.dig.pipe_pload.element_count();
-        k != sl.dig.pipe_pload.element_count_max() ; ++k )
+  for ( k = sl.dig.pipe_TDpload.element_count();
+        k != sl.dig.pipe_TDpload.element_count_max() ; ++k )
     ploads_conf.push_back( static_cast<uint32_t>(0) );
 
   return 0;
@@ -1654,14 +1719,14 @@ int encoder::detail::encode_TDpositions( Slice const& sl, vector<uint32_t>& pos_
   int32_t mask5bit = (1<<5)-1;  // 0b00000000000000000000000000011111
 
   // ***** generator positions *****
-  for ( k = 0 ; k != 18 ; ++k ){
+  for (k=0; k!=18; ++k){ // for some weird reason 18 positions are needed
 
     // update position for k'th gen (5 bits: [0 unused] 1 - 24 [-31 unused])
     temp5bit = 0;
-    if ( k < sl.dig.pipe_gen.element_count() )
+    if ( k < sl.dig.pipe_TDgen.element_count() )
       temp5bit = static_cast<int32_t>(
-          sl.dig.pipe_gen.position()[k].first * sl.dig.pipe_gen.hor_id_max() +
-          sl.dig.pipe_gen.position()[k].second + 1 );
+          sl.dig.pipe_TDgen.position()[k].first * sl.dig.pipe_TDgen.hor_id_max() +
+          sl.dig.pipe_TDgen.position()[k].second + 1 );
     temp5bit &= mask5bit;
 
 //    cout << "gen no " << k+1 << ": " << temp5bit << endl; // DEBUG
@@ -1677,19 +1742,19 @@ int encoder::detail::encode_TDpositions( Slice const& sl, vector<uint32_t>& pos_
   // ***** gens/loads number *****
   temp = 0;
   // number of generators
-  temp5bit = static_cast<int32_t>( sl.dig.pipe_gen.element_count() );
+  temp5bit = static_cast<int32_t>( sl.dig.pipe_TDgen.element_count() );
   temp5bit &= mask5bit;
   temp |= ( temp5bit << 0*5 );
   // number of const Z loads
-  temp5bit = static_cast<int32_t>( sl.dig.pipe_zload.element_count() );
+  temp5bit = static_cast<int32_t>( sl.dig.pipe_TDzload.element_count() );
   temp5bit &= mask5bit;
   temp |= ( temp5bit << 1*5 );
   // number of const P loads
-  temp5bit = static_cast<int32_t>( sl.dig.pipe_pload.element_count() );
+  temp5bit = static_cast<int32_t>( sl.dig.pipe_TDpload.element_count() );
   temp5bit &= mask5bit;
   temp |= ( temp5bit << 2*5 );
   // number of const I loads
-  temp5bit = static_cast<int32_t>( sl.dig.pipe_iload.element_count() );
+  temp5bit = static_cast<int32_t>( sl.dig.pipe_TDiload.element_count() );
   temp5bit &= mask5bit;
   temp |= ( temp5bit << 3*5 );
 
@@ -1697,14 +1762,14 @@ int encoder::detail::encode_TDpositions( Slice const& sl, vector<uint32_t>& pos_
 
   // ***** const Z load positions *****
   temp = 0;
-  for ( k = 0 ; k != sl.dig.pipe_zload.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDzload.element_count_max() ; ++k ){
 
     // update position for k'th load (5 bits: [0 unused] 1 - 24 [-31 unused])
     temp5bit = 0;
-    if ( k < sl.dig.pipe_zload.element_count() )
+    if ( k < sl.dig.pipe_TDzload.element_count() )
       temp5bit = static_cast<int32_t>(
-          sl.dig.pipe_zload.position()[k].first * sl.dig.pipe_zload.hor_id_max() +
-          sl.dig.pipe_zload.position()[k].second + 1 );
+          sl.dig.pipe_TDzload.position()[k].first * sl.dig.pipe_TDzload.hor_id_max() +
+          sl.dig.pipe_TDzload.position()[k].second + 1 );
     temp5bit &= mask5bit;
 
 //    cout << "cil no " << k+1 << ": " << temp5bit << endl; // DEBUG
@@ -1725,14 +1790,14 @@ int encoder::detail::encode_TDpositions( Slice const& sl, vector<uint32_t>& pos_
 
   // ***** const P load positions *****
   temp = 0;
-  for ( k = 0 ; k != sl.dig.pipe_pload.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDpload.element_count_max() ; ++k ){
 
     // update position for k'th load (5 bits: [0 unused] 1 - 24 [-31 unused])
     temp5bit = 0;
-    if ( k < sl.dig.pipe_pload.element_count() )
+    if ( k < sl.dig.pipe_TDpload.element_count() )
       temp5bit = static_cast<int32_t>(
-          sl.dig.pipe_pload.position()[k].first * sl.dig.pipe_pload.hor_id_max() +
-          sl.dig.pipe_pload.position()[k].second + 1 );
+          sl.dig.pipe_TDpload.position()[k].first * sl.dig.pipe_TDpload.hor_id_max() +
+          sl.dig.pipe_TDpload.position()[k].second + 1 );
     temp5bit &= mask5bit;
 
 //    cout << "cpl no " << k+1 << ": " << temp5bit << endl; // DEBUG
@@ -1753,14 +1818,14 @@ int encoder::detail::encode_TDpositions( Slice const& sl, vector<uint32_t>& pos_
 
   // ***** const I load positions *****
   temp = 0;
-  for ( k = 0 ; k != sl.dig.pipe_iload.element_count_max() ; ++k ){
+  for ( k = 0 ; k != sl.dig.pipe_TDiload.element_count_max() ; ++k ){
 
     // update position for k'th load (5 bits: [0 unused] 1 - 24 [-31 unused])
     temp5bit = 0;
-    if ( k < sl.dig.pipe_iload.element_count() )
+    if ( k < sl.dig.pipe_TDiload.element_count() )
       temp5bit = static_cast<int32_t>(
-          sl.dig.pipe_iload.position()[k].first * sl.dig.pipe_iload.hor_id_max() +
-          sl.dig.pipe_iload.position()[k].second + 1 );
+          sl.dig.pipe_TDiload.position()[k].first * sl.dig.pipe_TDiload.hor_id_max() +
+          sl.dig.pipe_TDiload.position()[k].second + 1 );
     temp5bit &= mask5bit;
 
 //    cout << "ccl no " << k+1 << ": " << temp5bit << endl; // DEBUG

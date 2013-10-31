@@ -15,31 +15,27 @@ using std::vector;
 ConstZLoadPipeline::ConstZLoadPipeline(size_t element_capacity,
                                        size_t ver_dim, size_t hor_dim) :
     Pipeline(element_capacity, ver_dim, hor_dim),
-    Yconst(_element_count_max, 0),
-    I0(_element_count_max, 0) {}
+    Yconst(_elementCountMax, 0),
+    I0(_elementCountMax, 0) {}
 
-int ConstZLoadPipeline::reset(){
+void ConstZLoadPipeline::reset(){
   // Invoke reset of parent class
-  int ans = Pipeline::reset();
-  if ( ans ) return 1;
+  Pipeline::reset();
   // element_count_max, ver_id_max, hor_id_max remain unchanged
-
-  Yconst.resize(_element_count_max, 0);
-  I0.resize(_element_count_max, 0);
-
-  return 0;
+  Yconst.resize(_elementCountMax, 0);
+  I0.resize(_elementCountMax, 0);
 }
 
 int ConstZLoadPipeline::insert_element( size_t ver_pos, size_t hor_pos,
                                         Load const& el, bool overwrite){
 
-  if ( _element_count == _element_count_max )
+  if ( _elementCount == _elementCountMax )
     // pipeline is full!
     return 1;
-  if ( ver_pos >= _ver_id_max )
+  if ( ver_pos >= _verIdMax )
     // Vertical index out of bounds! Invalid insertion!
     return 2;
-  if ( hor_pos >= _hor_id_max )
+  if ( hor_pos >= _horIdMax )
     // Horizontal index out of bounds! Invalid insertion!
     return 3;
 
@@ -63,7 +59,7 @@ int ConstZLoadPipeline::insert_element( size_t ver_pos, size_t hor_pos,
 
   // Find position k for new element
   bool pos_already_taken = false;
-  for ( k = 0 ; k != _element_count ; ++k ){
+  for ( k = 0 ; k != _elementCount ; ++k ){
     old_pseudo_id =
         calculate_pseudo_id( static_cast<size_t>( _position[k].first),
                              static_cast<size_t>(_position[k].second) );
@@ -85,7 +81,7 @@ int ConstZLoadPipeline::insert_element( size_t ver_pos, size_t hor_pos,
 
   if ( !pos_already_taken )
     // Make space for new element
-    for ( m = _element_count ; m != k ; --m ){
+    for ( m = _elementCount ; m != k ; --m ){
       _position[m] = _position[m-1];
       Yconst[m]  = Yconst[m-1];
       I0[m] = I0[m-1];
@@ -101,7 +97,7 @@ int ConstZLoadPipeline::insert_element( size_t ver_pos, size_t hor_pos,
   I0[k] = I;
 
   if ( !pos_already_taken )
-    ++_element_count;
+    ++_elementCount;
 
   return 0;
 }
@@ -121,7 +117,7 @@ int ConstZLoadPipeline::remove_element( size_t ver_pos, size_t hor_pos){
   size_t k = 0;
   bool el_found = false;
 
-  for ( k = 0 ; k != _element_count_max ; ++k ){
+  for ( k = 0 ; k != _elementCountMax ; ++k ){
 
     if ( (!el_found) &&
          (_position[k] == make_pair( (int) ver_pos, (int) hor_pos)) ){
@@ -129,7 +125,7 @@ int ConstZLoadPipeline::remove_element( size_t ver_pos, size_t hor_pos){
       el_found = true;
 
       // decrease element count
-      --_element_count;
+      --_elementCount;
 
       // reset pipeline line to default values
       _position[k] = make_pair(-1,-1);

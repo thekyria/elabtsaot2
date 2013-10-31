@@ -59,7 +59,7 @@ class SliceAnalog{
 
   int nodeCurrentSource(size_t id_ver, size_t id_hor, double seriesR, double shuntR);
   int nodeVoltageSource(size_t id_ver, size_t id_hor, double shuntR);
-  int nodeDisconnect(size_t id_ver, size_t id_hor);
+  void nodeDisconnect(size_t id_ver, size_t id_hor);
   int embrConnect(size_t id_ver, size_t id_hor, size_t pos, double r_near, double r_far);
   int embrDisconnect(size_t id_ver, size_t id_hor, size_t pos);
 

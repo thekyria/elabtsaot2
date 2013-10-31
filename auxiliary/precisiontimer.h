@@ -29,33 +29,18 @@ namespace elabtsaot{
   \author thekyria
 */
 class PrecisionTimer {
-
  public:
-
-  //! Constructor
-  PrecisionTimer() {
-    QueryPerformanceFrequency(&lFreq);
-  }
-
-  //! Starts the counter
-  inline void Start() {
-    QueryPerformanceCounter(&lStart);
-  }
-
+  PrecisionTimer() { QueryPerformanceFrequency(&lFreq); }
+  inline void Start() { QueryPerformanceCounter(&lStart); }
   //! Stops the counter and returns the result in seconds
-  /*!
-    \return seconds elapsed from last PrecisionTimer::Start() to this stop
-  */
+  /*! \return seconds elapsed from last PrecisionTimer::Start() to this stop */
   inline double Stop() {
     LARGE_INTEGER lEnd;
     QueryPerformanceCounter(&lEnd);
     return (double(lEnd.QuadPart - lStart.QuadPart) / lFreq.QuadPart);
   }
-
  private:
-
   LARGE_INTEGER lFreq, lStart;
-
 };
 
 } // end of namespace elabtsaot

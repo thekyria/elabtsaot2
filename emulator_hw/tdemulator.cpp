@@ -31,8 +31,8 @@ using std::complex;
 #include <bitset>
 using std::bitset;
 
-#define DBL_EPSILON 0.0000001
-#define DOUBLE_EQ(x,v) (((v - DBL_EPSILON) < x) && (x <( v + DBL_EPSILON)))
+#define DBL_E 0.0000001
+#define DOUBLE_EQ(x,v) (((v - DBL_E) < x) && (x <( v + DBL_E)))
 
 static const double INT_TSTEP_VALUES[] = { 0.000061035,
                                            0.000122070,
@@ -803,7 +803,7 @@ int TDEmulator::do_simulate( Scenario const& sce, TDResults& res ){
   PrecisionTimer timer; // counts in seconds
   timer.Start();
   // --------------- Map & fit & encode pws & end calib. mode ---------------
-  int ans = _emu->preconditionEmulator();
+  int ans = _emu->preconditionEmulator(EMU_OPTYPE_TD);
   if ( ans ) return ans;
   // _emu->encoding has been initialized to a size: [slicecount]x[560]
   cout << "TDEmulator::do_simulate(): ";
@@ -1051,10 +1051,10 @@ int TDEmulator::do_simulate( Scenario const& sce, TDResults& res ){
       numberOfRuns = _NIOSStartCodes[k].size();
     if ( _NIOSStartCodes[k].size() == 0 ){
       Slice* sl = &_emu->emuhw()->sliceSet[k];
-      if (    sl->dig.pipe_gen.element_count()   == 0   // if all sl pipelines are
-           && sl->dig.pipe_zload.element_count() == 0   // empty then start code is
-           && sl->dig.pipe_iload.element_count() == 0   // 6666 == slice in HiZ
-           && sl->dig.pipe_pload.element_count() == 0 )
+      if (    sl->dig.pipe_TDgen.element_count()   == 0   // if all sl pipelines are
+           && sl->dig.pipe_TDzload.element_count() == 0   // empty then start code is
+           && sl->dig.pipe_TDiload.element_count() == 0   // 6666 == slice in HiZ
+           && sl->dig.pipe_TDpload.element_count() == 0 )
         _NIOSStartCodes[k].push_back( 6666 );
       else                                          // if sl is not empty then
         _NIOSStartCodes[k].push_back( NEUTRAL_STARTCODE ); // put a placeholder
@@ -1272,7 +1272,7 @@ int TDEmulator::do_checkStability( vector<Scenario> const& scenarios,
   PrecisionTimer timer; // counts in seconds
   timer.Start();
   // --------------- Map & fit & encode pws & end calib. mode ---------------
-  int ans = _emu->preconditionEmulator();
+  int ans = _emu->preconditionEmulator(EMU_OPTYPE_TD);
   if (ans) return ans;
   // _emu->encoding has been initialized to a size: [slicecount]x[560]
   cout << "TDEmulator::do_checkStability(): ";
@@ -1347,10 +1347,10 @@ int TDEmulator::do_checkStability( vector<Scenario> const& scenarios,
   for (size_t k = 0 ; k != _emu->getHwSliceCount() ; ++k ){
     // Determine start code for slice k
     Slice* sl = &_emu->emuhw()->sliceSet[k];
-    if (    sl->dig.pipe_gen.element_count()   == 0   // if all sl pipelines are
-         && sl->dig.pipe_zload.element_count() == 0   // empty then start code is
-         && sl->dig.pipe_iload.element_count() == 0   // 6666 == slice in HiZ
-         && sl->dig.pipe_pload.element_count() == 0 ){
+    if (    sl->dig.pipe_TDgen.element_count()   == 0   // if all sl pipelines are
+         && sl->dig.pipe_TDzload.element_count() == 0   // empty then start code is
+         && sl->dig.pipe_TDiload.element_count() == 0   // 6666 == slice in HiZ
+         && sl->dig.pipe_TDpload.element_count() == 0 ){
       encoding556[0] = 6666;
       stopCodes[k] = -1; // for a hi-Z slice, do not expect any stopCode
     } else {
@@ -1409,12 +1409,12 @@ int TDEmulator::do_checkStability( vector<Scenario> const& scenarios,
 //           << " sceId=" << sceId
 //           << " tempGenStab=" << tempGenStab.to_string() << endl;
       for ( size_t genPipeId = 0 ;
-            genPipeId != sl->dig.pipe_gen.element_count() ;
+            genPipeId != sl->dig.pipe_TDgen.element_count() ;
             ++genPipeId ){
 
         // So for each one of the gens in the pipeline retrieve its mapping
         // position
-        pair<int,int> genPipePos = sl->dig.pipe_gen.position().at( genPipeId );
+        pair<int,int> genPipePos = sl->dig.pipe_TDgen.position().at( genPipeId );
         MappingPosition genMapPos( 2*sliceId,
                                    2*genPipePos.first,
                                    2*genPipePos.second );
@@ -1484,7 +1484,7 @@ int TDEmulator::do_checkCCT( vector<Scenario> const& scenarios,
   PrecisionTimer timer; // counts in seconds
   timer.Start();
   // --------------- Map & fit & encode pws & end calib. mode ---------------
-  int ans = _emu->preconditionEmulator();
+  int ans = _emu->preconditionEmulator(EMU_OPTYPE_TD);
   if (ans) return ans;
   // _emu->encoding has been initialized to a size: [slicecount]x[560]
   cout << "TDEmulator::do_checkCCT(): ";
@@ -1566,10 +1566,10 @@ int TDEmulator::do_checkCCT( vector<Scenario> const& scenarios,
   vector<bool> activeSlices(_emu->getHwSliceCount());
   for ( size_t k = 0 ; k != _emu->getHwSliceCount() ; ++k ){
     Slice* sl = &_emu->emuhw()->sliceSet[k];
-    if (    sl->dig.pipe_gen.element_count()   == 0   // if all sl pipelines are
-         && sl->dig.pipe_zload.element_count() == 0   // empty then start code is
-         && sl->dig.pipe_iload.element_count() == 0   // 6666 == slice in HiZ
-         && sl->dig.pipe_pload.element_count() == 0 ){
+    if (    sl->dig.pipe_TDgen.element_count()   == 0   // if all sl pipelines are
+         && sl->dig.pipe_TDzload.element_count() == 0   // empty then start code is
+         && sl->dig.pipe_TDiload.element_count() == 0   // 6666 == slice in HiZ
+         && sl->dig.pipe_TDpload.element_count() == 0 ){
       activeSlices[k] = false;
     } else {
       activeSlices[k] = true;
@@ -1804,10 +1804,10 @@ void TDEmulator::_encodeTimeOptions(){
     // all pipelines of any slice
     for ( size_t k = 0 ; k != _emu->getHwSliceCount() ; ++k ){
       Slice* sl = &_emu->emuhw()->sliceSet[k];
-      int genMetric = 107 + sl->dig.pipe_gen.element_count();
+      int genMetric = 107 + sl->dig.pipe_TDgen.element_count();
       if ( genMetric > maxMetric )
         maxMetric = genMetric;
-      int iloadMetric = 76 + sl->dig.pipe_zload.element_count();
+      int iloadMetric = 76 + sl->dig.pipe_TDzload.element_count();
       if ( iloadMetric > maxMetric )
         maxMetric = iloadMetric;
     }
@@ -1818,10 +1818,10 @@ void TDEmulator::_encodeTimeOptions(){
     uint32_t mask15 = (1 << 15) - 1;
     uint32_t temp = static_cast<uint32_t>( (NIOSSampleRate & mask15) << 15 );
     Slice* sl = &_emu->emuhw()->sliceSet[k];
-    if (    sl->dig.pipe_gen.element_count()   != 0   // if the slice pipelines are
-         || sl->dig.pipe_zload.element_count() != 0   // empty then the LSB of
-         || sl->dig.pipe_iload.element_count() != 0   // _emu->encoding[k][381] is left 0
-         || sl->dig.pipe_pload.element_count() != 0 )
+    if (    sl->dig.pipe_TDgen.element_count()   != 0   // if the slice pipelines are
+         || sl->dig.pipe_TDzload.element_count() != 0   // empty then the LSB of
+         || sl->dig.pipe_TDiload.element_count() != 0   // _emu->encoding[k][381] is left 0
+         || sl->dig.pipe_TDpload.element_count() != 0 )
       temp |= maxMetric;
     encoder::stamp_NIOS_confirm( temp );
     _emu->encoding[k][381] = temp;
@@ -2043,7 +2043,7 @@ int TDEmulator::_encodeScenarioBase( Scenario const& sce_,
       return 12;
 
     // Refitting proper
-    ans = _emu->embr_set(tab, row, col, embr_pos, *pBr, _emu->ratioZ(), embr_loc);
+    ans = _emu->embrSet(tab, row, col, embr_pos, *pBr, embr_loc);
     if ( ans )
       cout << "Fitting br " << el_extId << " failed with code: " << ans << endl;
     refittingPerformed = true;
@@ -2114,7 +2114,7 @@ int TDEmulator::_encodeScenarioBase( Scenario const& sce_,
       isOnLeftExtension = true;
 
     // Refitting proper
-    ans = _emu->embr_set(tab, row, col, embr_pos, *pBr, _emu->ratioZ(), embr_loc);
+    ans = _emu->embrSet(tab, row, col, embr_pos, *pBr, embr_loc);
     if( ans )
       cout << "Fitting br " << el_extId << " failed with code: " << ans << endl;
     refittingPerformed = true;
@@ -2394,7 +2394,7 @@ int TDEmulator::_encodeScenario( Scenario sce ){
 //       << "}" << endl;
   // ---- DEBUG ----
   if ( refittingPerformed ){
-    ans = _emu->encodePowersystem();
+    ans = _emu->encodePowersystem(EMU_OPTYPE_TD);
     if ( ans ) return 3;
   }
   size_t intTimeStepOption = _getIntTStepOption();
@@ -2421,7 +2421,7 @@ int TDEmulator::_encodeScenario( Scenario sce ){
     // *** SPIES ***
     Slice const* sl = &_emu->emuhw()->sliceSet[k];
     // Directive to spy all elements in the gen pipeline of the slice
-    uint32_t spyDirective = ((1 << sl->dig.pipe_gen.element_count()) - 1) << 1;
+    uint32_t spyDirective = ((1 << sl->dig.pipe_TDgen.element_count()) - 1) << 1;
     // For spy0 attached to gen angles
     _emu->encoding[k][331] = spyDirective;
     _emu->encoding[k][332] = startIt;
@@ -2512,7 +2512,7 @@ int TDEmulator::_encodeScenarioCCT( Scenario sce,
 //       << " refit:"<<refittingPerformed
 //       << "}" << endl;
   if ( refittingPerformed ){
-    ans = _emu->encodePowersystem();
+    ans = _emu->encodePowersystem(EMU_OPTYPE_TD);
     if ( ans ) return 3;
   }
 
@@ -3195,10 +3195,10 @@ int TDEmulator::_getStartCode( TDResultIdentifier const& tdri,
 
     // Determine pipelineId accordingly
     if ( pGen->M < GEN_MECHSTARTTIME_THRESHOLD ){
-      pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_gen;
+      pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_TDgen;
       isInGenPipeline = true;
     } else { // ( pGen->M() >= GEN_MECHSTARTTIME_THRESHOLD )
-      pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_iload;
+      pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_TDiload;
       isInGenPipeline = false;
     }
     pipelineId = pipe->search_element(row,col);
@@ -3258,10 +3258,10 @@ int TDEmulator::_getStartCode( TDResultIdentifier const& tdri,
     // Determine pipelineId accordingly
     switch ( pLoad->type() ){
     case LOADTYPE_CONSTZ:
-      pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_zload;
+      pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_TDzload;
       break;
     case LOADTYPE_CONSTI:
-      pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_iload;
+      pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_TDiload;
       break;
     case LOADTYPE_CONSTP:
     default:
@@ -3409,10 +3409,10 @@ int TDEmulator::_getSpyCode( TDResultIdentifier const& tdri,
     bool isInGenPipeline;
     Pipeline const* pipe;
     if ( pGen->M < GEN_MECHSTARTTIME_THRESHOLD ){
-      pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_gen;
+      pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_TDgen;
       isInGenPipeline = true;
     } else { // ( pGen->M() >= GEN_MECHSTARTTIME_THRESHOLD )
-      pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_iload;
+      pipe = &_emu->emuhw()->sliceSet[tab].dig.pipe_TDiload;
       isInGenPipeline = false;
     }
     int pipelineId = pipe->search_element(row,col);

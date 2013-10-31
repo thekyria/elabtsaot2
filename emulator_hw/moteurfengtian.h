@@ -17,9 +17,7 @@ class MoteurFengtian : public SSEngine {
 
 private:
 
-  int do_solvePowerFlow(Powersystem const& pws,
-                        ublas::matrix<complex,ublas::column_major>& Y,
-                        ublas::vector<complex>& V) const;
+  int do_solvePowerFlow(Powersystem const& pws, ublas::vector<complex>& V) const;
   void _getOptions( double& beta1,
                     double& beta2,
                     double& Ptolerance,

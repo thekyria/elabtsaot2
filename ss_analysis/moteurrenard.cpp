@@ -2,6 +2,7 @@
 #include "moteurrenard.h"
 using namespace elabtsaot;
 
+#include "ssutils.h"
 #include "logger.h"
 
 #include <boost/numeric/ublas/lu.hpp> // for matrix operations
@@ -54,9 +55,7 @@ MoteurRenard::MoteurRenard(Logger* log):
   _properties[tempPt] = tempPt.defaultValue;
 }
 
-int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
-                                    matrix<complex,column_major>& Y,
-                                    vector<complex>& V) const{
+int MoteurRenard::do_solvePowerFlow(Powersystem const& pws, vector<complex>& V) const{
 
   boost::timer::auto_cpu_timer t; // when t goes out of scope it prints timing info
 
@@ -81,7 +80,8 @@ int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
 //  cout << "init" << endl;
 
   // Build admittance matrix Y
-  ssengine::buildY(pws, Y);
+  matrix<complex,column_major> Y;
+  ssutils::buildY(pws, Y);
 //  cout << "Y: " << Y << endl;
 
   // initialize voltage and power vectors
@@ -115,7 +115,7 @@ int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
 
   // Evaluate F(x0)
   vector<complex> Smis(N);
-  ssengine::calculatePower(Y,V,Smis); // temporarily Smis holds actual power at current V
+  ssutils::calculatePower(Y,V,Smis); // temporarily Smis holds actual power at current V
 //  cout << "Scur: " << Smis << endl;
   Smis -= Sset; // now it holds the power mismatch
 //  cout << "Smis: " << Smis << endl;
@@ -139,7 +139,7 @@ int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
 
     // Evaluate Jacobian
     matrix<complex,column_major> dSdVm(N,N), dSdVa(N,N);
-    ssengine::calculateDSdV(Y,V,dSdVm,dSdVa);
+    ssutils::calculateDSdV(Y,V,dSdVm,dSdVa);
 //    cout << "dSdVm: " << dSdVm << endl;
 //    cout << "dSdVa: " << dSdVa << endl;
     matrix<double,column_major> J11(Npv+Npq,Npv+Npq), J12(Npv+Npq,Npq), J21(Npq,Npv+Npq), J22(Npq,Npq);
@@ -216,7 +216,7 @@ int MoteurRenard::do_solvePowerFlow(Powersystem const& pws,
     delete pm;
 
     // Evaluate F
-    ssengine::calculatePower(Y,V,Smis); // temporarily Smis holds actual power at current V
+    ssutils::calculatePower(Y,V,Smis); // temporarily Smis holds actual power at current V
     Smis -= Sset; // now it holds the power mismatch
 //    cout << "Smis: " << Smis << endl;
     for (size_t k=0; k!=Npv; ++k)

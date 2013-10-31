@@ -9,7 +9,7 @@ using namespace elabtsaot;
 #include "scenario.h"
 #include "tdresults.h"
 #include "tdresultsidentifier.h"
-#include "ssengine.h"
+#include "ssutils.h"
 
 #include <QProgressBar>
 
@@ -458,7 +458,7 @@ _calculateAugmentedYMatrix( vector<complex> const& Ubus,
                             vector<complex> const& Ubus0,
                             ublas::matrix<complex,ublas::column_major>& augY ){
 
-  ssengine::buildY(_pwsLocal, augY);
+  ssutils::buildY(_pwsLocal, augY);
   size_t busCount = augY.size1();
 
   // Load power

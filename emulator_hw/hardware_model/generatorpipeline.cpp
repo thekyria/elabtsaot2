@@ -17,18 +17,18 @@ using std::vector;
 GeneratorPipeline::GeneratorPipeline(size_t element_capacity,
                                      size_t ver_dim, size_t hor_dim) :
     Pipeline(element_capacity, ver_dim, hor_dim),
-    xd1inverse(_element_count_max, 0),
-    I0(_element_count_max, 0),
-    pMechanical(_element_count_max, 0),
-    gain1(_element_count_max, 0),
-    gain2(_element_count_max, 0),
-    gain3(_element_count_max, 0),
-    gain4(_element_count_max, 1),
-    gain5(_element_count_max, -1),
-    gain6(_element_count_max, 0.5),
-    pa0(_element_count_max, 0),
-    omega0(_element_count_max, 0),
-    delta0(_element_count_max, 0) {
+    xd1inverse(_elementCountMax, 0),
+    I0(_elementCountMax, 0),
+    pMechanical(_elementCountMax, 0),
+    gain1(_elementCountMax, 0),
+    gain2(_elementCountMax, 0),
+    gain3(_elementCountMax, 0),
+    gain4(_elementCountMax, 1),
+    gain5(_elementCountMax, -1),
+    gain6(_elementCountMax, 0.5),
+    pa0(_elementCountMax, 0),
+    omega0(_elementCountMax, 0),
+    delta0(_elementCountMax, 0) {
 
   // Initialize stages
   _stages.push_back("pa");
@@ -36,40 +36,37 @@ GeneratorPipeline::GeneratorPipeline(size_t element_capacity,
   _stages.push_back("delta");
 }
 
-int GeneratorPipeline::reset(){
+void GeneratorPipeline::reset(){
 
   // Invoke reset of parent class
-  int ans = Pipeline::reset();
-  if ( ans ) return 1;
+  Pipeline::reset();
   // element_count_max, ver_id_max, hor_id_max remain unchanged
 
-  xd1inverse.resize(_element_count_max, 0);
-  I0.resize(_element_count_max, 0);
-  pMechanical.resize(_element_count_max, 0);
-  gain1.resize(_element_count_max, 0);
-  gain2.resize(_element_count_max, 0);
-  gain3.resize(_element_count_max, 0);
-  gain4.resize(_element_count_max, 1);
-  gain5.resize(_element_count_max, -1);
-  gain6.resize(_element_count_max, 0.5);
-  pa0.resize(_element_count_max, 0);
-  omega0.resize(_element_count_max, 0);
-  delta0.resize(_element_count_max, 0);
-
-  return 0;
+  xd1inverse.resize(_elementCountMax, 0);
+  I0.resize(_elementCountMax, 0);
+  pMechanical.resize(_elementCountMax, 0);
+  gain1.resize(_elementCountMax, 0);
+  gain2.resize(_elementCountMax, 0);
+  gain3.resize(_elementCountMax, 0);
+  gain4.resize(_elementCountMax, 1);
+  gain5.resize(_elementCountMax, -1);
+  gain6.resize(_elementCountMax, 0.5);
+  pa0.resize(_elementCountMax, 0);
+  omega0.resize(_elementCountMax, 0);
+  delta0.resize(_elementCountMax, 0);
 }
 
 // High level functions
 int GeneratorPipeline::insert_element(size_t ver_pos, size_t hor_pos,
                                       Generator const& el, bool overwrite){
 
-  if ( _element_count == _element_count_max )
+  if ( _elementCount == _elementCountMax )
     // pipeline is full!
     return 1;
-  if ( ver_pos >= _ver_id_max )
+  if ( ver_pos >= _verIdMax )
     // Vertical index out of bounds! Invalid insertion!
     return 2;
-  if ( hor_pos >= _hor_id_max )
+  if ( hor_pos >= _horIdMax )
     // Horizontal index out of bounds! Invalid insertion!
     return 3;
 
@@ -93,7 +90,7 @@ int GeneratorPipeline::insert_element(size_t ver_pos, size_t hor_pos,
 
   // Find position k for new element
   bool pos_already_taken = false;
-  for ( k = 0 ; k != _element_count ; ++k ){
+  for ( k = 0 ; k != _elementCount ; ++k ){
     old_pseudo_id =
         calculate_pseudo_id( static_cast<size_t>( _position[k].first),
                              static_cast<size_t>(_position[k].second) );
@@ -115,7 +112,7 @@ int GeneratorPipeline::insert_element(size_t ver_pos, size_t hor_pos,
 
   if ( !pos_already_taken )
     // Make space for new element
-    for ( m = _element_count ; m != k ; --m ){
+    for ( m = _elementCount ; m != k ; --m ){
       _position[m] = _position[m-1];
       xd1inverse[m] = xd1inverse[m-1];
       I0[m] = I0[m-1];
@@ -164,7 +161,7 @@ int GeneratorPipeline::insert_element(size_t ver_pos, size_t hor_pos,
   delta0[k] = el.deltass();         // steady state delta [rad]
 
   if ( !pos_already_taken )
-    ++_element_count;
+    ++_elementCount;
 
   return 0;
 }
@@ -185,7 +182,7 @@ int GeneratorPipeline::remove_element(size_t ver_pos, size_t hor_pos){
   size_t k = 0;
   bool gen_found = false;
 
-  for ( k = 0 ; k != _element_count_max ; ++k ){
+  for ( k = 0 ; k != _elementCountMax ; ++k ){
 
     if ( (!gen_found) &&
          (_position[k] == make_pair( (int) ver_pos, (int) hor_pos)) ){
@@ -193,7 +190,7 @@ int GeneratorPipeline::remove_element(size_t ver_pos, size_t hor_pos){
       gen_found = true;
 
       // decrease element count
-      --_element_count;
+      --_elementCount;
 
       // reset pipeline line to default values
       _position[k] = make_pair(-1,-1);

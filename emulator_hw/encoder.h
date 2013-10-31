@@ -53,19 +53,6 @@ namespace encoder{
 int encodeSlicePF(const Slice &sl, std::vector<uint32_t>& sliceConf);
 //! Performs the encoding of one of the slices of the emulator hardware into a
 //! bitstream suitable for TD emulation
-/*!
-  Serially calls all encoding functions for the given slice and then merges
-  their output in _conf (private variable that stores the resulting output
-  configuration stream).
-
-  \param sl emulator hardware slice to be encoded
-
-  \return integer exit code; 0 when successful
-
-  \sa _encode_auxiliary(), _encode_generators(), _encode_zloads(),
-      _encode_ploads(), _encode_spies(), _encode_positions(),
-      _encode_iloads(), _encode_resistors(), _encode_switches()
-*/
 int encodeSliceTD( Slice const& sl, std::vector<uint32_t>& sliceConf );
 
 //! Stamps (bitwise OR) an unsigned 32 bit integer word with the confirm stamp
@@ -82,11 +69,11 @@ int encode_resistors( Slice const& sl, std::vector<uint32_t>& res_conf, std::vec
 int encode_switches( Slice const& sl, std::vector<uint32_t>& switches_conf );
 
 // PF specific encoding functions
-int encode_ggot( Slice const& sl, std::vector<uint32_t>& ggot_conf );
+int encode_PFgot( Slice const& sl, std::vector<uint32_t>& got_conf );
 int encode_PFpositions( Slice const& sl, std::vector<uint32_t>& pos_conf, std::vector<uint32_t>& slpos_conf );
 int encode_PFauxiliary( std::vector<uint32_t>& conf_conf, std::vector<uint32_t>& starter_conf );
-int encode_iinit( Slice const& sl, std::vector<uint32_t>& icar_conf, std::vector<uint32_t>& ipol_conf );
-int encode_PQsetpoints( Slice const& sl, std::vector<uint32_t>& pqset_conf );
+void encode_PFIinit( Slice const& sl, std::vector<uint32_t>& icar_conf, std::vector<uint32_t>& ipol_conf );
+void encode_PQsetpoints( Slice const& sl, std::vector<uint32_t>& pqset_conf );
 
 // TD specific encoding functions
 int encode_TDgenerators( Slice const& sl,

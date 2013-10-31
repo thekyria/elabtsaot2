@@ -42,7 +42,8 @@ class AuxiliaryEditor : public QSplitter{
   void rawReadFromDeviceSlot();
   void rawWriteToDeviceSlot();
 
-  void encodePowersystemSlot();
+  void encodePowersystemPFSlot();
+  void encodePowersystemTDSlot();
   void writeEncodingSlot();
   void logPowersystemEncodingSlot();
   void logGotEncodingSlot();
@@ -53,7 +54,8 @@ class AuxiliaryEditor : public QSplitter{
   void resetEmulationSlot();
   void validateSliceAssignementSlot();
   void validateMappingSlot();
-  void validateFittingSlot();
+  void validateFittingPFSlot();
+  void validateFittingTDSlot();
   void getEmulatorHwStateSlot();
   void getEmulatorHwCalStateSlot();
 

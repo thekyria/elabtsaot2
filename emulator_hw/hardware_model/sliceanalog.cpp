@@ -250,7 +250,7 @@ int SliceAnalog::nodeVoltageSource(size_t id_ver, size_t id_hor, double shuntR){
   return ans;
 }
 
-int SliceAnalog::nodeDisconnect(size_t id_ver, size_t id_hor){
+void SliceAnalog::nodeDisconnect(size_t id_ver, size_t id_hor){
   // Open all switches
   _atomSet[id_ver][id_hor].set_node_real_sw_current(false);
   _atomSet[id_ver][id_hor].set_node_imag_sw_current(false);
@@ -266,8 +266,6 @@ int SliceAnalog::nodeDisconnect(size_t id_ver, size_t id_hor){
   _atomSet[id_ver][id_hor].set_node_imag_pot_resistance_sw(false);
   _atomSet[id_ver][id_hor].set_node_real_pot_current_sw(false);
   _atomSet[id_ver][id_hor].set_node_imag_pot_current_sw(false);
-
-  return 0;
 }
 
 int SliceAnalog::embrConnect(size_t id_ver, size_t id_hor, size_t pos,

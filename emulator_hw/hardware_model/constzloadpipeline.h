@@ -48,7 +48,7 @@ class ConstZLoadPipeline : public Pipeline {
                      instantiated for */
   ConstZLoadPipeline(size_t element_capacity, size_t ver_dim, size_t hor_dim);
   virtual ~ConstZLoadPipeline(){}
-  int reset();          //!< Resets the pipeline
+  void reset();          //!< Resets the pipeline
 
   //! An element is inserted at the pipeline
   int insert_element(size_t ver_pos, size_t hor_pos, Load const& el, bool overwrite);

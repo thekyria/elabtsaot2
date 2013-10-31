@@ -11,7 +11,7 @@ VERSION = $${VER_MAJ}.$${VER_MIN}.$${VER_PAT}
 
 
 #----------------- Resources -----------------
-# Platform dependend application icon resource
+# Platform dependent application icon resource
 win32:RC_FILE = \
   $$ELABTSAOT2_ROOT/resources/elab-tsaot2.rc
 RESOURCES += \
@@ -92,6 +92,7 @@ SOURCES += \
   $$ELABTSAOT2_ROOT/importer_exporter/scenariosetxmlhandler.cpp \
   \
   $$ELABTSAOT2_ROOT/ss_analysis/ssengine.cpp \
+  $$ELABTSAOT2_ROOT/ss_analysis/ssutils.cpp \
   $$ELABTSAOT2_ROOT/ss_analysis/moteurrenard.cpp \
   $$ELABTSAOT2_ROOT/ss_analysis/moteurlapack.cpp \
   \
@@ -209,6 +210,7 @@ HEADERS += \
   $$ELABTSAOT2_ROOT/importer_exporter/scenariosetxmlhandler.h \
   \
   $$ELABTSAOT2_ROOT/ss_analysis/ssengine.h \
+  $$ELABTSAOT2_ROOT/ss_analysis/ssutils.h \
   $$ELABTSAOT2_ROOT/ss_analysis/moteurrenard.h \
   $$ELABTSAOT2_ROOT/ss_analysis/moteurlapack.h \
   \

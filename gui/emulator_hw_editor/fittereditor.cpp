@@ -53,19 +53,29 @@ FitterEditor::FitterEditor( Emulator* emu, QWidget* parent ) :
   connect( resetFittingAct, SIGNAL(triggered()),
            this, SLOT(resetFittingSlot()) );
 
-  // Auto fitting act
-  QAction* autoFittingAct = new QAction( QIcon(":/images/execute.png"),
-                                         "Auto fitting", fitToolbar );
-  fitToolbar->addAction(autoFittingAct);
-  connect( autoFittingAct, SIGNAL(triggered()),
-           this, SLOT(autoFittingSlot()) );
+  // Auto fitting (PF) act
+  QAction* autoFittingPFAct = new QAction( QIcon(":/images/execute.png"),
+                                         "Auto fitting (PF)", fitToolbar );
+  fitToolbar->addAction(autoFittingPFAct);
+  connect(autoFittingPFAct, SIGNAL(triggered()), this, SLOT(autoFittingPFSlot()));
 
-  // Validate fitting act
-  QAction* validateFittingAct = new QAction( QIcon(":/images/validate.png"),
-                                               "Validate fitting", fitToolbar );
-  fitToolbar->addAction(validateFittingAct);
-  connect( validateFittingAct, SIGNAL(triggered()),
-           this, SLOT(validateFittingSlot()) );
+  // Auto fitting (TD) act
+  QAction* autoFittingTDAct = new QAction( QIcon(":/images/execute.png"),
+                                         "Auto fitting (TD)", fitToolbar );
+  fitToolbar->addAction(autoFittingTDAct);
+  connect(autoFittingTDAct, SIGNAL(triggered()), this, SLOT(autoFittingTDSlot()));
+
+  // Validate fitting (PF) act
+  QAction* validateFittingPFAct = new QAction( QIcon(":/images/validate.png"),
+                                               "Validate fitting (PF)", fitToolbar );
+  fitToolbar->addAction(validateFittingPFAct);
+  connect(validateFittingPFAct, SIGNAL(triggered()), this, SLOT(validateFittingPFSlot()));
+
+  // Validate fitting (TD) act
+  QAction* validateFittingTDAct = new QAction( QIcon(":/images/validate.png"),
+                                               "Validate fitting (TD)", fitToolbar );
+  fitToolbar->addAction(validateFittingTDAct);
+  connect( validateFittingTDAct, SIGNAL(triggered()), this, SLOT(validateFittingTDSlot()) );
 
   fitToolbar->addSeparator(); // -- Separator
 
@@ -116,34 +126,44 @@ void FitterEditor::resetFittingSlot(){
   return;
 }
 
-void FitterEditor::autoFittingSlot(){
-
+void FitterEditor::autoFittingPFSlot(){
   vector<string> outputMsg;
-  int ans = _emu->autoFitting(&outputMsg);
+  int ans = _emu->autoFitting(EMU_OPTYPE_PF, &outputMsg);
   if ( ans ){
-    cout << "Auto-fitting failed with code " << ans << endl;
+    cout << "Auto-fitting (PF) failed with code " << ans << endl;
   } else {
-    cout << "Auto-fitting succeeded!" << endl;
+    cout << "Auto-fitting (PF) succeeded!" << endl;
     fee->updt();
   }
-  cout << "Auto-fitting warning messages: " << endl;
-  for ( size_t k = 0 ; k != outputMsg.size() ; ++k ){
+  cout << "Auto-fitting (PF) warning messages: " << endl;
+  for (size_t k=0; k!=outputMsg.size(); ++k)
     cout << outputMsg[k] << endl;
-  }
-
-  return;
 }
 
-void FitterEditor::validateFittingSlot(){
-
-  int ans = _emu->validateFitting();
+void FitterEditor::autoFittingTDSlot(){
+  vector<string> outputMsg;
+  int ans = _emu->autoFitting(EMU_OPTYPE_TD, &outputMsg);
   if ( ans ){
-    cout << "Validate fitting failed with code " << ans << endl;
+    cout << "Auto-fitting (TD) failed with code " << ans << endl;
   } else {
-    cout << "Validate fitting succeeded!" << endl;
+    cout << "Auto-fitting (TD) succeeded!" << endl;
+    fee->updt();
   }
+  cout << "Auto-fitting (TD) warning messages: " << endl;
+  for (size_t k=0; k!=outputMsg.size(); ++k)
+    cout << outputMsg[k] << endl;
+}
 
-  return;
+void FitterEditor::validateFittingPFSlot(){
+  int ans = _emu->validateFitting(EMU_OPTYPE_PF);
+  if (ans) cout << "Validate fitting (PF) failed with code " << ans << endl;
+  else cout << "Validate fitting (PF) succeeded!" << endl;
+}
+
+void FitterEditor::validateFittingTDSlot(){
+  int ans = _emu->validateFitting(EMU_OPTYPE_TD);
+  if (ans) cout << "Validate fitting (TD) failed with code " << ans << endl;
+  else cout << "Validate fitting (TD) succeeded!" << endl;
 }
 
 void FitterEditor::fittingPositionClickedSlot( int emulator_tab,

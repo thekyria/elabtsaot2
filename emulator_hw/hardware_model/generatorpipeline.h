@@ -48,7 +48,7 @@ class GeneratorPipeline : public Pipeline{
   virtual ~GeneratorPipeline(){}
 
   void display() const; //!< Outputs the member values to std::cout
-  int reset();          //!< Resets the pipeline
+  void reset();          //!< Resets the pipeline
 
   //! An element is inserted at the pipeline
   int insert_element(size_t ver_pos, size_t hor_pos, Generator const& el, bool overwrite);

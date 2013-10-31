@@ -4,6 +4,7 @@ using namespace elabtsaot;
 
 #include "powersystem.h"
 #include "ssengine.h"
+#include "ssutils.h"
 #include "tabularpowersystemeditor.h"
 #include "guiauxiliary.h"
 #include "importerexporter.h"
@@ -66,7 +67,7 @@ void PowerFlowEditor::resetPowersystemState(){
 
 void PowerFlowEditor::calculateYSlot() const{
   ublas::matrix<complex,ublas::column_major> Y;
-  ssengine::buildY(*_pws,Y);
+  ssutils::buildY(*_pws,Y);
   cout << "Y: " << Y << endl;
 }
 

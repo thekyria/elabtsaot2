@@ -81,19 +81,19 @@ void FitterSliceTab::updt(){
 
   // ----------------- Update pipelines -----------------
   // Generators pipeline
-  vector< pair<int,int> > pos = _slc->dig.pipe_gen.position();
-  vector<double> xd = _slc->dig.pipe_gen.xd1inverse;
-  vector< complex<double> > I0 = _slc->dig.pipe_gen.I0;
-  vector<double> pMech = _slc->dig.pipe_gen.pMechanical;
-  vector<double> g1 = _slc->dig.pipe_gen.gain1;
-  vector<double> g2 = _slc->dig.pipe_gen.gain2;
-  vector<double> g3 = _slc->dig.pipe_gen.gain3;
-  vector<double> g4 = _slc->dig.pipe_gen.gain4;
-  vector<double> g5 = _slc->dig.pipe_gen.gain5;
-  vector<double> g6 = _slc->dig.pipe_gen.gain6;
-  vector<double> pa0 = _slc->dig.pipe_gen.pa0;
-  vector<double> w0 = _slc->dig.pipe_gen.omega0;
-  vector<double> d0 = _slc->dig.pipe_gen.delta0;
+  vector< pair<int,int> > pos = _slc->dig.pipe_TDgen.position();
+  vector<double> xd = _slc->dig.pipe_TDgen.xd1inverse;
+  vector< complex<double> > I0 = _slc->dig.pipe_TDgen.I0;
+  vector<double> pMech = _slc->dig.pipe_TDgen.pMechanical;
+  vector<double> g1 = _slc->dig.pipe_TDgen.gain1;
+  vector<double> g2 = _slc->dig.pipe_TDgen.gain2;
+  vector<double> g3 = _slc->dig.pipe_TDgen.gain3;
+  vector<double> g4 = _slc->dig.pipe_TDgen.gain4;
+  vector<double> g5 = _slc->dig.pipe_TDgen.gain5;
+  vector<double> g6 = _slc->dig.pipe_TDgen.gain6;
+  vector<double> pa0 = _slc->dig.pipe_TDgen.pa0;
+  vector<double> w0 = _slc->dig.pipe_TDgen.omega0;
+  vector<double> d0 = _slc->dig.pipe_TDgen.delta0;
   for( size_t i = 0; i != pos.size(); ++i ){
     genPipeTable->setItem( i,0, new QTableWidgetItem( QString("%0").arg(pos[i].first) ) );
     genPipeTable->setItem( i,1, new QTableWidgetItem( QString("%0").arg(pos[i].second) ) );
@@ -113,9 +113,9 @@ void FitterSliceTab::updt(){
   }
 
   // Constant Z load pipeline
-  pos = _slc->dig.pipe_zload.position();
-  vector<complex<double> > Yconst = _slc->dig.pipe_zload.Yconst;
-  I0 = _slc->dig.pipe_zload.I0;
+  pos = _slc->dig.pipe_TDzload.position();
+  vector<complex<double> > Yconst = _slc->dig.pipe_TDzload.Yconst;
+  I0 = _slc->dig.pipe_TDzload.I0;
   for( size_t i = 0; i != pos.size(); ++i ){
     zloadPipeTable->setItem( i,0, new QTableWidgetItem( QString("%0").arg(pos[i].first) ) );
     zloadPipeTable->setItem( i,1, new QTableWidgetItem( QString("%0").arg(pos[i].second) ) );
@@ -126,8 +126,8 @@ void FitterSliceTab::updt(){
   }
 
   // Constant I load pipeline
-  pos = _slc->dig.pipe_iload.position();
-  vector<complex<double> > Iconst = _slc->dig.pipe_iload.Iconst;
+  pos = _slc->dig.pipe_TDiload.position();
+  vector<complex<double> > Iconst = _slc->dig.pipe_TDiload.Iconst;
   for( size_t i = 0 ; i != pos.size(); ++i ){
     iloadPipeTable->setItem( i,0, new QTableWidgetItem( QString("%0").arg(pos[i].first) ) );
     iloadPipeTable->setItem( i,1, new QTableWidgetItem( QString("%0").arg(pos[i].second) ) );
@@ -136,9 +136,9 @@ void FitterSliceTab::updt(){
   }
 
   // Constant P load pipeline
-  pos = _slc->dig.pipe_pload.position();
-  vector<complex<double> > Sconst = _slc->dig.pipe_pload.Sconst;
-  I0 = _slc->dig.pipe_zload.I0;
+  pos = _slc->dig.pipe_TDpload.position();
+  vector<complex<double> > Sconst = _slc->dig.pipe_TDpload.Sconst;
+  I0 = _slc->dig.pipe_TDzload.I0;
   for( size_t i = 0 ; i != pos.size(); ++i ){
     ploadPipeTable->setItem( i,0, new QTableWidgetItem( QString("%0").arg(pos[i].first) ) );
     ploadPipeTable->setItem( i,1, new QTableWidgetItem( QString("%0").arg(pos[i].second) ) );
@@ -183,66 +183,66 @@ void FitterSliceTab::genPipeSlot(int row, int col){
   // The first two rows (the position of the gen) are not editable
   switch ( col ){
   case 0:
-    genPipeTable->item( row,0 )->setText( QString("%0").arg(_slc->dig.pipe_gen.position().at(row).first) );
+    genPipeTable->item( row,0 )->setText( QString("%0").arg(_slc->dig.pipe_TDgen.position().at(row).first) );
     break;
 
   case 1:
-    genPipeTable->item( row,1 )->setText( QString("%0").arg(_slc->dig.pipe_gen.position().at(row).second) );
+    genPipeTable->item( row,1 )->setText( QString("%0").arg(_slc->dig.pipe_TDgen.position().at(row).second) );
     break;
 
   // The rest of the columns are editable; so, write changes to the model
   case 2:
-    _slc->dig.pipe_gen.xd1inverse[row] = genPipeTable->item(row,2)->text().toDouble();
+    _slc->dig.pipe_TDgen.xd1inverse[row] = genPipeTable->item(row,2)->text().toDouble();
     break;
 
   case 3:
-    _slc->dig.pipe_gen.I0[row] = complex<double>( genPipeTable->item(row,3)->text().toDouble(),
-                                                  _slc->dig.pipe_gen.I0[row].imag() );
+    _slc->dig.pipe_TDgen.I0[row] = complex<double>( genPipeTable->item(row,3)->text().toDouble(),
+                                                  _slc->dig.pipe_TDgen.I0[row].imag() );
     break;
 
   case 4:
-    _slc->dig.pipe_gen.I0[row] = complex<double>( _slc->dig.pipe_gen.I0[row].real(),
+    _slc->dig.pipe_TDgen.I0[row] = complex<double>( _slc->dig.pipe_TDgen.I0[row].real(),
                                                   genPipeTable->item(row,4)->text().toDouble() );
     break;
 
   case 5:
-    _slc->dig.pipe_gen.pMechanical[row] =  genPipeTable->item(row,5)->text().toDouble();
+    _slc->dig.pipe_TDgen.pMechanical[row] =  genPipeTable->item(row,5)->text().toDouble();
     break;
 
   case 6:
-    _slc->dig.pipe_gen.gain1[row] = genPipeTable->item(row,6)->text().toDouble();
+    _slc->dig.pipe_TDgen.gain1[row] = genPipeTable->item(row,6)->text().toDouble();
     break;
 
   case 7:
-    _slc->dig.pipe_gen.gain2[row] = genPipeTable->item(row,7)->text().toDouble();
+    _slc->dig.pipe_TDgen.gain2[row] = genPipeTable->item(row,7)->text().toDouble();
     break;
 
   case 8:
-    _slc->dig.pipe_gen.gain3[row] = genPipeTable->item(row,8)->text().toDouble();
+    _slc->dig.pipe_TDgen.gain3[row] = genPipeTable->item(row,8)->text().toDouble();
     break;
 
   case 9:
-    _slc->dig.pipe_gen.gain4[row] = genPipeTable->item(row,9)->text().toDouble();
+    _slc->dig.pipe_TDgen.gain4[row] = genPipeTable->item(row,9)->text().toDouble();
     break;
 
   case 10:
-    _slc->dig.pipe_gen.gain5[row] = genPipeTable->item(row,10)->text().toDouble();
+    _slc->dig.pipe_TDgen.gain5[row] = genPipeTable->item(row,10)->text().toDouble();
     break;
 
   case 11:
-    _slc->dig.pipe_gen.gain6[row] = genPipeTable->item(row,11)->text().toDouble();
+    _slc->dig.pipe_TDgen.gain6[row] = genPipeTable->item(row,11)->text().toDouble();
     break;
 
   case 12:
-    _slc->dig.pipe_gen.pa0[row] = genPipeTable->item(row,12)->text().toDouble();
+    _slc->dig.pipe_TDgen.pa0[row] = genPipeTable->item(row,12)->text().toDouble();
     break;
 
   case 13:
-    _slc->dig.pipe_gen.omega0[row] = genPipeTable->item(row,13)->text().toDouble();
+    _slc->dig.pipe_TDgen.omega0[row] = genPipeTable->item(row,13)->text().toDouble();
     break;
 
   case 14:
-    _slc->dig.pipe_gen.delta0[row] = genPipeTable->item(row,14)->text().toDouble();
+    _slc->dig.pipe_TDgen.delta0[row] = genPipeTable->item(row,14)->text().toDouble();
     break;
 
   default:
@@ -258,31 +258,31 @@ void FitterSliceTab::zloadPipeSlot(int row, int col){
   // The first two rows (the position of the load) are not editable
   switch (col){
   case 0:
-    zloadPipeTable->item(row,0)->setText( QString("%0").arg(_slc->dig.pipe_zload.position().at(row).first) );
+    zloadPipeTable->item(row,0)->setText( QString("%0").arg(_slc->dig.pipe_TDzload.position().at(row).first) );
     break;
 
   case 1:
-    zloadPipeTable->item(row,1)->setText( QString("%0").arg(_slc->dig.pipe_zload.position().at(row).second) );
+    zloadPipeTable->item(row,1)->setText( QString("%0").arg(_slc->dig.pipe_TDzload.position().at(row).second) );
     break;
 
   // The rest of the columns are editable; so, write changes to the model
   case 2:
-    _slc->dig.pipe_zload.Yconst[row] = complex<double>( zloadPipeTable->item(row,2)->text().toDouble(),
-                                                        _slc->dig.pipe_zload.Yconst[row].imag() );
+    _slc->dig.pipe_TDzload.Yconst[row] = complex<double>( zloadPipeTable->item(row,2)->text().toDouble(),
+                                                        _slc->dig.pipe_TDzload.Yconst[row].imag() );
     break;
 
   case 3:
-    _slc->dig.pipe_zload.Yconst[row] = complex<double>( _slc->dig.pipe_zload.Yconst[row].real(),
+    _slc->dig.pipe_TDzload.Yconst[row] = complex<double>( _slc->dig.pipe_TDzload.Yconst[row].real(),
                                                         zloadPipeTable->item(row,3)->text().toDouble() );
     break;
 
   case 4:
-    _slc->dig.pipe_zload.I0[row] = complex<double>( zloadPipeTable->item(row,4)->text().toDouble(),
-                                                    _slc->dig.pipe_zload.I0[row].imag() );
+    _slc->dig.pipe_TDzload.I0[row] = complex<double>( zloadPipeTable->item(row,4)->text().toDouble(),
+                                                    _slc->dig.pipe_TDzload.I0[row].imag() );
     break;
 
   case 5:
-    _slc->dig.pipe_zload.I0[row] = complex<double>( _slc->dig.pipe_zload.I0[row].real(),
+    _slc->dig.pipe_TDzload.I0[row] = complex<double>( _slc->dig.pipe_TDzload.I0[row].real(),
                                                     zloadPipeTable->item(row,5)->text().toDouble() );
     break;
 
@@ -299,21 +299,21 @@ void FitterSliceTab::iloadPipeSlot(int row, int col){
   // The first two rows (the position of the load) are not editable
   switch (col){
   case 0:
-    iloadPipeTable->item(row,0)->setText( QString("%0").arg(_slc->dig.pipe_iload.position().at(row).first) );
+    iloadPipeTable->item(row,0)->setText( QString("%0").arg(_slc->dig.pipe_TDiload.position().at(row).first) );
     break;
 
   case 1:
-    iloadPipeTable->item(row,1)->setText( QString("%0").arg(_slc->dig.pipe_iload.position().at(row).second) );
+    iloadPipeTable->item(row,1)->setText( QString("%0").arg(_slc->dig.pipe_TDiload.position().at(row).second) );
     break;
 
   // The rest of the columns are editable; so, write changes to the model
   case 2:
-    _slc->dig.pipe_iload.Iconst[row] = complex<double>( iloadPipeTable->item(row,2)->text().toDouble(),
-                                                        _slc->dig.pipe_iload.Iconst[row].imag() );
+    _slc->dig.pipe_TDiload.Iconst[row] = complex<double>( iloadPipeTable->item(row,2)->text().toDouble(),
+                                                        _slc->dig.pipe_TDiload.Iconst[row].imag() );
     break;
 
   case 3:
-    _slc->dig.pipe_iload.Iconst[row] = complex<double>( _slc->dig.pipe_iload.Iconst[row].real(),
+    _slc->dig.pipe_TDiload.Iconst[row] = complex<double>( _slc->dig.pipe_TDiload.Iconst[row].real(),
                                                         iloadPipeTable->item(row,3)->text().toDouble() );
     break;
 
@@ -330,31 +330,31 @@ void FitterSliceTab::ploadPipeSlot(int row, int col){
   // The first two rows (the position of the load) are not editable
   switch (col){
   case 0:
-    ploadPipeTable->item(row,0)->setText( QString("%0").arg(_slc->dig.pipe_pload.position().at(row).first) );
+    ploadPipeTable->item(row,0)->setText( QString("%0").arg(_slc->dig.pipe_TDpload.position().at(row).first) );
     break;
 
   case 1:
-    ploadPipeTable->item(row,1)->setText( QString("%0").arg(_slc->dig.pipe_pload.position().at(row).second) );
+    ploadPipeTable->item(row,1)->setText( QString("%0").arg(_slc->dig.pipe_TDpload.position().at(row).second) );
     break;
 
   // The rest of the columns are editable; so, write changes to the model
   case 2:
-    _slc->dig.pipe_pload.Sconst[row] = complex<double>( ploadPipeTable->item(row,2)->text().toDouble(),
-                                                        _slc->dig.pipe_pload.Sconst[row].real() );
+    _slc->dig.pipe_TDpload.Sconst[row] = complex<double>( ploadPipeTable->item(row,2)->text().toDouble(),
+                                                        _slc->dig.pipe_TDpload.Sconst[row].real() );
     break;
 
   case 3:
-    _slc->dig.pipe_pload.Sconst[row] = complex<double>( _slc->dig.pipe_pload.Sconst[row].imag(),
+    _slc->dig.pipe_TDpload.Sconst[row] = complex<double>( _slc->dig.pipe_TDpload.Sconst[row].imag(),
                                                         ploadPipeTable->item(row,3)->text().toDouble() );
     break;
 
   case 4:
-    _slc->dig.pipe_pload.I0[row] = complex<double>( ploadPipeTable->item(row,4)->text().toDouble(),
-                                                    _slc->dig.pipe_pload.I0[row].imag() );
+    _slc->dig.pipe_TDpload.I0[row] = complex<double>( ploadPipeTable->item(row,4)->text().toDouble(),
+                                                    _slc->dig.pipe_TDpload.I0[row].imag() );
     break;
 
   case 5:
-    _slc->dig.pipe_pload.I0[row] = complex<double>( _slc->dig.pipe_pload.I0[row].real(),
+    _slc->dig.pipe_TDpload.I0[row] = complex<double>( _slc->dig.pipe_TDpload.I0[row].real(),
                                                     ploadPipeTable->item(row,5)->text().toDouble() );
 
   default:
@@ -450,7 +450,7 @@ void FitterSliceTab::_init_pipeBox(){
   pipeBoxLay->addWidget( pipeTabWidget );
 
   // Generator pipeline
-  genPipeTable = new QTableWidget( _slc->dig.pipe_gen.element_count_max(), 15 );
+  genPipeTable = new QTableWidget( _slc->dig.pipe_TDgen.element_count_max(), 15 );
   pipeTabWidget->addTab( genPipeTable, "Generators" );
   QStringList genPipeLabels = QStringList();
   genPipeLabels.push_back("X Pos");
@@ -473,7 +473,7 @@ void FitterSliceTab::_init_pipeBox(){
   genPipeTable->resizeRowsToContents();
 
   // Constant Z load pipeline
-  zloadPipeTable = new QTableWidget(_slc->dig.pipe_zload.element_count_max(), 6);
+  zloadPipeTable = new QTableWidget(_slc->dig.pipe_TDzload.element_count_max(), 6);
   pipeTabWidget->addTab( zloadPipeTable, "Const. Z loads" );
   QStringList zloadPipeLabels = QStringList();
   zloadPipeLabels.push_back("X Pos");
@@ -487,7 +487,7 @@ void FitterSliceTab::_init_pipeBox(){
   zloadPipeTable->resizeRowsToContents();
 
   // Constant I load pipeline
-  iloadPipeTable = new QTableWidget(_slc->dig.pipe_iload.element_count_max(), 4);
+  iloadPipeTable = new QTableWidget(_slc->dig.pipe_TDiload.element_count_max(), 4);
   pipeTabWidget->addTab( iloadPipeTable, "Const. I loads" );
   QStringList iloadPipeLabels = QStringList();
   iloadPipeLabels.push_back("X Pos");
@@ -499,7 +499,7 @@ void FitterSliceTab::_init_pipeBox(){
   iloadPipeTable->resizeRowsToContents();
 
   // Constant P load pipeline
-  ploadPipeTable = new QTableWidget(_slc->dig.pipe_iload.element_count_max(), 6);
+  ploadPipeTable = new QTableWidget(_slc->dig.pipe_TDiload.element_count_max(), 6);
   pipeTabWidget->addTab( ploadPipeTable, "Const. P loads" );
   QStringList ploadPipeLabels = QStringList();
   ploadPipeLabels.push_back("X Pos");
