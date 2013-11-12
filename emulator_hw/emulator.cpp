@@ -896,7 +896,7 @@ int Emulator::writeEncoding(bool verify, bool force){
       return 1;
 
     // Write bitstream to board
-    ans = _usb->write( devId,  1 , encoding[k] );
+    ans = _usb->write(devId, 1, encoding[k]);
     if ( ans ) return 2;
     cout << "Emulator::_writeEncoding(): ";
     cout << "write dev" << devId << " " << timer.Stop() << " s" << endl;

@@ -22,7 +22,8 @@ private:
                     double& beta2,
                     double& Ptolerance,
                     double& Qtolerance,
-                    size_t& maxIterCount ) const;
+                    size_t& maxIterCount,
+                    int& method ) const;
 
   // ---------- Variables ----------
   Emulator* _emu;

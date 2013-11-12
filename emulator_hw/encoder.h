@@ -71,7 +71,9 @@ int encode_switches( Slice const& sl, std::vector<uint32_t>& switches_conf );
 // PF specific encoding functions
 int encode_PFgot( Slice const& sl, std::vector<uint32_t>& got_conf );
 int encode_PFpositions( Slice const& sl, std::vector<uint32_t>& pos_conf, std::vector<uint32_t>& slpos_conf );
-int encode_PFauxiliary( std::vector<uint32_t>& conf_conf, std::vector<uint32_t>& starter_conf );
+void encode_PFauxiliary( std::vector<uint32_t>& conf_conf,
+                         std::vector<uint32_t>& starter_conf,
+                         std::vector<uint32_t>& nios_conf );
 void encode_PFIinit( Slice const& sl, std::vector<uint32_t>& icar_conf, std::vector<uint32_t>& ipol_conf );
 void encode_PQsetpoints( Slice const& sl, std::vector<uint32_t>& pqset_conf );
 

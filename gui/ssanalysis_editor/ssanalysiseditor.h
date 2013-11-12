@@ -30,12 +30,12 @@ class SSAnalysisEditor : public QSplitter {
 
  public:
 
-  SSAnalysisEditor( Powersystem*& pws,
-                    SSEngine*& sse,
-                    MoteurRenard* sse_mrn,
-                    MoteurLapack* sse_mlp,
-                    MoteurFengtian* sse_fen,
-                    QWidget* parent = 0 );
+  SSAnalysisEditor(Powersystem*& pws,
+                   SSEngine*& sse,
+                   MoteurRenard* sse_mrn,
+                   MoteurLapack* sse_mlp,
+                   MoteurFengtian* sse_fen,
+                   QWidget* parent=0);
   ~SSAnalysisEditor(){}
 
  public slots:

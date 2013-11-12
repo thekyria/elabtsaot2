@@ -39,7 +39,7 @@ int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
   //---------------|---------|-------------------------------------------------
   // got_conf      |   0: 47 |   1: 48 [ 48] detail::encode_got
   //  none         |  48:338 |  49:339 [291]  none
-  // pos_conf      | 339:354 | 340:343 [  4] detail::encode_PFpositions
+  // pos_conf      | 339:342 | 340:343 [  4] detail::encode_PFpositions
   //  none         | 343:350 | 344:351 [  8]  none
   // slpos_conf    |     351 |     352 [  1] detail::encode_PFpositions
   //  none         | 352:353 | 353:354 [  2]  none
@@ -54,7 +54,9 @@ int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
   // conf_conf     |     554 |     555 [  1] detail::encode_PFauxiliary
   // pqset_conf    | 555:578 | 556:579 [ 24] detail::encode_PQsetpoints
   // ipol_conf     | 579:602 | 580:603 [ 24] detail::encode_iinit
-  //  none         | 603:608 | 604:609 [  6]  none
+  //  none         | 603:606 | 604:607 [  4]  none
+  // nios_conf     |     607 |     608 [  1] detail::encode_PFauxiliary
+  //  none         |     608 |     609 [  1]  none
 
   vector<uint32_t> got_conf;
   vector<uint32_t> none;
@@ -69,12 +71,11 @@ int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
   vector<uint32_t> switches_conf;
   vector<uint32_t> pqset_conf;
   vector<uint32_t> ipol_conf;
-  vector<uint32_t> beta_conf;
-  vector<uint32_t> opt2_conf;
+  vector<uint32_t> nios_conf;
 
   ans |= detail::encode_PFgot(sl, got_conf);
   ans |= detail::encode_PFpositions(sl, pos_conf, slpos_conf);
-  ans |= detail::encode_PFauxiliary(conf_conf, starter_conf);
+  detail::encode_PFauxiliary(conf_conf, starter_conf, nios_conf);
   ans |= detail::encode_vref(sl, vref_conf);
   detail::encode_PFIinit(sl, icar_conf, ipol_conf);
   ans |= detail::encode_resistors(sl, res_conf, res_tcon_conf );
@@ -83,14 +84,11 @@ int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
   if (ans) return ans;
 
   sliceConf.insert(sliceConf.end(), got_conf.begin(), got_conf.end() );
-  none.resize(291,0);
-  sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  none.resize(291,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
   sliceConf.insert(sliceConf.end(), pos_conf.begin(), pos_conf.end() );
-  none.resize(8,0);
-  sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  none.resize(8,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
   sliceConf.insert(sliceConf.end(), slpos_conf.begin(), slpos_conf.end() );
-  none.resize(2,0);
-  sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  none.resize(2,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
   sliceConf.insert(sliceConf.end(), conf_conf.begin(), conf_conf.end() );
   sliceConf.insert(sliceConf.end(), vref_conf.begin(), vref_conf.end() );
   sliceConf.insert(sliceConf.end(), icar_conf.begin(), icar_conf.end() );
@@ -98,14 +96,15 @@ int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
   sliceConf.insert(sliceConf.end(), res_conf.begin(), res_conf.end() );
   sliceConf.insert(sliceConf.end(), res_tcon_conf.begin(), res_tcon_conf.end() );
   sliceConf.insert(sliceConf.end(), switches_conf.begin(), switches_conf.end() );
-  none.resize(3,0);
-  sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  none.resize(3,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  sliceConf.insert(sliceConf.end(), conf_conf.begin(), conf_conf.end() );
   sliceConf.insert(sliceConf.end(), pqset_conf.begin(), pqset_conf.end() );
   sliceConf.insert(sliceConf.end(), ipol_conf.begin(), ipol_conf.end() );
-  none.resize(6,0);
-  sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  none.resize(4,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  sliceConf.insert(sliceConf.end(), nios_conf.begin(), nios_conf.end() );
+  none.resize(1,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
 
-  return 777;
+  return 0;
 }
 
 int encoder::encodeSliceTD(Slice const& sl , vector<uint32_t>& sliceConf ){
@@ -637,10 +636,10 @@ int encoder::detail::encode_resistors( Slice const& sl,
   // Fill in resistor values (8-bit)
 
   am = sl.ana.getAtom(0,1);
-    atom_res_values[atom_count][0]  = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_D);
-    atom_res_values[atom_count][1]  = (uint8_t) am->embr_real_pot_far_tap(EMBRPOS_D);
-    atom_res_values[atom_count][2]  = (uint8_t) am->embr_imag_pot_near_tap(EMBRPOS_D);
-    atom_res_values[atom_count][3]  = (uint8_t) am->embr_imag_pot_far_tap(EMBRPOS_D);
+  atom_res_values[atom_count][0]  = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_D);
+  atom_res_values[atom_count][1]  = (uint8_t) am->embr_real_pot_far_tap(EMBRPOS_D);
+  atom_res_values[atom_count][2]  = (uint8_t) am->embr_imag_pot_near_tap(EMBRPOS_D);
+  atom_res_values[atom_count][3]  = (uint8_t) am->embr_imag_pot_far_tap(EMBRPOS_D);
 
   am = sl.ana.getAtom(0,2);
   atom_res_values[atom_count][4]  = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_D);
@@ -1156,20 +1155,22 @@ int encoder::detail::encode_PFpositions( Slice const& sl,
   return 0;
 }
 
-int encoder::detail::encode_PFauxiliary( vector<uint32_t>& conf_conf,
-                                         vector<uint32_t>& starter_conf ){
+void encoder::detail::encode_PFauxiliary( vector<uint32_t>& conf_conf,
+                                          vector<uint32_t>& starter_conf,
+                                          vector<uint32_t>& nios_conf ){
   conf_conf.clear();
-  starter_conf.clear();
-
   uint32_t temp = 0U;
   stamp_NIOS_confirm(temp);
   conf_conf.push_back(temp);
 
+  starter_conf.clear();
   temp = 1050U;
   stamp_NIOS_confirm(temp);
   starter_conf.push_back(temp);
 
-  return 0;
+  nios_conf.clear();
+  temp = 1U;
+  nios_conf.push_back(temp);
 }
 
 void encoder::detail::encode_PFIinit( Slice const& sl,
@@ -1210,18 +1211,26 @@ void encoder::detail::encode_PFIinit( Slice const& sl,
     icar_conf[nodeId] = static_cast<uint32_t>(temp);
 
     // Polar ///////////////////////////////////////////////////////////////////
-    detail::form_word(std::abs(I0) , 16, 10, true, &tempLSB);
+    detail::form_word(std::abs(I0) , 16, 11, true, &tempLSB);
     detail::form_word(std::arg(I0) , 16, 10, true, &tempMSB);
     temp = (tempMSB<<16)|(tempLSB);
     ipol_conf[k] = static_cast<uint32_t>(temp);
   }
 
   // Include the slack in the cartesian configuration
+  // Comment: both real and imag currents for the slack are negated because
+  // on the emulator the slack is implemented in a "load" pipeline, that has a
+  // different convention for the directions of the currents:
+  // (copy-pasted comment from encodeTDiloads)
+  // Note 1: for xloads the pipe_xload convention is that there is a flow INTO
+  // the loads, whereas for the real emulator DAC, the convention is that there
+  // is a flow OUT OF the DAC (into the grid). Therefore, currents of loads have
+  // to be negated.
   I0 = sl.dig.pipe_PFslack.I0[0];
   pair<int,int> posSl =  sl.dig.pipe_PFslack.position()[0];
   nodeId = pipePQ.calculate_pseudo_id(posSl.first,posSl.second);
-  detail::form_word( I0.real() , 12, 7, true, &tempLSB );
-  detail::form_word(-I0.imag() , 12, 7, true, &tempMSB );
+  detail::form_word(  -I0.real() , 12, 7, true, &tempLSB );
+  detail::form_word(-(-I0.imag()) , 12, 7, true, &tempMSB );
   temp = (tempMSB<<12)|(tempLSB);
   icar_conf[nodeId] = static_cast<uint32_t>(temp);
 
@@ -1246,8 +1255,8 @@ void encoder::detail::encode_PQsetpoints(Slice const& sl, vector<uint32_t>& pqse
   PQPipeline const& pipePQ(sl.dig.pipe_PFPQ);
   for (size_t k=0; k!=pipePQ.element_count(); ++k){
     S = pipePQ.Sset[k];
-    detail::form_word(S.real(), 16, 10, true, &tempLSB);
-    detail::form_word(S.imag(), 16, 10, true, &tempMSB);
+    detail::form_word(S.real(), 16, 11, true, &tempLSB);
+    detail::form_word(S.imag(), 16, 11, true, &tempMSB);
     temp = (tempMSB<<16)|(tempLSB);
     pqset_conf[k] = static_cast<uint32_t>(temp);
   }
