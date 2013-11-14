@@ -95,12 +95,9 @@ class TDEmulator : public TDEngine {
                    unsigned int& spyCode ) const;
 
   // Waiting functions
-  int _waitForStopCodes( std::vector<int> const& stopCodes,
-                         double timeout );
-  int _waitForResults( std::vector<uint32_t> const& runCodes,
-                       double timeout );
-  int _waitForSpy( size_t sliceId, uint32_t spyCode,
-                   double timeout );
+  int _waitForStopCodes( std::vector<int> const& stopCodes, double timeout );
+  int _waitForResults( std::vector<uint32_t> const& runCodes, double timeout );
+  int _waitForSpy( size_t sliceId, uint32_t spyCode, double timeout );
 
   // Parsing functions
   void _parseGenAngles( std::vector<uint32_t> const& resultsRead,

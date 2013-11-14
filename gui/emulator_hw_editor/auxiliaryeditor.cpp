@@ -350,7 +350,7 @@ void AuxiliaryEditor::rawWriteToDeviceSlot(){
 }
 
 void AuxiliaryEditor::encodePowersystemPFSlot(){
-  int ans = _emu->encodePowersystem(EMU_OPTYPE_PF);
+  int ans = _emu->encodePowersystem(EMU_OPTYPE_GPF);
   if ( ans ) cout << "Encode (PF) powersyetem failed with code " << ans << endl;
   else cout << "Encode powersyetem was successful!" << endl;
   return;
@@ -462,7 +462,7 @@ void AuxiliaryEditor::validateMappingSlot(){
 }
 
 void AuxiliaryEditor::validateFittingPFSlot(){
-  int ans = _emu->validateFitting(EMU_OPTYPE_PF);
+  int ans = _emu->validateFitting(EMU_OPTYPE_GPF);
   if ( ans ) cout << "Validate fitting (PF) failed with code " << ans << endl;
   else cout << "Validate fitting was successful!" << endl;
 }

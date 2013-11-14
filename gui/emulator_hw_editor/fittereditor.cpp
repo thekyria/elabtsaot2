@@ -128,7 +128,7 @@ void FitterEditor::resetFittingSlot(){
 
 void FitterEditor::autoFittingPFSlot(){
   vector<string> outputMsg;
-  int ans = _emu->autoFitting(EMU_OPTYPE_PF, &outputMsg);
+  int ans = _emu->autoFitting(EMU_OPTYPE_GPF, &outputMsg);
   if ( ans ){
     cout << "Auto-fitting (PF) failed with code " << ans << endl;
   } else {
@@ -155,7 +155,7 @@ void FitterEditor::autoFittingTDSlot(){
 }
 
 void FitterEditor::validateFittingPFSlot(){
-  int ans = _emu->validateFitting(EMU_OPTYPE_PF);
+  int ans = _emu->validateFitting(EMU_OPTYPE_GPF);
   if (ans) cout << "Validate fitting (PF) failed with code " << ans << endl;
   else cout << "Validate fitting (PF) succeeded!" << endl;
 }

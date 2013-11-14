@@ -2,19 +2,18 @@
 #include "moteurfengtian.h"
 using namespace elabtsaot;
 
-using namespace boost::numeric::ublas;
+//using namespace ublas;
 
 #include "emulator.h"
 #include "encoder.h"
+#include "precisiontimer.h"
 
 #include <boost/timer/timer.hpp>
 
 #include <iostream>
 using std::cout;
 using std::endl;
-//#include <string>
-using std::string;
-#include <ctime> // for time(), ctime()
+using std::vector;
 
 enum MoteurFengtianProperties{
   MFT_PROPERTY_BETA1,
@@ -26,7 +25,7 @@ enum MoteurFengtianProperties{
 };
 
 enum MoteurFengtianMethod{
-  MFT_METHOD_GUILLAUME = 0,
+  MFT_METHOD_GPF = 0, // Guillaume Power Flow
   MFT_METHOD_DC = 1
 };
 
@@ -82,7 +81,20 @@ MoteurFengtian::MoteurFengtian(Emulator* emu, Logger* log) :
   _properties[tempPt] = tempPt.defaultValue;
 }
 
-int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, vector<complex>& V) const{
+#define GPF_ADDR_START 605
+#define GPF_ADDR_STOP 606
+#define GPF_ADDR_ITERCOUNT 610
+#define GPF_ADDR_RESULTS 612
+
+#define GPF_WRCODE_START 1111
+#define GPF_WRCODE_RESET 2222
+#define GPF_WRCODE_HIZ   6666
+
+#define GPF_RDCODE_CONVERGED 9999
+#define GPF_RDCODE_NOTCONVERGED 6666
+#define GPF_RDCODE_ISRESET 3333
+
+int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<complex>& V) const{
 
   boost::timer::auto_cpu_timer t; // when t goes out of scope it prints timing info
 
@@ -99,7 +111,8 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, vector<complex>& V
      beta2       :
      Ptolerance  :
      Qtolerance  :
-     maxIterCount:  */
+     maxIterCount:
+     method      : */
   double beta1;
   double beta2;
   double Ptolerance;
@@ -110,41 +123,127 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, vector<complex>& V
 
   bool converged(false);
 
-  // Map & fit & encode pws & end calib. mode
-  int ans = _emu->preconditionEmulator(EMU_OPTYPE_PF);
-  if ( ans ) return ans;
+  switch (method){
+  /*****************************************************************************
+   * GUILLAUME (LANZ) POWER FLOW METHOD
+   ****************************************************************************/
+  case MFT_METHOD_GPF:{
+    // Map & fit & encode pws & end calib. mode
+    int ans = _emu->preconditionEmulator(EMU_OPTYPE_GPF);
+    if (ans) return ans;
 
-  // Finalize encoding
-  // beta
-  int32_t tempMSB, tempLSB;
-  encoder::detail::form_word(beta2, 11, 10, false, &tempMSB);
-  encoder::detail::form_word(beta1, 11, 10, false, &tempLSB);
-  int32_t tempBeta = (tempMSB<<16) | (tempLSB);
-  // tolerance
-  encoder::detail::form_word(Qtolerance, 16, 11, false, &tempMSB);
-  encoder::detail::form_word(Ptolerance, 16, 11, false, &tempLSB);
-  int32_t tempTol = (tempMSB<<16) | (tempLSB);
-  // max iteration
-  int32_t mask7 = (1<<7)-1;
-  int32_t tempMaxIter = maxIterCount;
-  tempMaxIter &= mask7;
-  for (size_t k(0);k!=_emu->encoding.size();++k){
-    _emu->encoding[k][603] = tempBeta;
-    _emu->encoding[k][606] = tempMaxIter;
-    _emu->encoding[k][608] = tempTol;
+    // Finalize encoding
+    // beta
+    int32_t tempMSB, tempLSB;
+    encoder::detail::form_word(beta2, 11, 10, false, &tempMSB);
+    encoder::detail::form_word(beta1, 11, 10, false, &tempLSB);
+    int32_t tempBeta = (tempMSB<<16) | (tempLSB);
+    // tolerance
+    encoder::detail::form_word(Qtolerance, 16, 11, false, &tempMSB);
+    encoder::detail::form_word(Ptolerance, 16, 11, false, &tempLSB);
+    int32_t tempTol = (tempMSB<<16) | (tempLSB);
+    // max iteration
+    int32_t mask7 = (1<<7)-1;
+    int32_t tempMaxIter = maxIterCount;
+    tempMaxIter &= mask7;
+    for (size_t k(0);k!=_emu->encoding.size();++k){
+      _emu->encoding[k][603] = tempBeta;
+      _emu->encoding[k][606] = tempMaxIter;
+      _emu->encoding[k][608] = tempTol;
+    }
+
+    // Finally write the modified _emu->encoding vector to the devices
+    ans = _emu->writeEncoding(false);
+    if (ans) return 42;
+
+    size_t sliceCount = _emu->getHwSliceCount();
+    vector<int> devId(sliceCount);
+    for(size_t k(0); k!=_emu->getHwSliceCount();++k)
+      devId[k] = _emu->sliceDeviceMap(k);
+    // Determine the start codes
+    vector<unsigned int> _NIOSStartCodes(sliceCount,0); // start code for each emulator slice
+    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+      Slice* sl = &_emu->emuhw()->sliceSet[sliceId_];
+      if (   sl->dig.pipe_PFPQ.element_count()   ==0
+          && sl->dig.pipe_PFslack.element_count()==0)  // if all pipelines empty
+        _NIOSStartCodes[sliceId_] = GPF_WRCODE_HIZ; // then start code=6666 (==slice in HiZ)
+      else
+        _NIOSStartCodes[sliceId_] = GPF_WRCODE_START; // if not empty normal start
+    }
+
+    // Write the start codes
+    size_t address(GPF_ADDR_START);
+    vector<uint32_t> encoding605(1);
+    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+      encoding605[0] = _NIOSStartCodes[sliceId_];
+      ans = _emu->usbWrite(devId[sliceId_], address, encoding605);
+    }
+    if (ans) return 43;
+
+    // Check convergeance (read stop code)
+    ans = _waitForGPFConvergence(10.0, converged);
+    if (ans) return 44;
+
+    vector<uint32_t> readBuffer;
+    // Read number of iterations by the algorithm
+    address = GPF_ADDR_ITERCOUNT;
+    ans = _emu->usbRead(devId[0], address, 1, readBuffer);
+    if (ans) return 45;
+    size_t iterCount = static_cast<size_t>(readBuffer[0]);
+    cout << "iteration count: " << iterCount << endl;
+
+    // Retrieve the mapping of the buses
+    size_t busCount = pws.getBusCount();
+    vector<MappingPosition> busMap(busCount);
+    for (size_t k(0); k!=busCount; ++k){
+      Bus const* bus = pws.getBus(k);
+      MappingPosition tempMapPos; size_t tempEmbrPos; // tempEmbrPos redundant (pointer not used)
+      _emu->mmd()->getElementMapping(PWSMODELELEMENTTYPE_BUS, bus->extId, &tempMapPos, &tempEmbrPos);
+      busMap[k] = tempMapPos;
+    }
+
+    // Read and actual voltage results & update results
+    V.resize(busCount);
+    address = GPF_ADDR_RESULTS;
+    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+      // Read results for sliceId_
+      ans = _emu->usbRead(devId[sliceId_], address, 24, readBuffer);
+      // Parse them for sliceId_
+      vector<complex> out;
+      _parseVoltage(readBuffer,out);
+
+      // Check which buses will have results on this slice
+      PQPipeline* pipe = &_emu->emuhw()->sliceSet[sliceId_].dig.pipe_PFPQ;
+      for (size_t k(0); k!=busMap.size(); ++k){
+        MappingPosition tempMapPos = busMap[k];
+        if (tempMapPos.tab == sliceId_){
+          // For these results, get index in the PQPipeline of the slice
+          int tempRow = tempMapPos.row;
+          int tempCol = tempMapPos.col;
+          int tempIndex = pipe->search_element(tempRow,tempCol);
+          // If found in the pipeline the respective V result is updated
+          if (tempIndex >= 0)
+            V(k) = out[tempIndex];
+        }
+      }
+    }
+
+    // Reset the board after power flow is complete
+    address = GPF_ADDR_START;
+    encoding605[0] = GPF_WRCODE_RESET;
+    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_)
+      ans = _emu->usbWrite(sliceId_, address, encoding605);
+    if (ans) return 46;
+
+  break;}
+
+  /*****************************************************************************
+   * DC POWER FLOW METHOD
+   ****************************************************************************/
+  case MFT_METHOD_DC:{
+
+  break;}
   }
-
-  // Finally write the modified _emu->encoding vector to the devices
-  ans = _emu->writeEncoding(false);
-  if (ans) return 42;
-
-  // Write the start code
-  size_t address605(605);
-  std::vector<uint32_t> encoding605(1, 1111);
-  for (size_t sliceId_(0); sliceId_!=_emu->getHwSliceCount(); ++sliceId_)
-    _emu->usbWrite(sliceId_, address605, encoding605);
-
-  // TODO
 
   if (!converged) return 2;
   return 0;
@@ -162,10 +261,67 @@ void MoteurFengtian::_getOptions(double& beta1,
   boost::any anyPtolerance = _getPropertyValueFromKey(MFT_PROPERTY_PTOL);
   boost::any anyQtolerance = _getPropertyValueFromKey(MFT_PROPERTY_QTOL);
   boost::any anyMaxIterCount = _getPropertyValueFromKey(MFT_PROPERTY_MAXIT);
+  boost::any anyMethod = _getPropertyValueFromKey(MFT_PROPERTY_METHOD);
   // Store them in output arguments
   beta1 = boost::any_cast<double>( anyBeta1 );
   beta2 = boost::any_cast<double>( anyBeta2 );
   Ptolerance = boost::any_cast<double>( anyPtolerance );
   Qtolerance = boost::any_cast<double>( anyQtolerance );
   maxIterCount = boost::any_cast<int>( anyMaxIterCount );
+  method = boost::any_cast<int>( anyMethod );
+}
+
+#define DEFAULT_TIMEOUT 5.0
+int MoteurFengtian::_waitForGPFConvergence(double timeout_, bool& converged) const{
+  // If timeout negative then default to 5 seconds
+  double timeout=(timeout_>0)?timeout_:DEFAULT_TIMEOUT;
+
+  // Retrieve device ids for slices
+  size_t sliceCount = _emu->getHwSliceCount();
+  vector<int> devId(sliceCount);
+  for(size_t k(0); k!=_emu->getHwSliceCount();++k)
+    devId[k] = _emu->sliceDeviceMap(k);
+
+  // Set a time threshold of 'timeout' seconds for the operation
+  double elapsedTime = 0;
+  PrecisionTimer timer; // counts in seconds
+  timer.Start();
+
+  vector<uint32_t> readBuffer;
+  while (elapsedTime<timeout){
+    int ans = _emu->usbRead(devId[0], GPF_ADDR_STOP, 1, readBuffer);
+    if (ans) return 2;
+    if (readBuffer[0]==GPF_RDCODE_CONVERGED){
+      converged = true;
+      return 0;
+    }
+    if (readBuffer[0]==GPF_RDCODE_NOTCONVERGED){
+      converged = false;
+      return 0;
+    }
+    // Update timer
+    elapsedTime += timer.Stop();
+    timer.Start();
+  }
+//  converged = false;
+  return 1;
+}
+
+void MoteurFengtian::_parseVoltage(vector<uint32_t> const& val, vector<complex> out) const{
+  out.resize(val.size(),complex(0.0,0.0));
+  // Vector val contains signed 0x0000Q2.14 format numbers
+  unsigned int bit16 = (1<<15);
+  unsigned int signExpansionL = ~( (1<<16) - 1 );
+  for ( size_t k = 0 ; k != val.size() ; ++k ){
+    int32_t LSB = static_cast<int32_t>( val[k]&0x0000FFFF );
+    int32_t MSB = static_cast<int32_t>( (val[k]&0xFFFF0000)>>16 );
+    if (LSB&bit16) // get sign
+      LSB |= signExpansionL;
+    if (MSB&bit16) // get sign
+      MSB |= signExpansionL;
+
+    double temp_real = static_cast<double>(LSB) / static_cast<double>(1<<14);
+    double temp_imag = static_cast<double>(MSB) / static_cast<double>(1<<14);
+    out[k] = complex(temp_real,temp_imag);
+  }
 }

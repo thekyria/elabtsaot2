@@ -3443,17 +3443,14 @@ int TDEmulator::_getSpyCode( TDResultIdentifier const& tdri,
 }
 
 // stopCodes are given with sliceId indexing!
-int TDEmulator::_waitForStopCodes( vector<int> const& stopCodes,
-                                   double timeout_ ){
+int TDEmulator::_waitForStopCodes(vector<int> const& stopCodes, double timeout_){
 
-  if ( stopCodes.size() != _emu->getHwSliceCount() )
-    return 1;
+  if (stopCodes.size()!=_emu->getHwSliceCount()) return 1;
 
   // If timeout negative then default to 5 seconds
   double timeout = (timeout_>0) ? timeout_ : 5.0 ;
 
   // Retrieve device ids for slices
-  int ans;
   size_t k; // counter
   vector<int> devId;
   for( k = 0 ; k != _emu->getHwSliceCount(); ++k ){
@@ -3485,7 +3482,7 @@ int TDEmulator::_waitForStopCodes( vector<int> const& stopCodes,
       // Skip for read slices
       if ( stopCodesReady[k] ) continue;
 
-      ans = _emu->usbRead(devId[k], 557, 1, readBuffer);
+      int ans = _emu->usbRead(devId[k], 557, 1, readBuffer);
 //      // DEBUG
 //      cout << "DEBUG >> 0557: " << readBuffer[0] << endl;
 //      _emu->usbRead(devId[k], 1000, 5, debugBuffer);
@@ -3520,8 +3517,7 @@ int TDEmulator::_waitForStopCodes( vector<int> const& stopCodes,
 }
 
 // runCodes are given with sliceId indexing!
-int TDEmulator::_waitForResults( vector<uint32_t> const& runCodes,
-                                 double timeout ){
+int TDEmulator::_waitForResults( vector<uint32_t> const& runCodes, double timeout ){
 
   // Prepare stopCodes vector to wait for
   vector<int> stopCodes( runCodes.size() );

@@ -799,7 +799,7 @@ int Emulator::autoFitting(EmulatorOpType opType, vector<string>* outputMsg){
   if (ans) return ans;
 
   switch (opType){
-  case EMU_OPTYPE_PF:
+  case EMU_OPTYPE_GPF:
     // ----- Fit buses -----
     ans = _fitBusesPF(outputMsg);
     if (ans) return ans;
@@ -832,7 +832,7 @@ int Emulator::validateFitting(EmulatorOpType opType){
   // to EMU_STATE_FITOK
   // TODO REALLY IMPLEMENT validateFitting()
   switch (opType){
-  case EMU_OPTYPE_PF:
+  case EMU_OPTYPE_GPF:
     /* TODO: PF */ break;
   case EMU_OPTYPE_TD:
     /* TODO: TD */ break;
@@ -861,7 +861,7 @@ int Emulator::encodePowersystem(EmulatorOpType opType){
   for( size_t k = 0 ; k != _emuhw->sliceSet.size(); ++k ){
     int ans(0);
     switch (opType){
-    case EMU_OPTYPE_PF:
+    case EMU_OPTYPE_GPF:
       ans = encoder::encodeSlicePF( _emuhw->sliceSet[k],encoding[k]); break;
     case EMU_OPTYPE_TD:
       ans = encoder::encodeSliceTD( _emuhw->sliceSet[k],encoding[k]); break;
