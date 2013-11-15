@@ -21,9 +21,8 @@ private:
   void _getOptions( double& beta1, double& beta2, double& Ptolerance, double& Qtolerance,
                     size_t& maxIterCount, int& method ) const;
   int _waitForGPFConvergence(double timeout_, bool& converged) const;
-  void _parseVoltage(std::vector<uint32_t> const& val, std::vector<complex> out) const;
+  void _parseVoltage(std::vector<uint32_t> const& val, std::vector<complex>& out) const;
 
-  // ---------- Variables ----------
   Emulator* _emu;
 
 };

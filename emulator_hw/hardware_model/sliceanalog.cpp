@@ -2,7 +2,7 @@
 #include "sliceanalog.h"
 using namespace elabtsaot;
 
-using std::vector;
+using ublas::vector;
 #include <limits>
 using std::numeric_limits;
 
@@ -12,7 +12,7 @@ using std::numeric_limits;
 #define DEFGOTOFFSET 2.5          //!< Default GOT offset [Volt]
 
 SliceAnalog::SliceAnalog() :
-  _atomSet(VERTICALNUMBEROFATOMS, vector<Atom>(HORIZONTALNUMBEROFATOMS,
+  _atomSet(VERTICALNUMBEROFATOMS, std::vector<Atom>(HORIZONTALNUMBEROFATOMS,
           Atom(&_real_voltage_ref,&_imag_voltage_ref))),
   _real_voltage_ref( DAC_DEF_TAP, DAC_DEF_RESOLUTION, DAC_DEF_OUTMIN, DAC_DEF_OUTMAX ),
   _imag_voltage_ref( DAC_DEF_TAP, DAC_DEF_RESOLUTION, DAC_DEF_OUTMIN, DAC_DEF_OUTMAX ) {}
@@ -57,111 +57,764 @@ double SliceAnalog::getMinMaxAchievableR() const{
         minMaxR = _atomSet[k][m].getMinMaxAchievableR();
   return minMaxR;
 }
+using namespace ublas;
 
-//ublas::matrix<complex<double>,ublas::column_major> SliceAnalog::calculate_Y_matrix(){
-//  // TODO for proper emulator branches (EMBRPOS_ R, UR, U) take into account the
-//  // case when mid grounding switch is closed
-//  ublas::matrix<complex<double>,ublas::column_major> Y_hw;
-//  size_t n = _atomSet.size() * _atomSet[0].size();
-//  Y_hw.resize(n,n);
-//  Y_hw.clear();
+void SliceAnalog::buildCd(matrix<int,column_major>& Cd) const{
 
-//  size_t k, m;
-//  size_t a_n = 0; // a_tom n_umber
-//  double temp_y = 0;
+  size_t ver, hor;
+  this->size(ver,hor);
+  Cd.resize(6*              ver*hor,   1 + ver*hor + hor-2 +  ver-2 +   hor +    ver-1);
+  //        br no per node  node no   gnd  atoms     bot.ext  left.ext  top.ext  right.ext
+  Cd.clear();
 
-//  for ( k = 0 ; k != _atomSet.size() ; ++k ){
-//    for ( m = 0 ; m != _atomSet[k].size() ; ++m ){
+  /* ---------------------------------------
+  Node numbering
+  ------------------------------------------
+        32   33    34    35    36    37
+        |  /  |  /  |  /  |  /  |  /  |  /
+        | /   | /   | /   | /   | /   | /
+        |/___ |/___ |/___ |/___ |/___ |/___
+        19   20    21    22    23    24
+        |  /  |  /  |  /  |  /  |  /  |  /
+        | /   | /   | /   | /   | /   | /
+  31___ |/___ |/___ |/___ |/___ |/___ |/___40
+        13   14    15    16    17    18
+        |  /  |  /  |  /  |  /  |  /  |  /
+        | /   | /   | /   | /   | /   | /
+  30___ |/___ |/___ |/___ |/___ |/___ |/___39
+        7     8     9    10    11    12
+        |  /  |  /  |  /  |  /  |  /  |  /
+        | /   | /   | /   | /   | /   | /
+  29___ |/___ |/___ |/___ |/___ |/___ |/___38
+        1     2     3     4     5     6
+              |     |     |     |
+              |     |     |     |
+              |     |     |     |
+              25    26    27    28
+       *
+       |
+      ---
+       -  0  (GND)
 
-//      // --- For the atom node ---
-//      temp_y = 0;
+  ------------------------------------------
+  Branch numbering
+  ------------------------------------------
+  For node N [0-23], base number for the branches is BN = 6xN and the following
+  branches are indexed by the respective offsets
 
-//      // Resistance to ground switch is closed
-//      if ( _atomSet[k][m].node_real_sw_resistance() ){
-//        // Resistance to ground potentiometer internal switch is closed
-//        if ( _atomSet[k][m].node_real_pot_resistance_sw() ){
-//          temp_y += 1/ ( _atomSet[k][m].node_real_pot_resistance_r() );
-//        }
-//      }
-//      // Add node admittance to element (a_n,a_n)
-//      Y_hw(a_n,a_n) += complex<double>(0, temp_y);
+                      |     /
+                      |    /
+                     +1   +2
+                      |  /
+                      | /
+                      |/
+         ---- +5 ---- N ---- +3 ------
+                      |\
+                      | \
+                     +4  +0
+                      |   |
+                      |  ---
+                      |   -
 
-//      // --- For branch EMBRPOS_R ---
-//      temp_y = 0;
-//      assert( _atomSet[k][m].embr_exist(EMBRPOS_R) ); // Embr phys exists
+  All branches are considered with the FROM side at node N. */
 
-//      // Proper emulator branch (near and far end potentiometers)
-//      if ( _atomSet[k][m].embr_real_pot_near_sw(EMBRPOS_R) &&
-//           _atomSet[k][m].embr_real_pot_far_sw(EMBRPOS_R)){
-//        // Near and far end potentiometer internal switch is closed
-//        temp_y += 1/( _atomSet[k][m].embr_real_pot_near_r(EMBRPOS_R) +
-//                      _atomSet[k][m].embr_real_pot_far_r(EMBRPOS_R) );
-//      }
-//      // Branch short circuit switch
-//      if ( _atomSet[k][m].embr_real_sw_sc(EMBRPOS_R) ){
-//        // Branch short circuit switch is closed
-//        temp_y += 1.0 / 2.5; // 2.5 Ohm is the typical value of the sc switch cl
-//      }
-//      // Add emulator branch admittance ..
-//      // .. to element (a_n,a_n) and  ..
-//      Y_hw(a_n,a_n) += complex<double>(0, temp_y);
-//      // to element (a_n,a_n+1) unless we are at the last column of the atom set
-//      if ( m != (_atomSet[k].size()-1) )
-//        Y_hw(a_n,a_n+1) -= complex<double>(0, temp_y);
+  // --- Node 1 ---
+  Cd((1-1)*6+0, 1) = 1; Cd((1-1)*6+0, 0) = -1;
+  Cd((1-1)*6+1, 1) = 1; Cd((1-1)*6+1, 7) = -1;
+  Cd((1-1)*6+2, 1) = 1; Cd((1-1)*6+2, 8) = -1;
+  Cd((1-1)*6+3, 1) = 1; Cd((1-1)*6+3, 2) = -1;
+//  Cd((1-1)*6+4, 1) = 1; Cd((1-1)*6+4, X) = -1;
+  Cd((1-1)*6+5, 1) = 1; Cd((1-1)*6+5, 29) = -1;
 
-//      // --- For branch EMBRPOS_UR ---
-//      temp_y = 0;
-//      assert( _atomSet[k][m].embr_exist(EMBRPOS_UR) ); // Embr phys exists
+  // --- Node 2 ---
+  Cd((2-1)*6+0, 2) = 1; Cd((2-1)*6+0, 0) = -1;
+  Cd((2-1)*6+1, 2) = 1; Cd((2-1)*6+1, 8) = -1;
+  Cd((2-1)*6+2, 2) = 1; Cd((2-1)*6+2, 9) = -1;
+  Cd((2-1)*6+3, 2) = 1; Cd((2-1)*6+3, 3) = -1;
+  Cd((2-1)*6+4, 2) = 1; Cd((2-1)*6+4, 25) = -1;
+//  Cd((2-1)*6+5, 2) = 1; Cd((2-1)*6+5, X) = -1;
 
-//      // Proper emulator branch (near and far end potentiometers)
-//      if ( _atomSet[k][m].embr_real_pot_near_sw(EMBRPOS_UR) &&
-//           _atomSet[k][m].embr_real_pot_far_sw(EMBRPOS_UR)){
-//        // Near and far end potentiometer internal switch is closed
-//        temp_y += 1/( _atomSet[k][m].embr_real_pot_near_r(EMBRPOS_UR) +
-//                      _atomSet[k][m].embr_real_pot_far_r(EMBRPOS_UR) );
-//      }
-//      // Branch short circuit switch
-//      if ( _atomSet[k][m].embr_real_sw_sc(EMBRPOS_UR) ){
-//        // Branch short circuit switch is closed
-//        temp_y += 1.0 / 2.5; // 2.5 Ohm is the typical value of the sc sw closed
-//      }
-//      // Add emulator branch admittance ..
-//      // .. to element (a_n,a_n) and  ..
-//      Y_hw(a_n,a_n) += complex<double>(0, temp_y);
-//      // .. to element (a_n+1,a_n+1) unless we are at either the last column
-//      // or the last row of the atom set
-//      if ( ( k != (_atomSet.size()-1) ) && ( m != (_atomSet[k].size()-1) ) )
-//        Y_hw(a_n+1,a_n+1) -= complex<double>(0, temp_y);
+  // --- Node 3 ---
+  Cd((3-1)*6+0, 3) = 1; Cd((3-1)*6+0, 0) = -1;
+  Cd((3-1)*6+1, 3) = 1; Cd((3-1)*6+1, 9) = -1;
+  Cd((3-1)*6+2, 3) = 1; Cd((3-1)*6+2, 10) = -1;
+  Cd((3-1)*6+3, 3) = 1; Cd((3-1)*6+3, 4) = -1;
+  Cd((3-1)*6+4, 3) = 1; Cd((3-1)*6+4, 26) = -1;
+//  Cd((3-1)*6+5, 3) = 1; Cd((3-1)*6+5, X) = -1;
 
-//      // --- For branch EMBRPOS_U ---
-//      temp_y = 0;
-//      assert( _atomSet[k][m].embr_exist(EMBRPOS_U) ); // Embr phys exists
+  // --- Node 4 ---
+  Cd((4-1)*6+0, 4) = 1; Cd((4-1)*6+0, 0) = -1;
+  Cd((4-1)*6+1, 4) = 1; Cd((4-1)*6+1, 10) = -1;
+  Cd((4-1)*6+2, 4) = 1; Cd((4-1)*6+2, 11) = -1;
+  Cd((4-1)*6+3, 4) = 1; Cd((4-1)*6+3, 5) = -1;
+  Cd((4-1)*6+4, 4) = 1; Cd((4-1)*6+4, 27) = -1;
+//  Cd((4-1)*6+5, 4) = 1; Cd((4-1)*6+5, X) = -1;
 
-//      // Proper emulator branch (near and far end potentiometers)
-//      if ( _atomSet[k][m].embr_real_pot_near_sw(EMBRPOS_U) &&
-//           _atomSet[k][m].embr_real_pot_far_sw(EMBRPOS_U)){
-//        // Near and far end potentiometer internal switch is closed
-//        temp_y += 1/( _atomSet[k][m].embr_real_pot_near_r(EMBRPOS_U) +
-//                      _atomSet[k][m].embr_real_pot_far_r(EMBRPOS_U) );
-//      }
-//      // Branch short circuit switch
-//      if ( _atomSet[k][m].embr_real_sw_sc(EMBRPOS_U) ){
-//        // Branch short circuit switch is closed
-//        temp_y += 1.0 / 2.5; // 2.5 Ohm is the typical value of the sc sw closed
-//      }
-//      // Add emulator branch admittance ..
-//      // .. to element (a_n,a_n) and  ..
-//      Y_hw(a_n,a_n) += complex<double>(0, temp_y);
-//      // to element (a_n+1,a_n) unless we are at the last row of the atom set
-//      if ( k != (_atomSet.size()-1) )
-//        Y_hw(a_n+1,a_n) -= complex<double>(0, temp_y);
+  // --- Node 5 ---
+  Cd((5-1)*6+0, 5) = 1; Cd((5-1)*6+0, 0) = -1;
+  Cd((5-1)*6+1, 5) = 1; Cd((5-1)*6+1, 11) = -1;
+  Cd((5-1)*6+2, 5) = 1; Cd((5-1)*6+2, 12) = -1;
+  Cd((5-1)*6+3, 5) = 1; Cd((5-1)*6+3, 6) = -1;
+  Cd((5-1)*6+4, 5) = 1; Cd((5-1)*6+4, 28) = -1;
+//  Cd((5-1)*6+5, 5) = 1; Cd((5-1)*6+5, X) = -1;
 
-//      ++a_n; // increase atom number
-//    }
-//  }
+  // --- Node 6 ---
+  Cd((6-1)*6+0, 6) = 1; Cd((6-1)*6+0, 0) = -1;
+  Cd((6-1)*6+1, 6) = 1; Cd((6-1)*6+1, 12) = -1;
+  Cd((6-1)*6+2, 6) = 1; Cd((6-1)*6+2, 39) = -1;
+  Cd((6-1)*6+3, 6) = 1; Cd((6-1)*6+3, 38) = -1;
+//  Cd((6-1)*6+4, 6) = 1; Cd((6-1)*6+4, X) = -1;
+//  Cd((6-1)*6+5, 6) = 1; Cd((6-1)*6+5, X) = -1;
 
-//  return Y_hw;
-//}
+  // --- Node 7 ---
+  Cd((7-1)*6+0, 7) = 1; Cd((7-1)*6+0, 0) = -1;
+  Cd((7-1)*6+1, 7) = 1; Cd((7-1)*6+1, 13) = -1;
+  Cd((7-1)*6+2, 7) = 1; Cd((7-1)*6+2, 14) = -1;
+  Cd((7-1)*6+3, 7) = 1; Cd((7-1)*6+3, 8) = -1;
+//  Cd((7-1)*6+4, 7) = 1; Cd((7-1)*6+4, X) = -1;
+  Cd((7-1)*6+5, 7) = 1; Cd((7-1)*6+5, 30) = -1;
+
+  // --- Node 8 ---
+  Cd((8-1)*6+0, 8) = 1; Cd((8-1)*6+0, 0) = -1;
+  Cd((8-1)*6+1, 8) = 1; Cd((8-1)*6+1, 14) = -1;
+  Cd((8-1)*6+2, 8) = 1; Cd((8-1)*6+2, 15) = -1;
+  Cd((8-1)*6+3, 8) = 1; Cd((8-1)*6+3, 9) = -1;
+//  Cd((8-1)*6+4, 8) = 1; Cd((8-1)*6+4, X) = -1;
+//  Cd((8-1)*6+5, 8) = 1; Cd((8-1)*6+5, X) = -1;
+
+  // --- Node 9 ---
+  Cd((9-1)*6+0, 9) = 1; Cd((9-1)*6+0, 0) = -1;
+  Cd((9-1)*6+1, 9) = 1; Cd((9-1)*6+1, 15) = -1;
+  Cd((9-1)*6+2, 9) = 1; Cd((9-1)*6+2, 16) = -1;
+  Cd((9-1)*6+3, 9) = 1; Cd((9-1)*6+3, 10) = -1;
+//  Cd((9-1)*6+4, 9) = 1; Cd((9-1)*6+4, X) = -1;
+//  Cd((9-1)*6+5, 9) = 1; Cd((9-1)*6+5, X) = -1;
+
+  // --- Node 10 ---
+  Cd((10-1)*6+0, 10) = 1; Cd((10-1)*6+0, 0) = -1;
+  Cd((10-1)*6+1, 10) = 1; Cd((10-1)*6+1, 16) = -1;
+  Cd((10-1)*6+2, 10) = 1; Cd((10-1)*6+2, 17) = -1;
+  Cd((10-1)*6+3, 10) = 1; Cd((10-1)*6+3, 11) = -1;
+//  Cd((10-1)*6+4, 10) = 1; Cd((10-1)*6+4, X) = -1;
+//  Cd((10-1)*6+5, 10) = 1; Cd((10-1)*6+5, X) = -1;
+
+  // --- Node 11 ---
+  Cd((11-1)*6+0, 11) = 1; Cd((11-1)*6+0, 0) = -1;
+  Cd((11-1)*6+1, 11) = 1; Cd((11-1)*6+1, 17) = -1;
+  Cd((11-1)*6+2, 11) = 1; Cd((11-1)*6+2, 18) = -1;
+  Cd((11-1)*6+3, 11) = 1; Cd((11-1)*6+3, 12) = -1;
+//  Cd((11-1)*6+4, 11) = 1; Cd((11-1)*6+4, X) = -1;
+//  Cd((11-1)*6+5, 11) = 1; Cd((11-1)*6+5, X) = -1;
+
+  // --- Node 12 ---
+  Cd((12-1)*6+0, 12) = 1; Cd((12-1)*6+0, 0) = -1;
+  Cd((12-1)*6+1, 12) = 1; Cd((12-1)*6+1, 18) = -1;
+  Cd((12-1)*6+2, 12) = 1; Cd((12-1)*6+2, 40) = -1;
+  Cd((12-1)*6+3, 12) = 1; Cd((12-1)*6+3, 39) = -1;
+//  Cd((12-1)*6+4, 12) = 1; Cd((12-1)*6+4, X) = -1;
+//  Cd((12-1)*6+5, 12) = 1; Cd((12-1)*6+5, X) = -1;
+
+  // --- Node 13 ---
+  Cd((13-1)*6+0, 13) = 1; Cd((13-1)*6+0, 0) = -1;
+  Cd((13-1)*6+1, 13) = 1; Cd((13-1)*6+1, 19) = -1;
+  Cd((13-1)*6+2, 13) = 1; Cd((13-1)*6+2, 20) = -1;
+  Cd((13-1)*6+3, 13) = 1; Cd((13-1)*6+3, 14) = -1;
+//  Cd((13-1)*6+4, 13) = 1; Cd((13-1)*6+4, X) = -1;
+  Cd((13-1)*6+5, 13) = 1; Cd((13-1)*6+5, 31) = -1;
+
+  // --- Node 14 ---
+  Cd((14-1)*6+0, 14) = 1; Cd((14-1)*6+0, 0) = -1;
+  Cd((14-1)*6+1, 14) = 1; Cd((14-1)*6+1, 20) = -1;
+  Cd((14-1)*6+2, 14) = 1; Cd((14-1)*6+2, 21) = -1;
+  Cd((14-1)*6+3, 14) = 1; Cd((14-1)*6+3, 15) = -1;
+//  Cd((14-1)*6+4, 14) = 1; Cd((14-1)*6+4, X) = -1;
+//  Cd((14-1)*6+5, 14) = 1; Cd((14-1)*6+5, X) = -1;
+
+  // --- Node 15 ---
+  Cd((15-1)*6+0, 15) = 1; Cd((15-1)*6+0, 0) = -1;
+  Cd((15-1)*6+1, 15) = 1; Cd((15-1)*6+1, 21) = -1;
+  Cd((15-1)*6+2, 15) = 1; Cd((15-1)*6+2, 22) = -1;
+  Cd((15-1)*6+3, 15) = 1; Cd((15-1)*6+3, 16) = -1;
+//  Cd((15-1)*6+4, 15) = 1; Cd((15-1)*6+4, X) = -1;
+//  Cd((15-1)*6+5, 15) = 1; Cd((15-1)*6+5, X) = -1;
+
+  // --- Node 16 ---
+  Cd((16-1)*6+0, 16) = 1; Cd((16-1)*6+0, 0) = -1;
+  Cd((16-1)*6+1, 16) = 1; Cd((16-1)*6+1, 22) = -1;
+  Cd((16-1)*6+2, 16) = 1; Cd((16-1)*6+2, 23) = -1;
+  Cd((16-1)*6+3, 16) = 1; Cd((16-1)*6+3, 17) = -1;
+//  Cd((16-1)*6+4, 16) = 1; Cd((16-1)*6+4, X) = -1;
+//  Cd((16-1)*6+5, 16) = 1; Cd((16-1)*6+5, X) = -1;
+
+  // --- Node 17 ---
+  Cd((17-1)*6+0, 17) = 1; Cd((17-1)*6+0, 0) = -1;
+  Cd((17-1)*6+1, 17) = 1; Cd((17-1)*6+1, 23) = -1;
+  Cd((17-1)*6+2, 17) = 1; Cd((17-1)*6+2, 24) = -1;
+  Cd((17-1)*6+3, 17) = 1; Cd((17-1)*6+3, 18) = -1;
+//  Cd((17-1)*6+4, 17) = 1; Cd((17-1)*6+4, X) = -1;
+//  Cd((17-1)*6+5, 17) = 1; Cd((17-1)*6+5, X) = -1;
+
+  // --- Node 18 ---
+  Cd((18-1)*6+0, 18) = 1; Cd((18-1)*6+0, 0) = -1;
+  Cd((18-1)*6+1, 18) = 1; Cd((18-1)*6+1, 24) = -1;
+//  Cd((18-1)*6+2, 18) = 1; Cd((18-1)*6+2, X) = -1;
+  Cd((18-1)*6+3, 18) = 1; Cd((18-1)*6+3, 40) = -1;
+//  Cd((18-1)*6+4, 18) = 1; Cd((18-1)*6+4, X) = -1;
+//  Cd((18-1)*6+5, 18) = 1; Cd((18-1)*6+5, X) = -1;
+
+  // --- Node 19 ---
+  Cd((19-1)*6+0, 19) = 1; Cd((19-1)*6+0, 0) = -1;
+  Cd((19-1)*6+1, 19) = 1; Cd((19-1)*6+1, 32) = -1;
+  Cd((19-1)*6+2, 19) = 1; Cd((19-1)*6+2, 33) = -1;
+  Cd((19-1)*6+3, 19) = 1; Cd((19-1)*6+3, 20) = -1;
+//  Cd((19-1)*6+4, 19) = 1; Cd((19-1)*6+4, X) = -1;
+//  Cd((19-1)*6+5, 19) = 1; Cd((19-1)*6+5, X) = -1;
+
+  // --- Node 20 ---
+  Cd((20-1)*6+0, 20) = 1; Cd((20-1)*6+0, 0) = -1;
+  Cd((20-1)*6+1, 20) = 1; Cd((20-1)*6+1, 33) = -1;
+  Cd((20-1)*6+2, 20) = 1; Cd((20-1)*6+2, 34) = -1;
+  Cd((20-1)*6+3, 20) = 1; Cd((20-1)*6+3, 21) = -1;
+//  Cd((20-1)*6+4, 20) = 1; Cd((20-1)*6+4, X) = -1;
+//  Cd((20-1)*6+5, 20) = 1; Cd((20-1)*6+5, X) = -1;
+
+  // --- Node 21 ---
+  Cd((21-1)*6+0, 21) = 1; Cd((21-1)*6+0, 0) = -1;
+  Cd((21-1)*6+1, 21) = 1; Cd((21-1)*6+1, 34) = -1;
+  Cd((21-1)*6+2, 21) = 1; Cd((21-1)*6+2, 35) = -1;
+  Cd((21-1)*6+3, 21) = 1; Cd((21-1)*6+3, 22) = -1;
+//  Cd((21-1)*6+4, 21) = 1; Cd((21-1)*6+4, X) = -1;
+//  Cd((21-1)*6+5, 21) = 1; Cd((21-1)*6+5, X) = -1;
+
+  // --- Node 22 ---
+  Cd((22-1)*6+0, 22) = 1; Cd((22-1)*6+0, 0) = -1;
+  Cd((22-1)*6+1, 22) = 1; Cd((22-1)*6+1, 35) = -1;
+  Cd((22-1)*6+2, 22) = 1; Cd((22-1)*6+2, 36) = -1;
+  Cd((22-1)*6+3, 22) = 1; Cd((22-1)*6+3, 23) = -1;
+//  Cd((22-1)*6+4, 22) = 1; Cd((22-1)*6+4, X) = -1;
+//  Cd((22-1)*6+5, 22) = 1; Cd((22-1)*6+5, X) = -1;
+
+  // --- Node 23 ---
+  Cd((23-1)*6+0, 23) = 1; Cd((23-1)*6+0, 0) = -1;
+  Cd((23-1)*6+1, 23) = 1; Cd((23-1)*6+1, 36) = -1;
+  Cd((23-1)*6+2, 23) = 1; Cd((23-1)*6+2, 37) = -1;
+  Cd((23-1)*6+3, 23) = 1; Cd((23-1)*6+3, 24) = -1;
+//  Cd((23-1)*6+4, 23) = 1; Cd((23-1)*6+4, X) = -1;
+//  Cd((23-1)*6+5, 23) = 1; Cd((23-1)*6+5, X) = -1;
+
+  // --- Node 24 ---
+  Cd((24-1)*6+0, 24) = 1; Cd((24-1)*6+0, 0) = -1;
+  Cd((24-1)*6+1, 24) = 1; Cd((24-1)*6+1, 37) = -1;
+//  Cd((24-1)*6+2, 24) = 1; Cd((24-1)*6+2, X) = -1;
+//  Cd((24-1)*6+3, 24) = 1; Cd((24-1)*6+3, X) = -1;
+//  Cd((24-1)*6+4, 24) = 1; Cd((24-1)*6+4, X) = -1;
+//  Cd((24-1)*6+5, 24) = 1; Cd((24-1)*6+5, X) = -1;
+
+}
+
+void SliceAnalog::buildGbr(vector<double>& Gbr, bool real) const{
+  size_t ver, hor;
+  this->size(ver,hor);
+  Gbr.resize(6*ver*hor);
+  Gbr.clear();
+
+  /* ------------------------------------------
+  Branch numbering
+  ------------------------------------------
+  For node N [0-23], base number for the branches is BN = 6xN and the following
+  branches are indexed by the respective offsets
+
+                      |     /
+                      |    /
+                     +1   +2
+                      |  /
+                      | /
+                      |/
+         ---- +5 ---- N ---- +3 ------
+                      |\
+                      | \
+                     +4  +0
+                      |   |
+                      |  ---
+                      |   -
+
+  All branches are considered with the FROM side at node N. */
+
+  Atom const* atom;
+  // --- Node 1 ---
+  atom = &_atomSet[0][0];
+  Gbr((1-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((1-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((1-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((1-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((1-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+  Gbr((1-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 2 ---
+  atom = &_atomSet[0][1];
+  Gbr((2-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((2-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((2-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((2-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+  Gbr((2-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((2-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 3 ---
+  atom = &_atomSet[0][2];
+  Gbr((3-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((3-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((3-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((3-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+  Gbr((3-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((3-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 4 ---
+  atom = &_atomSet[0][3];
+  Gbr((4-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((4-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((4-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((4-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+  Gbr((4-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((4-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 5 ---
+  atom = &_atomSet[0][4];
+  Gbr((5-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((5-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((5-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((5-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+  Gbr((5-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((5-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 6 ---
+  atom = &_atomSet[0][5];
+  Gbr((6-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((6-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((6-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((6-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+  Gbr((6-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((6-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --------------
+
+  // --- Node 7 ---
+  atom = &_atomSet[1][0];
+  Gbr((7-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((7-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((7-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((7-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((7-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+  Gbr((7-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 8 ---
+  atom = &_atomSet[1][1];
+  Gbr((8-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((8-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((8-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((8-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((8-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((8-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 9 ---
+  atom = &_atomSet[1][2];
+  Gbr((9-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((9-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((9-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((9-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((9-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((9-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 10 ---
+  atom = &_atomSet[1][3];
+  Gbr((10-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((10-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((10-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((10-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((10-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((10-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 11 ---
+  atom = &_atomSet[1][4];
+  Gbr((11-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((11-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((11-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((11-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((11-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((11-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 12 ---
+  atom = &_atomSet[1][5];
+  Gbr((12-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((12-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((12-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((12-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((12-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((12-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --------------
+
+  // --- Node 13 ---
+  atom = &_atomSet[2][0];
+  Gbr((13-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((13-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((13-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((13-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((13-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+  Gbr((13-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 14 ---
+  atom = &_atomSet[2][1];
+  Gbr((14-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((14-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((14-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((14-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((14-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((14-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 15 ---
+  atom = &_atomSet[2][2];
+  Gbr((15-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((15-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((15-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((15-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((15-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((15-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 16 ---
+  atom = &_atomSet[2][3];
+  Gbr((16-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((16-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((16-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((16-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((16-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((16-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 17 ---
+  atom = &_atomSet[2][4];
+  Gbr((17-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((17-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((17-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((17-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((17-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((17-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 18 ---
+  atom = &_atomSet[2][5];
+  Gbr((18-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((18-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+//  Gbr((18-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((18-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((18-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((18-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --------------
+
+  // --- Node 19 ---
+  atom = &_atomSet[3][0];
+  Gbr((19-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((19-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((19-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((19-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((19-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((19-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 20 ---
+  atom = &_atomSet[3][1];
+  Gbr((20-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((20-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((20-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((20-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((20-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((20-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 21 ---
+  atom = &_atomSet[3][2];
+  Gbr((21-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((21-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((21-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((21-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((21-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((21-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 22 ---
+  atom = &_atomSet[3][3];
+  Gbr((22-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((22-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((22-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((22-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((22-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((22-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 23 ---
+  atom = &_atomSet[3][4];
+  Gbr((23-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((23-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+  Gbr((23-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+  Gbr((23-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((23-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((23-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+
+  // --- Node 24 ---
+  atom = &_atomSet[3][5];
+  Gbr((24-1)*6+0) = atom->node_pot_resistance_r(real);
+  Gbr((24-1)*6+1) = atom->embr_pot_near_r(EMBRPOS_U,real) + atom->embr_pot_far_r(EMBRPOS_U,real);
+//  Gbr((24-1)*6+2) = atom->embr_pot_near_r(EMBRPOS_UR,real) + atom->embr_pot_far_r(EMBRPOS_UR,real);
+//  Gbr((24-1)*6+3) = atom->embr_pot_near_r(EMBRPOS_R,real) + atom->embr_pot_far_r(EMBRPOS_R,real);
+//  Gbr((24-1)*6+4) = atom->embr_pot_near_r(EMBRPOS_D,real) + atom->embr_pot_far_r(EMBRPOS_D,real);
+//  Gbr((24-1)*6+5) = atom->embr_pot_near_r(EMBRPOS_L,real) + atom->embr_pot_far_r(EMBRPOS_L,real);
+}
+
+void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
+  size_t ver, hor;
+  this->size(ver,hor);
+  brStatus.resize(6*ver*hor);
+  brStatus.clear();
+
+  /* ------------------------------------------
+  Branch numbering
+  ------------------------------------------
+  For node N [0-23], base number for the branches is BN = 6xN and the following
+  branches are indexed by the respective offsets
+
+                      |     /
+                      |    /
+                     +1   +2
+                      |  /
+                      | /
+                      |/
+         ---- +5 ---- N ---- +3 ------
+                      |\
+                      | \
+                     +4  +0
+                      |   |
+                      |  ---
+                      |   -
+
+  All branches are considered with the FROM side at node N. */
+
+  Atom const* atom;
+  // --- Node 1 ---
+  atom = &_atomSet[0][0];
+  brStatus((1-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((1-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((1-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((1-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((1-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+  brStatus((1-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 2 ---
+  atom = &_atomSet[0][1];
+  brStatus((2-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((2-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((2-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((2-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+  brStatus((2-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((2-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 3 ---
+  atom = &_atomSet[0][2];
+  brStatus((3-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((3-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((3-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((3-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+  brStatus((3-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((3-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 4 ---
+  atom = &_atomSet[0][3];
+  brStatus((4-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((4-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((4-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((4-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+  brStatus((4-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((4-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 5 ---
+  atom = &_atomSet[0][4];
+  brStatus((5-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((5-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((5-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((5-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+  brStatus((5-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((5-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 6 ---
+  atom = &_atomSet[0][5];
+  brStatus((6-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((6-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((6-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((6-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((6-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((6-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --------------
+
+  // --- Node 7 ---
+  atom = &_atomSet[1][0];
+  brStatus((7-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((7-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((7-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((7-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((7-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+  brStatus((7-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 8 ---
+  atom = &_atomSet[1][1];
+  brStatus((8-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((8-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((8-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((8-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((8-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((8-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 9 ---
+  atom = &_atomSet[1][2];
+  brStatus((9-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((9-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((9-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((9-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((9-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((9-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 10 ---
+  atom = &_atomSet[1][3];
+  brStatus((10-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((10-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((10-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((10-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((10-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((10-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 11 ---
+  atom = &_atomSet[1][4];
+  brStatus((11-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((11-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((11-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((11-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((11-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((11-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 12 ---
+  atom = &_atomSet[1][5];
+  brStatus((12-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((12-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((12-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((12-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((12-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((12-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --------------
+
+  // --- Node 13 ---
+  atom = &_atomSet[2][0];
+  brStatus((13-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((13-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((13-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((13-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((13-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+  brStatus((13-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 14 ---
+  atom = &_atomSet[2][1];
+  brStatus((14-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((14-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((14-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((14-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((14-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((14-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 15 ---
+  atom = &_atomSet[2][2];
+  brStatus((15-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((15-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((15-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((15-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((15-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((15-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 16 ---
+  atom = &_atomSet[2][3];
+  brStatus((16-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((16-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((16-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((16-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((16-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((16-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 17 ---
+  atom = &_atomSet[2][4];
+  brStatus((17-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((17-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((17-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((17-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((17-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((17-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 18 ---
+  atom = &_atomSet[2][5];
+  brStatus((18-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((18-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+//  brStatus((18-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((18-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((18-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((18-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --------------
+
+  // --- Node 19 ---
+  atom = &_atomSet[3][0];
+  brStatus((19-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((19-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((19-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((19-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((19-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((19-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 20 ---
+  atom = &_atomSet[3][1];
+  brStatus((20-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((20-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((20-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((20-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((20-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((20-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 21 ---
+  atom = &_atomSet[3][2];
+  brStatus((21-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((21-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((21-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((21-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((21-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((21-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 22 ---
+  atom = &_atomSet[3][3];
+  brStatus((22-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((22-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((22-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((22-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((22-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((22-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 23 ---
+  atom = &_atomSet[3][4];
+  brStatus((23-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((23-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+  brStatus((23-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+  brStatus((23-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((23-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((23-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+
+  // --- Node 24 ---
+  atom = &_atomSet[3][5];
+  brStatus((24-1)*6+0) = atom->node_pot_resistance_sw(real)&atom->node_sw_resistance(real)?1:0;
+  brStatus((24-1)*6+1) = atom->embr_pot_near_sw(EMBRPOS_U,real)|atom->embr_pot_far_sw(EMBRPOS_U,real)?1:0;
+//  brStatus((24-1)*6+2) = atom->embr_pot_near_sw(EMBRPOS_UR,real)|atom->embr_pot_far_sw(EMBRPOS_UR,real)?1:0;
+//  brStatus((24-1)*6+3) = atom->embr_pot_near_sw(EMBRPOS_R,real)|atom->embr_pot_far_sw(EMBRPOS_R,real)?1:0;
+//  brStatus((24-1)*6+4) = atom->embr_pot_near_sw(EMBRPOS_D,real)|atom->embr_pot_far_sw(EMBRPOS_D,real)?1:0;
+//  brStatus((24-1)*6+5) = atom->embr_pot_near_sw(EMBRPOS_L,real)|atom->embr_pot_far_sw(EMBRPOS_L,real)?1:0;
+}
 
 void SliceAnalog::calibrate(SliceAnalog const& cal_sl){
   size_t ver, hor;

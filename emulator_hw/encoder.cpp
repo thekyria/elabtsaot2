@@ -75,7 +75,7 @@ int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
 
   ans |= detail::encode_PFgot(sl, got_conf);
   ans |= detail::encode_PFpositions(sl, pos_conf, slpos_conf);
-  detail::encode_PFauxiliary(conf_conf, starter_conf, nios_conf);
+  detail::encode_PFauxiliary(sl, conf_conf, starter_conf, nios_conf);
   ans |= detail::encode_vref(sl, vref_conf);
   detail::encode_PFIinit(sl, icar_conf, ipol_conf);
   ans |= detail::encode_resistors(sl, res_conf, res_tcon_conf );
@@ -1155,7 +1155,8 @@ int encoder::detail::encode_PFpositions( Slice const& sl,
   return 0;
 }
 
-void encoder::detail::encode_PFauxiliary( vector<uint32_t>& conf_conf,
+void encoder::detail::encode_PFauxiliary( Slice const& sl,
+                                          vector<uint32_t>& conf_conf,
                                           vector<uint32_t>& starter_conf,
                                           vector<uint32_t>& nios_conf ){
   conf_conf.clear();
@@ -1164,7 +1165,11 @@ void encoder::detail::encode_PFauxiliary( vector<uint32_t>& conf_conf,
   conf_conf.push_back(temp);
 
   starter_conf.clear();
-  temp = 1050U;
+  if (   sl.dig.pipe_PFPQ.element_count()   ==0
+      && sl.dig.pipe_PFslack.element_count()==0)  // if all pipelines empty
+    temp = 0U;
+  else
+    temp = 1050U;
   stamp_NIOS_confirm(temp);
   starter_conf.push_back(temp);
 

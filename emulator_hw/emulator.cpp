@@ -149,7 +149,7 @@ int Emulator::preconditionEmulator(EmulatorOpType opType){
 
   int ans;
   // --------------- Map & fit & encode pws ---------------
-  switch ( _state ){
+  switch (_state){
   case EMU_STATE_START:
     ans = initializeUSB(); // would change _state to EMU_STATE_USBINIT
     if ( ans ) return 10;
@@ -804,6 +804,9 @@ int Emulator::autoFitting(EmulatorOpType opType, vector<string>* outputMsg){
     ans = _fitBusesPF(outputMsg);
     if (ans) return ans;
     break;
+  case EMU_OPTYPE_DCPF:
+    // TODO
+    break;
   case EMU_OPTYPE_TD:
     // ----- Fit generators -----
     ans = _fitGeneratorsTD(outputMsg);
@@ -820,11 +823,11 @@ int Emulator::autoFitting(EmulatorOpType opType, vector<string>* outputMsg){
 int Emulator::validateFitting(EmulatorOpType opType){
   // Calling validateFittingTD() downsets the state of the Emulator to
   // EMU_STATE_MAPOK
-  if ( _state > EMU_STATE_MAPOK )
+  if (_state>EMU_STATE_MAPOK)
     _state = EMU_STATE_MAPOK;
   // Else if the state of the Emulator is not at least
   // EMU_STATE_MAPOK the function is not executed (returns non-zero)
-  else if ( _state < EMU_STATE_MAPOK )
+  else if (_state<EMU_STATE_MAPOK)
     return -1;
 
 
@@ -833,7 +836,9 @@ int Emulator::validateFitting(EmulatorOpType opType){
   // TODO REALLY IMPLEMENT validateFitting()
   switch (opType){
   case EMU_OPTYPE_GPF:
-    /* TODO: PF */ break;
+    /* TODO: GPF */ break;
+  case EMU_OPTYPE_DCPF:
+    /* TODO: DCPF */ break;
   case EMU_OPTYPE_TD:
     /* TODO: TD */ break;
   }
@@ -863,6 +868,8 @@ int Emulator::encodePowersystem(EmulatorOpType opType){
     switch (opType){
     case EMU_OPTYPE_GPF:
       ans = encoder::encodeSlicePF( _emuhw->sliceSet[k],encoding[k]); break;
+    case EMU_OPTYPE_DCPF:
+      /* TODO: DCPF */ break;
     case EMU_OPTYPE_TD:
       ans = encoder::encodeSliceTD( _emuhw->sliceSet[k],encoding[k]); break;
     }

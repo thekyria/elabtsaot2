@@ -54,8 +54,9 @@ enum EmulatorCalState{
 };
 
 enum EmulatorOpType{
-  EMU_OPTYPE_GPF, // Operation concerning Guillaume's Power Flow
-  EMU_OPTYPE_TD  // Operation concerning TD simulation
+  EMU_OPTYPE_GPF,  // Operation concerning Guillaume's Power Flow
+  EMU_OPTYPE_DCPF, // Operation concerning DC Power Flow
+  EMU_OPTYPE_TD    // Operation concerning TD simulation
 };
 
 class Emulator {

@@ -14,6 +14,7 @@ using namespace elabtsaot;
 using std::cout;
 using std::endl;
 using std::vector;
+using std::polar;
 
 enum MoteurFengtianProperties{
   MFT_PROPERTY_BETA1,
@@ -79,6 +80,15 @@ MoteurFengtian::MoteurFengtian(Emulator* emu, Logger* log) :
   tempPt.minValue = 1;
   tempPt.maxValue = 127;
   _properties[tempPt] = tempPt.defaultValue;
+
+  tempPt.key = MFT_PROPERTY_METHOD;
+  tempPt.dataType = PROPERTYT_DTYPE_INT;
+  tempPt.name = "Method";
+  tempPt.description = "0: Guillaume's Power Flow; 1: DC Power Flow";
+  tempPt.defaultValue = static_cast<int>(MFT_METHOD_GPF);
+  tempPt.minValue = static_cast<int>(MFT_METHOD_GPF);
+  tempPt.maxValue = static_cast<int>(MFT_METHOD_DC);
+  _properties[tempPt] = tempPt.defaultValue;
 }
 
 #define GPF_ADDR_START 605
@@ -121,7 +131,14 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
   int method;
   _getOptions(beta1, beta2, Ptolerance, Qtolerance, maxIterCount, method);
 
+  // Initialize output voltages
   bool converged(false);
+  size_t busCount = pws.getBusCount();
+  V.resize(busCount);
+  for (size_t k(0); k!=busCount; ++k){
+    Bus const* bus = pws.getBus(k);
+    V(k) = polar(bus->V,bus->theta);
+  }
 
   switch (method){
   /*****************************************************************************
@@ -193,7 +210,6 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
     cout << "iteration count: " << iterCount << endl;
 
     // Retrieve the mapping of the buses
-    size_t busCount = pws.getBusCount();
     vector<MappingPosition> busMap(busCount);
     for (size_t k(0); k!=busCount; ++k){
       Bus const* bus = pws.getBus(k);
@@ -203,7 +219,6 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
     }
 
     // Read and actual voltage results & update results
-    V.resize(busCount);
     address = GPF_ADDR_RESULTS;
     for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
       // Read results for sliceId_
@@ -216,7 +231,7 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
       PQPipeline* pipe = &_emu->emuhw()->sliceSet[sliceId_].dig.pipe_PFPQ;
       for (size_t k(0); k!=busMap.size(); ++k){
         MappingPosition tempMapPos = busMap[k];
-        if (tempMapPos.tab == sliceId_){
+        if (tempMapPos.tab == static_cast<int>(sliceId_)){
           // For these results, get index in the PQPipeline of the slice
           int tempRow = tempMapPos.row;
           int tempCol = tempMapPos.col;
@@ -307,7 +322,7 @@ int MoteurFengtian::_waitForGPFConvergence(double timeout_, bool& converged) con
   return 1;
 }
 
-void MoteurFengtian::_parseVoltage(vector<uint32_t> const& val, vector<complex> out) const{
+void MoteurFengtian::_parseVoltage(vector<uint32_t> const& val, vector<complex>& out) const{
   out.resize(val.size(),complex(0.0,0.0));
   // Vector val contains signed 0x0000Q2.14 format numbers
   unsigned int bit16 = (1<<15);

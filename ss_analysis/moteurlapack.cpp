@@ -267,7 +267,7 @@ int MoteurLapack::do_solvePowerFlow(Powersystem const& pws, vector<complex>& V) 
     std::copy(pv.begin(), pv.end(), pvpq.begin());
     std::copy(pq.begin(), pq.end(), pvpq.begin()+pv.size());
     matrix<double,column_major> Bp( ssutils::indexMatrix(B,pvpq,pvpq) );
-    vector<double> Pp( ssutils::indexVector(P,pvpq) );
+    vector<double> Pp(ssutils::indexVector(P,pvpq));
 
     // Compute slack bus correction
     vector<double> Bsl( column(B,sl[0]) );
