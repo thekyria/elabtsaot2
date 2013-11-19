@@ -7,6 +7,7 @@ using namespace elabtsaot;
 #include "emulator.h"
 #include "encoder.h"
 #include "precisiontimer.h"
+#include "auxiliary.h"
 
 #include <boost/timer/timer.hpp>
 
@@ -29,6 +30,25 @@ enum MoteurFengtianMethod{
   MFT_METHOD_GPF = 0, // Guillaume Power Flow
   MFT_METHOD_DC = 1
 };
+
+#define GPF_ADDR_BETA 604
+#define GPF_ADDR_START 605
+#define GPF_ADDR_STOP 606
+#define GPF_ADDR_MAXITER 607
+#define GPF_ADDR_NIOSSAMPLE 608
+#define GPF_ADDR_TOL 609
+#define GPF_ADDR_ITERCOUNT 610
+#define GPF_ADDR_RESULTS 611
+
+#define GPF_WRCODE_START 1111
+#define GPF_WRCODE_RESET 2222
+#define GPF_WRCODE_HIZ   6666
+
+#define GPF_RDCODE_CONVERGED 9999
+#define GPF_RDCODE_NOTCONVERGED 6666
+#define GPF_RDCODE_ISRESET 3333
+
+#define DEFAULT_TIMEOUT 5.0
 
 MoteurFengtian::MoteurFengtian(Emulator* emu, Logger* log) :
   SSEngine("MoteurFengtian (based on Emulator) s.s. engine", log),
@@ -91,19 +111,6 @@ MoteurFengtian::MoteurFengtian(Emulator* emu, Logger* log) :
   _properties[tempPt] = tempPt.defaultValue;
 }
 
-#define GPF_ADDR_START 605
-#define GPF_ADDR_STOP 606
-#define GPF_ADDR_ITERCOUNT 610
-#define GPF_ADDR_RESULTS 612
-
-#define GPF_WRCODE_START 1111
-#define GPF_WRCODE_RESET 2222
-#define GPF_WRCODE_HIZ   6666
-
-#define GPF_RDCODE_CONVERGED 9999
-#define GPF_RDCODE_NOTCONVERGED 6666
-#define GPF_RDCODE_ISRESET 3333
-
 int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<complex>& V) const{
 
   boost::timer::auto_cpu_timer t; // when t goes out of scope it prints timing info
@@ -145,6 +152,7 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
    * GUILLAUME (LANZ) POWER FLOW METHOD
    ****************************************************************************/
   case MFT_METHOD_GPF:{
+    cout << "MoteurFengtian using GPF" << endl;
     // Map & fit & encode pws & end calib. mode
     int ans = _emu->preconditionEmulator(EMU_OPTYPE_GPF);
     if (ans) return ans;
@@ -164,12 +172,13 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
     int32_t tempMaxIter = maxIterCount;
     tempMaxIter &= mask7;
     for (size_t k(0);k!=_emu->encoding.size();++k){
-      _emu->encoding[k][603] = tempBeta;
-      _emu->encoding[k][606] = tempMaxIter;
-      _emu->encoding[k][608] = tempTol;
+      _emu->encoding[k][GPF_ADDR_BETA-1]    = tempBeta;
+      _emu->encoding[k][GPF_ADDR_MAXITER-1] = tempMaxIter;
+      _emu->encoding[k][GPF_ADDR_TOL-1]     = tempTol;
     }
 
     // Finally write the modified _emu->encoding vector to the devices
+    cout << "Writing encoding ..." << endl;
     ans = _emu->writeEncoding(false);
     if (ans) return 42;
 
@@ -189,17 +198,24 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
     }
 
     // Write the start codes
+    cout << "Writing start codes ..." << endl;
     size_t address(GPF_ADDR_START);
     vector<uint32_t> encoding605(1);
     for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+      cout << "slice: " << sliceId_ << " start_code: " << _NIOSStartCodes[sliceId_] << endl;
       encoding605[0] = _NIOSStartCodes[sliceId_];
       ans = _emu->usbWrite(devId[sliceId_], address, encoding605);
     }
     if (ans) return 43;
 
     // Check convergeance (read stop code)
+    cout << "Polling convergence flag ... ";
     ans = _waitForGPFConvergence(10.0, converged);
     if (ans) return 44;
+    if (converged)
+      cout << "converged! (" << GPF_RDCODE_CONVERGED << ")" << endl;
+    else
+      cout << "not converged! (" << GPF_RDCODE_NOTCONVERGED << ")" << endl;
 
     vector<uint32_t> readBuffer;
     // Read number of iterations by the algorithm
@@ -207,7 +223,7 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
     ans = _emu->usbRead(devId[0], address, 1, readBuffer);
     if (ans) return 45;
     size_t iterCount = static_cast<size_t>(readBuffer[0]);
-    cout << "iteration count: " << iterCount << endl;
+    cout << "Iteration count (address " << GPF_ADDR_ITERCOUNT << "): " << iterCount << endl;
 
     // Retrieve the mapping of the buses
     vector<MappingPosition> busMap(busCount);
@@ -219,13 +235,18 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
     }
 
     // Read and actual voltage results & update results
+    cout << "Reading results ... " << endl;
     address = GPF_ADDR_RESULTS;
     for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+      using auxiliary::operator <<;
+
       // Read results for sliceId_
       ans = _emu->usbRead(devId[sliceId_], address, 24, readBuffer);
+      cout << "readBuffer: " << readBuffer << endl;
       // Parse them for sliceId_
       vector<complex> out;
       _parseVoltage(readBuffer,out);
+      cout << "readBuffer (parsed): " << out << endl;
 
       // Check which buses will have results on this slice
       PQPipeline* pipe = &_emu->emuhw()->sliceSet[sliceId_].dig.pipe_PFPQ;
@@ -244,11 +265,15 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
     }
 
     // Reset the board after power flow is complete
+    cout << "Reseting slices ... ";
     address = GPF_ADDR_START;
     encoding605[0] = GPF_WRCODE_RESET;
-    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_)
+    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+      cout << " " << sliceId_;
       ans = _emu->usbWrite(sliceId_, address, encoding605);
+    }
     if (ans) return 46;
+    cout << " done!" << endl;
 
   break;}
 
@@ -256,6 +281,9 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
    * DC POWER FLOW METHOD
    ****************************************************************************/
   case MFT_METHOD_DC:{
+    cout << "MoteurFengtian using DC PF" << endl;
+
+    // TODO!
 
   break;}
   }
@@ -286,7 +314,6 @@ void MoteurFengtian::_getOptions(double& beta1,
   method = boost::any_cast<int>( anyMethod );
 }
 
-#define DEFAULT_TIMEOUT 5.0
 int MoteurFengtian::_waitForGPFConvergence(double timeout_, bool& converged) const{
   // If timeout negative then default to 5 seconds
   double timeout=(timeout_>0)?timeout_:DEFAULT_TIMEOUT;
