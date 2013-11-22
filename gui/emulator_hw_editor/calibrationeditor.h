@@ -3,8 +3,7 @@
 
 This class is part of the elab-tsaot project in the Electronics Laboratory of
 the Ecole Polytechnique Federal de Lausanne.
-
-\author Theodoros Kyriakidis, thekyria at gmail dot com, Electronics Laboratory
+\author Lilis Georgios, georgios.lilis at epfl dot ch, Elab
 EPFL
 */
 
@@ -40,6 +39,9 @@ class CalibrationEditor : public QSplitter{
 
   int init();
   int updt();
+  int calexport(QString filename);
+  int calimport(QString filename);
+  int hardreset();
 
  public slots:
 
@@ -53,6 +55,8 @@ class CalibrationEditor : public QSplitter{
   void checkCellSlot();
   void potTestSlot();
   void potTestErrorSlot();
+  void calibrationExportSlot();
+  void calibrationImportSlot();
 
  private:
 
@@ -74,6 +78,7 @@ class CalibrationEditor : public QSplitter{
                          QVector<QVector<double> > *decodedresultsimag ,int numofSamples);
   void _offsetGainHandling( QVector<uint32_t>* encodedinput, int gainoroffset);
   void _soft_reset();
+  void _hard_reset();
 
   // ------------------------- Variables -------------------------
   QVector <int> rescode;
@@ -103,6 +108,7 @@ class CalibrationEditor : public QSplitter{
   //Master Store of all the devices
   struct devicedata{
     int device_id;
+    QString deviceName;
     QVector <QVector<QString> > calibrationnamedatanew;
     QVector <QVector<double> > calibrationoffsetdatanew;
     QVector <QVector<double> > calibrationgaindatanew;

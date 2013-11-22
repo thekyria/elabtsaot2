@@ -4,7 +4,7 @@ using namespace elabtsaot;
 
 #include "logger.h"
 #include "emulator.h"
-
+#include "importerexporter.h"
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
 #include <qwt_plot_item.h>
@@ -33,14 +33,21 @@ using namespace elabtsaot;
 #include <QPen>
 #include <QtAlgorithms>
 #include <QGroupBox>
+#include <QDir>
+
 
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
 using std::cout;
 using std::endl;
+using std::ios;
+using std::ostream;
+using std::string;
 #include <iomanip>
 using std::vector;
+#include <stdio.h>
+#include <direct.h>
 
 #define CONSTRES 2200.0
 
@@ -78,7 +85,7 @@ CalibrationEditor::CalibrationEditor( Emulator* emu, Logger* log,
     connect( calibrationSetterAct, SIGNAL(triggered()),
              this, SLOT(calibrationSetterSlot()) );
 
-    QAction* endCalibrationModeAct = new QAction( QIcon(":/images/.png"),
+    QAction* endCalibrationModeAct = new QAction( QIcon(":/images/end.png"),
                                                   "End calibration mode", this );
     calibrationEditorToolbar->addAction( endCalibrationModeAct );
     connect( endCalibrationModeAct, SIGNAL(triggered()),
@@ -127,6 +134,19 @@ CalibrationEditor::CalibrationEditor( Emulator* emu, Logger* log,
     calibrationEditorToolbar->addAction(potTestErrorAct);
     connect( potTestErrorAct, SIGNAL(triggered()),
              this, SLOT(potTestErrorSlot()) );
+
+    QAction *calibrationExportAct = new QAction (QIcon(":/images/export.png"),
+                                                 "Export calibration values",this);
+    calibrationEditorToolbar->addAction(calibrationExportAct);
+    connect( calibrationExportAct, SIGNAL(triggered()),
+             this, SLOT(calibrationExportSlot()) );
+
+    QAction *calibrationImportAct = new QAction (QIcon(":/images/import.png"),
+                                                 "Import calibration values",this);
+    calibrationEditorToolbar->addAction(calibrationImportAct);
+    connect( calibrationImportAct, SIGNAL(triggered()),
+             this, SLOT(calibrationImportSlot()) );
+
 
     QHBoxLayout *mainlayout = new QHBoxLayout;
     calibresults->setLayout(mainlayout);
@@ -538,7 +558,7 @@ CalibrationEditor::~CalibrationEditor(){
 }
 
 int CalibrationEditor::init(){
-
+    _emu->assignSliceToDevice(0,0);
     // Update local emulator according to _emu->emuhw()
     _cal_emuhw->init( _emu->getHwSliceCount() );
 
@@ -567,7 +587,8 @@ int CalibrationEditor::init(){
         References_Imag->at(i)->setEnabled(true);
         //Initialize the storing of all active devices
         devicedata* dd = new devicedata;
-        dd->device_id=i;
+        dd->device_id = i;
+        dd->deviceName = QString::fromStdString(_emu->getUSBDevices().at(i).deviceName);
         _master_store.append(dd);
     }
     return 0;
@@ -584,198 +605,6 @@ int CalibrationEditor::updt(){
     return 0;
 }
 
-void CalibrationEditor::startCalibrationSlot(){
-    
-    int ans = _emu->validateSliceDeviceAssignement();
-
-    if ( ans )
-        cout << "Cannot validate Slice <-> Devices assignement, try to assign all slices to devices first" << endl;
-
-    else{
-        cout << "Slice <-> Devices assignement validated, proceeding to calibration! " << endl;
-
-        vector<uint32_t> tempvector;
-        for ( size_t i = 0 ; i < _cal_emuhw->sliceSet.size() ; ++i ){
-            int devId = _emu->sliceDeviceMap(i);
-            cout<<endl<<endl<<"Calibration of device "<<devId<<endl;
-            //Reseting before test
-            tempvector.clear();
-            tempvector.push_back(2222);
-            _emu->usbWrite( devId, 286,tempvector);
-            if (chk0->isChecked()){
-                cout<<"Running ADC offset calibration..."<<endl;
-                int ans = _ADCOffsetConverterCalibration(devId);
-                if (ans==1){
-                    cout<<"Emulator board "<<_emu->getUSBDevices().at(devId).deviceName<<" failed to respond, please do a hardware reset"<<endl;
-                    _soft_reset();
-                    return;
-                }
-
-            }
-            _log->notifyProgress(5);
-            if (chk1->isChecked()){
-                cout<<"Running DAC calibration..."<<endl;
-                int ans = _convertersCalibration(devId);
-                if (ans==1){
-                    cout<<"Emulator board "<<_emu->getUSBDevices().at(devId).deviceName<<" failed to respond, please do a hardware reset"<<endl;
-                    _soft_reset();
-                    return;
-                }
-
-            }
-            _log->notifyProgress(10);
-
-            if (chk2->isChecked()){
-                cout<<"Running Conversion resistor calibration..."<<endl;
-                int ans = _conversionResistorCalibrationNew(devId);
-                if (options[3]!='6'){
-                    cout<<"Running debug Conversion resistor calibration..."<<endl;
-                    ans = _conversionResistorCalibrationNew(devId);
-                }
-
-                if (ans==3){
-                    cout<<endl;
-                    cout<<"Wrong results returned by board,reset and plug-unplug board "<<devId<<endl<<endl;
-                    cout<<"If not corrected, check soldering points of board and connectors"<<endl;
-                    _log->notifyProgress(100);
-                    _soft_reset();
-                    return;
-                }
-                else if (ans==1){
-                    cout<<"Emulator board "<<_emu->getUSBDevices().at(devId).deviceName<<" failed to respond, please do a hardware reset"<<endl;
-                    _soft_reset();
-                    return;
-                }
-            }
-            _log->notifyProgress(20);
-
-            if (chk3->isChecked()){
-                cout<<"Running Internal resistor calibration..."<<endl;
-                int ans =_gridResistorCalibrationNew(devId,0);
-                if (ans==3)
-                    cout<<"I noticed some misbehaving Internal resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
-            }
-            _log->notifyProgress(30);
-
-            if (chk4->isChecked()){
-                cout<<"Running P0Chip1-2 resistor calibration..."<<endl;
-                int ans =_gridResistorCalibrationNew(devId,1);
-                if (ans==3)
-                    cout<<"I noticed some misbehaving P0Chip1-2 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
-            }
-            _log->notifyProgress(40);
-
-            if (chk5->isChecked()){
-                cout<<"Running P1Chip1-2 resistor calibration..."<<endl;
-                int ans =_gridResistorCalibrationNew(devId,2);
-                if (ans==3)
-                    cout<<"I noticed some misbehaving P1Chip1-2 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
-            }
-            _log->notifyProgress(50);
-
-            if (chk6->isChecked()){
-                cout<<"Running P2Chip1-2 resistor calibration..."<<endl;
-                int ans = _gridResistorCalibrationNew(devId,3);
-                if (ans==3)
-                    cout<<"I noticed some misbehaving P2Chip1-2 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
-            }
-            _log->notifyProgress(60);
-
-            if (chk7->isChecked()){
-                cout<<"Running P3Chip1-2 resistor calibration..."<<endl;
-                int ans =_gridResistorCalibrationNew(devId,4);
-                if (ans==3)
-                    cout<<"I noticed some misbehaving P3Chip1-2 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
-            }
-            _log->notifyProgress(70);
-
-            if (chk8->isChecked()){
-                cout<<"Running P0P2Chip3 resistor calibration..."<<endl;
-                int ans =_gridResistorCalibrationNew(devId,5);
-                if (ans==3)
-                    cout<<"I noticed some misbehaving P0P2Chip3 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
-            }
-            _log->notifyProgress(80);
-
-            if (chk9->isChecked()){
-                cout<<"Running P1P3Chip3 resistor calibration..."<<endl;
-                int ans =_gridResistorCalibrationNew(devId,6);
-                if (ans==3)
-                    cout<<"I noticed some misbehaving P1P3Chip3 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
-            }
-            _log->notifyProgress(90);
-
-            if (chk10->isChecked()){
-                cout<<"Running P0P2EXT resistor calibration..."<<endl;
-                int ans =_gridResistorCalibrationNew(devId,7);
-                if (ans==3)
-                    cout<<"I noticed some misbehaving P0P2EXT resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
-            }
-            _log->notifyProgress(95);
-
-            if (chk11->isChecked()){
-                cout<<"Running P1P3EXT resistor calibration..."<<endl;
-                int ans =_gridResistorCalibrationNew(devId,8);
-                if (ans==3)
-                    cout<<"I noticed some misbehaving P1P3EXT resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
-            }
-
-            //Saving device data
-            _master_store.at(i)->calibrationnamedatanew=calibrationnamedatanew;
-            _master_store.at(i)->calibrationoffsetdatanew=calibrationoffsetdatanew;
-            _master_store.at(i)->calibrationgaindatanew=calibrationgaindatanew;
-            _master_store.at(i)->calibrationidnew=calibrationidnew;
-            _master_store.at(i)->calibrationrabnew=calibrationrabnew;
-            _master_store.at(i)->calibrationrwnew=calibrationrwnew;
-            _master_store.at(i)->rawresultsnew=rawresultsnew;
-            _master_store.at(i)->lsqresultsnew=lsqresultsnew;
-            _soft_reset();//erasing the temp vector of device
-            _log->notifyProgress(100);
-        }
-    }
-
-}
-
-void CalibrationEditor::calibrationSetterSlot(){
-
-    if ( _cal_emuhw->sliceSet.size() == 0 ){
-        cout<<"Set number of slices first from the option dialog"<<endl;
-        return;
-    }
-
-    // Store calibration values (currently in containers) into local _cal_emuhw copy
-    int ans = 0;
-    for( size_t sliceindex = 0 ; sliceindex < _cal_emuhw->sliceSet.size() ; ++sliceindex ){
-        ans = _calibrationSetter( sliceindex );
-        if ( ans ){
-            cout << "Storing calibration resutls to local emulator copy ";
-            cout << "failed with code " << ans << endl;
-        }
-    }
-
-    // Verify sizes
-    // TODO: slice count, as well as atom count for each slice
-
-    // Calibrate of the real EmulatorHw
-    for (size_t k=0; k!=_emu->emuhw()->sliceSet.size(); ++k )
-      _emu->emuhw()->sliceSet[k].ana.calibrate(_cal_emuhw->sliceSet[k].ana);
-
-    if ( ans )
-        cout << "Writing calibration to the emulator failed with code " << ans << endl;
-    else
-        cout << "Calibrating the emulator was successful" << endl;
-
-    return;
-}
-
-void CalibrationEditor::endCalibrationModeSlot(){
-    int ans = _emu->endCalibrationMode();
-    if (ans)
-        cout << "Ending the emulator calibration mode failed with code " << ans << endl;
-    else
-        cout << "Ending the emulator calibration mode was successful" << endl;
-    return;
-}
 
 int CalibrationEditor::_ADCOffsetConverterCalibration(int devid){
     vector<uint32_t> tempvector;
@@ -2439,7 +2268,7 @@ void CalibrationEditor::_displayCurveNew(){
                     temprawxresults.append(i);
                 }
                 if (options[2]!='6'){
-                    
+
                     for(int i=rawresultsnew[realorimag].size()-24;i<rawresultsnew[realorimag].size()  ;i++){
                         temprawresultsnew=rawresultsnew[realorimag][i];
                         QwtPlotCurve *curve = new QwtPlotCurve;
@@ -2560,14 +2389,17 @@ int CalibrationEditor::_calibrationSetter( size_t sliceindex ){
     for (size_t v = 0 ; v != ver ; ++v){
         for (size_t h = 0 ; h != hor ; ++h){
             at=&sl->ana._atomSet[v][h];
+            //ADC
             at->set_node_adc_offset_corr(calibrationoffsetdatanew[0][i+24],true);// +24 because the first 24 is the adc offset not the DAC/ADC test
             at->set_node_adc_offset_corr(calibrationoffsetdatanew[1][i+24],false);// +24 because the first 24 is the adc offset not the DAC/ADC test
             at->set_node_adc_gain_corr(calibrationgaindatanew[0][i+24],true);// +24 because the first 24 is the adc offset not the DAC/ADC test
             at->set_node_adc_gain_corr(calibrationgaindatanew[1][i+24],false);// +24 because the first 24 is the adc offset not the DAC/ADC test
+            //Convertion Resistor
             at->set_node_real_pot_current_rab(calibrationrabnew[0][i],true);
             at->set_node_imag_pot_current_rab(calibrationrabnew[1][i],true);
             at->set_node_real_pot_current_rw(calibrationrwnew[0][i],true);
             at->set_node_imag_pot_current_rw(calibrationrwnew[1][i],true);
+            //Internal resistor
             at->set_node_real_pot_resistance_rab(calibrationrabnew[0][i+24],true);
             at->set_node_imag_pot_resistance_rab(calibrationrabnew[1][i+24],true);
             at->set_node_real_pot_resistance_rw(calibrationrwnew[0][i+24],true);
@@ -2873,7 +2705,6 @@ void CalibrationEditor::_resultsHandling(QVector<uint32_t> const& nodedata,
     }
 }
 
-
 void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
                                              int gainoroffset ){
 
@@ -2931,48 +2762,17 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
 
 }
 
-void CalibrationEditor::resetCalibrationSlot(){
+void CalibrationEditor::_hard_reset(){
     cout<<endl;
     cout<<"Reseting devices"<<endl;
     init();
     cout<<"Resetting calibration"<<endl<<endl;
-
-    calibrationnamedatanew.clear();
-    calibrationoffsetdatanew.clear();
-    calibrationgaindatanew.clear();
-    calibrationrabnew.clear();
-    calibrationrwnew.clear();
-    calibrationidnew.clear();
-    rawresultsnew.clear();
-    lsqresultsnew.clear();
-    P3resnew.clear();
-    P1resnew.clear();
-    gainlabel->clear();
-    offsetlabel->clear();
-    resistorlabel->clear();
-    //Initialize the calibration storage vectors
-    //The first dimensions if for the real and imag part of emulator
-    for(int i=0;i<2;++i){
-        calibrationnamedatanew.append(QVector<QString>());
-        calibrationoffsetdatanew.append(QVector<double>());
-        calibrationgaindatanew.append(QVector<double>());
-        calibrationidnew.append(QVector<int>());
-        calibrationrabnew.append(QVector <double>());
-        calibrationrwnew.append(QVector<double>());
-        rawresultsnew.append(QVector<QVector <double> >());
-        lsqresultsnew.append(QVector<QVector <double> >());
-    }
-    _log->notifyProgress(0);
+    CalibrationEditor::_soft_reset();
     plot->detachItems(QwtPlotItem::Rtti_PlotItem);
     plot->setTitle(QwtText( "Debug Plot" ));
     plot->replot();
-    //Resetting
-    vector<uint32_t> tempvector;
-    tempvector.clear();
-    tempvector.push_back(2222);
-    for (size_t i=0;i<_emu->getUSBDevicesCount();i++)
-        _emu->usbWrite( i, 286,tempvector);
 }
+
 void CalibrationEditor::_soft_reset(){
 
     calibrationnamedatanew.clear();
@@ -3007,6 +2807,415 @@ void CalibrationEditor::_soft_reset(){
     tempvector.push_back(2222);
     for (size_t i=0;i<_emu->getUSBDevicesCount();i++)
         _emu->usbWrite( i, 286,tempvector);
+}
+int CalibrationEditor::hardreset(){
+    _hard_reset();
+    return 1;
+}
+
+int CalibrationEditor::calexport(QString filename){
+
+    cout << "Exporting to: " << filename.toStdString() << endl;
+    char* cstr;
+    string fname = filename.toStdString();
+    cstr = new char [fname.size()+1];
+    strcpy( cstr, fname.c_str() );
+    FILE *f;
+    f = fopen( cstr, "w");
+
+    fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
+    fprintf(f, "<calibration xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
+
+    // --------------- Output devices's info ---------------
+    fprintf(f, "<Info>\n");
+    fprintf(f, "\t<Name> %s </Name>\n", "Calibration values of devices");
+    fprintf(f, "\t<Devicenumber> %zu </Devicenumber>\n", _emu->getUSBDevicesCount());
+    fprintf(f, "</Info>\n");
+    fflush(f);
+
+    // --------------- Output devices' info ---------------
+    fprintf(f, "<Devices>\n");
+    if (_emu->getUSBDevicesCount()!= _master_store.size()){
+        cout<< "ERROR" << endl;
+        cout<< "Devices connected are more than stored in calibration data stractures" << endl;
+        return 0;
+    }
+
+    for(size_t devid = 0; devid != _emu->getUSBDevicesCount(); ++devid){
+        //Check the names' vector for existence of data
+        if (_master_store.at(devid)->calibrationnamedatanew.size()==0){
+            cout<<"None test was run"<<endl;
+            return 0;
+        }
+        if (_master_store.at(devid)->calibrationnamedatanew[0].size()!=254){
+            cout<<"Run all tests before exporting"<<endl;
+            return 0;
+        }
+
+
+        //Take a copy of all device values
+        //The vectors look like that:
+        // Row1(Real): columns1..n(test1(n1 n2 n3 ... n24) + test2(n1 n2 n3 ... n24) ... test12(n1 n2 n3 ... n7))
+        // Row2(Imaginary): columns1..n(test1(n1 n2 n3 ... n24) + test2(n1 n2 n3 ... n24) ... test12(n1 n2 n3 ... n7))
+
+        // Please not the last two tests dont have 24 nodes
+        // As well as the gain offset vector are only 48 size long since they have only two test
+        // The resistor tests should they are full, they have 254 values for each(real/imag)
+
+        QVector <QVector<double> > offsets = _master_store.at(devid)->calibrationoffsetdatanew;
+        QVector <QVector<double> > gains = _master_store.at(devid)->calibrationgaindatanew;
+        QVector <QVector<double> > rab = _master_store.at(devid)->calibrationrabnew;
+        QVector <QVector<double> > rw = _master_store.at(devid)->calibrationrwnew;
+        QString devName = _master_store.at(devid)->deviceName;
+
+        QVector <QString> TestNames;
+        TestNames.append("ADC");             //0
+        TestNames.append("DAC_ADC");    //1
+
+        fprintf(f, "\t<Device>\n");
+        fprintf(f, "\t\t<Id> %zu </Id>\n", devid);
+        fprintf(f, "\t\t<Name> %s </Name>\n", devName.toStdString().c_str());
+        // ----------- Output Nodes's info ---------------
+        fprintf(f, "\t\t<Nodes>\n");
+        for(size_t node=0; node!=24; ++node){
+            fprintf(f, "\t\t\t<Node>\n");
+            fprintf(f, "\t\t\t\t<Id> %zu </Id>\n", node);
+            fprintf(f, "\t\t\t\t<Data>\n");
+            QVector <QString> REAL_IMAG;
+            REAL_IMAG.append("Real");
+            REAL_IMAG.append("Imag");
+            for (size_t ri = 0; ri!=REAL_IMAG.size(); ++ri){
+                fprintf(f, "\t\t\t\t\t<%s>\n", REAL_IMAG[ri].toStdString().c_str());
+                // ---------- ADC offset -------
+                fprintf(f, "\t\t\t\t\t\t<%s>\n", TestNames[0].toStdString().c_str());
+                fprintf(f, "\t\t\t\t\t\t\t<%s> %.12f </%s>\n", string("Offset").c_str(), offsets[ri][node] , string("Offset").c_str());
+                fprintf(f, "\t\t\t\t\t\t</%s>\n", TestNames[0].toStdString().c_str());
+
+                // ---------- ADC/DAC offset gain-------
+                fprintf(f, "\t\t\t\t\t\t<%s>\n", TestNames[1].toStdString().c_str());
+                fprintf(f, "\t\t\t\t\t\t\t<%s> %.12f </%s>\n", string("Offset").c_str() , offsets[ri][node+24] , string("Offset").c_str());
+                fprintf(f, "\t\t\t\t\t\t\t<%s> %.12f </%s>\n", string("Gain").c_str() , gains[ri][node+24] , string("Gain").c_str());
+                fprintf(f, "\t\t\t\t\t\t</%s>\n", TestNames[1].toStdString().c_str());
+
+                QVector <QString> RESISTORS;
+                RESISTORS.append("Convertion");
+                RESISTORS.append("Internal");
+                RESISTORS.append("P0Chip1-2");
+                RESISTORS.append("P1Chip1-2");
+                RESISTORS.append("P2Chip1-2");
+                RESISTORS.append("P3Chip1-2");
+                RESISTORS.append("P0P2Chip3");
+                RESISTORS.append("P1P3Chip3");
+                //The external
+                RESISTORS.append("P0P2EXT"); // Index 8
+                RESISTORS.append("P1P3EXT"); // Index 9
+
+                // TestNames have an offset of 2, since there are two test before.
+
+                for (size_t rt = 0; rt!= (RESISTORS.size()-2); ++rt){ //Remove the ext
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[rt].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+rt*24]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+rt*24]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[rt].toStdString().c_str());
+                }
+                //                // ---------- Convertion Resistor-------
+                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[2].toStdString().c_str());
+                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node]);
+                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node]);
+
+                //                // ---------- Internal Resistor-------
+                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[3].toStdString().c_str());
+                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+24]);
+                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+24]);
+
+                //                // ---------- P0Chip1-2 Resistor-------
+                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[4].toStdString().c_str());
+                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+48]);
+                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+48]);
+
+                //                // ---------- P1Chip1-2 Resistor-------
+                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[5].toStdString().c_str());
+                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+72]);
+                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+72]);
+
+                //                // ---------- P2Chip1-2 Resistor-------
+                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[6].toStdString().c_str());
+                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+96]);
+                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+96]);
+
+                //                // ---------- P3Chip1-2 Resistor-------
+                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[7].toStdString().c_str());
+                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+120]);
+                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+120]);
+
+                //                // ---------- P0P2Chip3 Resistor-------
+                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[8].toStdString().c_str());
+                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+144]);
+                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+144]);
+
+                //                // ---------- P1P3Chip3 Resistor-------
+                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[9].toStdString().c_str());
+                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+168]);
+                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+168]);
+
+                if (node==0|node==1|node==2|node==3|node==4){
+                    // ---------- P0P2EXT Resistor------- There are only in 7 nodes
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[8].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+192]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+192]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[8].toStdString().c_str());
+
+                    // ---------- P1P3EXT Resistor------- There are only in 7 nodes
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[9].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+199]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+199]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[9].toStdString().c_str());
+
+                }
+                if (node==6){
+                    // ---------- P0P2EXT Resistor------- There are only in 7 nodes
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[8].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][5+192]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][5+192]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[8].toStdString().c_str());
+
+                    // ---------- P1P3EXT Resistor------- There are only in 7 nodes
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[9].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][5+199]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][5+199]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[9].toStdString().c_str());
+
+                }
+                if (node==12){
+                    // ---------- P0P2EXT Resistor------- There are only in 7 nodes
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[8].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][6+192]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][6+192]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[8].toStdString().c_str());
+
+
+                    // ---------- P1P3EXT Resistor------- There are only in 7 nodes
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[9].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][6+199]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][6+199]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[9].toStdString().c_str());
+
+                }
+                fprintf(f, "\t\t\t\t\t</%s>\n", REAL_IMAG[ri].toStdString().c_str());
+            } //Real Imag write finish here
+            fprintf(f, "\t\t\t\t</Data>\n");
+            fprintf(f, "\t\t\t</Node>\n");
+        } // Nodes finish here
+        fprintf(f, "\t\t</Nodes>\n");
+        fprintf(f, "\t</Device>\n");
+    }//End of the devices
+    fprintf(f, "</Devices>\n\n");
+    fprintf(f, "</calibration>\n");
+
+    fflush(f);
+    fclose(f);
+    cout << "File written" << endl;
+    return 1;
+}
+
+int CalibrationEditor::calimport(QString filename){
+    int ans = io::importCalibrationValues(filename.toStdString(), this);
+    return ans;
+}
+
+void CalibrationEditor::startCalibrationSlot(){
+
+    int ans = _emu->validateSliceDeviceAssignement();
+    if ( ans )
+        cout << "Cannot validate Slice <-> Devices assignement, try to assign all slices to devices first" << endl;
+    else{
+        cout << "Slice <-> Devices assignement validated, proceeding to calibration! " << endl;
+        vector<uint32_t> tempvector;
+        for ( size_t i = 0 ; i < _cal_emuhw->sliceSet.size() ; ++i ){
+            int devId = _emu->sliceDeviceMap(i);
+            cout<<endl<<endl<<"Calibration of device "<<devId<<endl;
+            //Reseting before test
+            tempvector.clear();
+            tempvector.push_back(2222);
+            _emu->usbWrite( devId, 286,tempvector);
+            if (chk0->isChecked()){
+                cout<<"Running ADC offset calibration..."<<endl;
+                int ans = _ADCOffsetConverterCalibration(devId);
+                if (ans==1){
+                    cout<<"Emulator board "<<_emu->getUSBDevices().at(devId).deviceName<<" failed to respond, please do a hardware reset"<<endl;
+                    _soft_reset();
+                    return;
+                }
+
+            }
+            _log->notifyProgress(5);
+            if (chk1->isChecked()){
+                cout<<"Running DAC calibration..."<<endl;
+                int ans = _convertersCalibration(devId);
+                if (ans==1){
+                    cout<<"Emulator board "<<_emu->getUSBDevices().at(devId).deviceName<<" failed to respond, please do a hardware reset"<<endl;
+                    _soft_reset();
+                    return;
+                }
+
+            }
+            _log->notifyProgress(10);
+
+            if (chk2->isChecked()){
+                cout<<"Running Conversion resistor calibration..."<<endl;
+                int ans = _conversionResistorCalibrationNew(devId);
+                if (options[3]!='6'){
+                    cout<<"Running debug Conversion resistor calibration..."<<endl;
+                    ans = _conversionResistorCalibrationNew(devId);
+                }
+
+                if (ans==3){
+                    cout<<endl;
+                    cout<<"Wrong results returned by board,reset and plug-unplug board "<<devId<<endl<<endl;
+                    cout<<"If not corrected, check soldering points of board and connectors"<<endl;
+                    _log->notifyProgress(100);
+                    _soft_reset();
+                    return;
+                }
+                else if (ans==1){
+                    cout<<"Emulator board "<<_emu->getUSBDevices().at(devId).deviceName<<" failed to respond, please do a hardware reset"<<endl;
+                    _soft_reset();
+                    return;
+                }
+            }
+            _log->notifyProgress(20);
+
+            if (chk3->isChecked()){
+                cout<<"Running Internal resistor calibration..."<<endl;
+                int ans =_gridResistorCalibrationNew(devId,0);
+                if (ans==3)
+                    cout<<"I noticed some misbehaving Internal resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
+            }
+            _log->notifyProgress(30);
+
+            if (chk4->isChecked()){
+                cout<<"Running P0Chip1-2 resistor calibration..."<<endl;
+                int ans =_gridResistorCalibrationNew(devId,1);
+                if (ans==3)
+                    cout<<"I noticed some misbehaving P0Chip1-2 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
+            }
+            _log->notifyProgress(40);
+
+            if (chk5->isChecked()){
+                cout<<"Running P1Chip1-2 resistor calibration..."<<endl;
+                int ans =_gridResistorCalibrationNew(devId,2);
+                if (ans==3)
+                    cout<<"I noticed some misbehaving P1Chip1-2 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
+            }
+            _log->notifyProgress(50);
+
+            if (chk6->isChecked()){
+                cout<<"Running P2Chip1-2 resistor calibration..."<<endl;
+                int ans = _gridResistorCalibrationNew(devId,3);
+                if (ans==3)
+                    cout<<"I noticed some misbehaving P2Chip1-2 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
+            }
+            _log->notifyProgress(60);
+
+            if (chk7->isChecked()){
+                cout<<"Running P3Chip1-2 resistor calibration..."<<endl;
+                int ans =_gridResistorCalibrationNew(devId,4);
+                if (ans==3)
+                    cout<<"I noticed some misbehaving P3Chip1-2 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
+            }
+            _log->notifyProgress(70);
+
+            if (chk8->isChecked()){
+                cout<<"Running P0P2Chip3 resistor calibration..."<<endl;
+                int ans =_gridResistorCalibrationNew(devId,5);
+                if (ans==3)
+                    cout<<"I noticed some misbehaving P0P2Chip3 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
+            }
+            _log->notifyProgress(80);
+
+            if (chk9->isChecked()){
+                cout<<"Running P1P3Chip3 resistor calibration..."<<endl;
+                int ans =_gridResistorCalibrationNew(devId,6);
+                if (ans==3)
+                    cout<<"I noticed some misbehaving P1P3Chip3 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
+            }
+            _log->notifyProgress(90);
+
+            if (chk10->isChecked()){
+                cout<<"Running P0P2EXT resistor calibration..."<<endl;
+                int ans =_gridResistorCalibrationNew(devId,7);
+                if (ans==3)
+                    cout<<"I noticed some misbehaving P0P2EXT resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
+            }
+            _log->notifyProgress(95);
+
+            if (chk11->isChecked()){
+                cout<<"Running P1P3EXT resistor calibration..."<<endl;
+                int ans =_gridResistorCalibrationNew(devId,8);
+                if (ans==3)
+                    cout<<"I noticed some misbehaving P1P3EXT resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
+            }
+
+            //Saving device data
+            _master_store.at(i)->calibrationnamedatanew=calibrationnamedatanew;
+            _master_store.at(i)->calibrationoffsetdatanew=calibrationoffsetdatanew;
+            _master_store.at(i)->calibrationgaindatanew=calibrationgaindatanew;
+            _master_store.at(i)->calibrationidnew=calibrationidnew;
+            _master_store.at(i)->calibrationrabnew=calibrationrabnew;
+            _master_store.at(i)->calibrationrwnew=calibrationrwnew;
+            _master_store.at(i)->rawresultsnew=rawresultsnew;
+            _master_store.at(i)->lsqresultsnew=lsqresultsnew;
+            _soft_reset();//erasing the temp vector of device
+            _log->notifyProgress(100);
+        }
+    }
+
+}
+
+void CalibrationEditor::calibrationSetterSlot(){
+
+    if ( _cal_emuhw->sliceSet.size() == 0 ){
+        cout<<"Set number of slices first from the option dialog"<<endl;
+        return;
+    }
+
+    // Store calibration values (currently in containers) into local _cal_emuhw copy
+    int ans = 0;
+    for( size_t sliceindex = 0 ; sliceindex < _cal_emuhw->sliceSet.size() ; ++sliceindex ){
+        ans = _calibrationSetter( sliceindex );
+        if ( ans ){
+            cout << "Storing calibration resutls to local emulator copy ";
+            cout << "failed with code " << ans << endl;
+        }
+    }
+
+    // Verify sizes
+    // TODO: slice count, as well as atom count for each slice
+
+    // Calibrate of the real EmulatorHw
+    for (size_t k=0; k!=_emu->emuhw()->sliceSet.size(); ++k )
+        _emu->emuhw()->sliceSet[k].ana.calibrate(_cal_emuhw->sliceSet[k].ana);
+
+    if ( ans )
+        cout << "Writing calibration to the emulator failed with code " << ans << endl;
+    else
+        cout << "Calibrating the emulator was successful" << endl;
+
+    return;
+}
+
+void CalibrationEditor::endCalibrationModeSlot(){
+    int ans = _emu->endCalibrationMode();
+    if (ans)
+        cout << "Ending the emulator calibration mode failed with code " << ans << endl;
+    else
+        cout << "Ending the emulator calibration mode was successful" << endl;
+    return;
+}
+
+void CalibrationEditor::resetCalibrationSlot(){
+    // Button slot
+    CalibrationEditor::_hard_reset();
 }
 
 void CalibrationEditor:: displayCurvesSlot(){
@@ -3060,8 +3269,6 @@ void CalibrationEditor::displayCalibrationDataSlot(){
     QGroupBox optionbox("Options",&predialog);
     optionbox.setLayout(opl);
 
-
-
     QHBoxLayout layoutButtons;
     QPushButton ok("Ok");
     QPushButton cancel("Cancel");
@@ -3074,7 +3281,6 @@ void CalibrationEditor::displayCalibrationDataSlot(){
     predialogl.addLayout(&layoutButtons);
 
     QVector<bool> dialogoptions(6,false);
-
     if (predialog.exec()){
         if (rop1->isChecked())
             dialogoptions[0]=true;
@@ -3102,21 +3308,23 @@ void CalibrationEditor::setOptionsSlot(){
     dialog.setMinimumSize(400,200);
     QGridLayout dialoglayout;
     dialog.setLayout(&dialoglayout);
+    QLabel voltagelabel(QString("Choose one of these for diplaying the measured voltage for the specific resistor value test"));
     QLabel label1(QString("Voltage of %0 kOhm ramp: ").arg(Potentiometer::r_from_tap(rescode[0])/1000,0,'f',2));
     QCheckBox check1;
     QLabel label2(QString("Voltage of %0 kOhm ramp: ").arg(Potentiometer::r_from_tap(rescode[1])/1000,0,'f',2));
     QCheckBox check2;
     QLabel label3(QString("Voltage of %0 kOhm ramp: ").arg(Potentiometer::r_from_tap(rescode[2])/1000,0,'f',2));
     QCheckBox check3;
+    QLabel resistorlabel(QString("Choose one of these for diplaying the measured resistor values for the specific resistor value"));
     QLabel label4(QString("%0 kOhm res: ").arg(Potentiometer::r_from_tap(rescode[0])/1000,0,'f',2));
     QCheckBox check4;
     QLabel label5(QString("%0 kOhm res: ").arg(Potentiometer::r_from_tap(rescode[1])/1000,0,'f',2));
     QCheckBox check5;
     QLabel label6(QString("%0 kOhm res: ").arg(Potentiometer::r_from_tap(rescode[2])/1000,0,'f',2));
     QCheckBox check6;
-    QLabel label7(QString("All the nodes: "));
+    QLabel label7(QString("Chose if you want all the nodes in one graph: "));
     QCheckBox check7;
-    QLabel label8("Rerun conversion res test: ");
+    QLabel label8("Rerun conversion res test, to check accuracy of calibration: ");
     QCheckBox check8;
     QLabel label8s("Overide convertion r/i tap value(-1=default): ");
     QSpinBox spin8;
@@ -3133,13 +3341,15 @@ void CalibrationEditor::setOptionsSlot(){
     dialog.connect(&cancel, SIGNAL(clicked()), &dialog, SLOT(reject()));
     layoutButtons.addWidget( &ok );
     layoutButtons.addWidget( &cancel );
-    dialoglayout.addWidget(&label1,0,0);
-    dialoglayout.addWidget(&label2,1,0);
-    dialoglayout.addWidget(&label3,2,0);
+    dialoglayout.addWidget(&voltagelabel,0,0,0,2);
+    dialoglayout.addWidget(&label1,1,0);
+    dialoglayout.addWidget(&label2,2,0);
+    dialoglayout.addWidget(&label3,3,0);
     //----------------
-    dialoglayout.addWidget(&label4,4,0);
-    dialoglayout.addWidget(&label5,5,0);
-    dialoglayout.addWidget(&label6,6,0);
+    dialoglayout.addWidget(&resistorlabel,4,0,0,2);
+    dialoglayout.addWidget(&label4,5,0);
+    dialoglayout.addWidget(&label5,6,0);
+    dialoglayout.addWidget(&label6,7,0);
     //----------------
     dialoglayout.addWidget(&label7,8,0);
     //----------------
@@ -3148,13 +3358,13 @@ void CalibrationEditor::setOptionsSlot(){
     //----------------
     dialoglayout.addWidget(&label9,13,0);
     //----------------
-    dialoglayout.addWidget(&check1,0,1);
-    dialoglayout.addWidget(&check2,1,1);
-    dialoglayout.addWidget(&check3,2,1);
+    dialoglayout.addWidget(&check1,1,1);
+    dialoglayout.addWidget(&check2,2,1);
+    dialoglayout.addWidget(&check3,3,1);
     //----------------
-    dialoglayout.addWidget(&check4,4,1);
-    dialoglayout.addWidget(&check5,5,1);
-    dialoglayout.addWidget(&check6,6,1);
+    dialoglayout.addWidget(&check4,5,1);
+    dialoglayout.addWidget(&check5,6,1);
+    dialoglayout.addWidget(&check6,7,1);
     //----------------
     dialoglayout.addWidget(&check7,8,1);
     //----------------
@@ -3286,9 +3496,9 @@ void CalibrationEditor::checkCellSlot(){
             imagfailedcells.append(QVector<int> ());
 
         for (int cell=0;cell<24;++cell){//It doesnt test the EXT res
-                for(int testid=0;testid<8;testid++)
-                    if(calibrationrabnew[1][cell+(testid*24)]>11000||calibrationrabnew[1][cell+(testid*24)]<9000||std::isnan(calibrationrabnew[1][cell+(testid*24)]))
-                        imagfailedcells[testid].append(cell);
+            for(int testid=0;testid<8;testid++)
+                if(calibrationrabnew[1][cell+(testid*24)]>11000||calibrationrabnew[1][cell+(testid*24)]<9000||std::isnan(calibrationrabnew[1][cell+(testid*24)]))
+                    imagfailedcells[testid].append(cell);
         }
 
         cout<<"Cells failing Conversion resistor real test: "<<endl;
@@ -3472,4 +3682,25 @@ void CalibrationEditor::potTestErrorSlot(){
         cout<<endl;
         cout<<"The avarage relative error of imag Rab is: "<<sumtempres<<"%"<<endl;
     }
+}
+
+void CalibrationEditor::calibrationExportSlot(){
+    // Define the file name
+    QDir currentdir;
+    currentdir.cdUp();
+    QString filename = QDir::toNativeSeparators(currentdir.path()).append("\\calibrationfile.xml");
+    int ans = calexport(filename);
+    if (ans)
+        cout << "Exported successfully";
+}
+
+void CalibrationEditor::calibrationImportSlot(){
+    // Define the file name
+    QDir currentdir;
+    currentdir.cdUp();
+    QString filename = QDir::toNativeSeparators(currentdir.path()).append("\\calibrationfile.xml");
+    int ans = calimport(filename);
+    if (ans)
+        cout << "Imported successfully";
+
 }

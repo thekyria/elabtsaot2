@@ -1,10 +1,10 @@
 /*!
-\file simulator_sw.h
+\file calibrationeditor.h
 
 This class is part of the elab-tsaot project in the Electronics Laboratory of
 the Ecole Polytechnique Federal de Lausanne.
 
-\author Theodoros Kyriakidis, thekyria at gmail dot com, Electronics Laboratory
+\author Lilis Georgios, georgios.lilis at epfl dot ch, Elab
 EPFL
 */
 
