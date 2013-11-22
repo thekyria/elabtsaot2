@@ -707,75 +707,7 @@ int io::importCalibrationValues(string filename_, CalibrationEditor* cal){
                     }
                     node = node.nextSibling();
                 }
-            }//end of for
-
-            //                    if(i == 0 || i == 1){ //Only the first two have offset
-            //                        data = test.namedItem("Offset");
-            //                        namereal[nodeNo +24*i] = TEST_NAMES[i].append(" real ").append(" of node ").append(nodeid);
-            //                        offsetreal[nodeNo +24*i] = data.toElement().text().toDouble();
-            //                        if(TEST_NAMES[i] == TEST_NAMES[1]){ //Only second has gain, the first is just 0
-            //                            data = test.namedItem("Gain");
-            //                            gainreal[nodeNo +24*i] = data.toElement().text().toDouble();
-            //                        }else
-            //                            gainreal[nodeNo +24*i] = 0; //Zero for the first test
-            //                    }else if( i > 1 && i < 10){ //Regular resistors
-            //                        int rt = i-2; //The relative address in calibration vectors, since rw rab start from 0
-            //                        namereal[nodeNo +24*rt] = TEST_NAMES[i].append(" real ").append(" of node ").append(nodeid);
-
-            //                        data = test.namedItem("rab");
-            //                        rabreal[nodeNo +24*rt] = data.toElement().text().toDouble();
-
-            //                        data = test.namedItem("rw");
-            //                        rwreal[nodeNo +24*rt] = data.toElement().text().toDouble();
-            //                    }else if(i==10 or i==11){ //External resistors, nodes 0 1 2 3 4 6 12
-            //                        int rt = i-2;
-            //                        if(nodeNo <=4){
-            //                            namereal[nodeNo +24*rt] = TEST_NAMES[i].append(" real ").append(" of node ").append(nodeid);
-
-            //                            data = test.namedItem("rab");
-            //                            rabreal[nodeNo +24*rt] = data.toElement().text().toDouble();
-
-            //                            data = test.namedItem("rw");
-            //                            rwreal[nodeNo +24*rt] = data.toElement().text().toDouble();
-            //                        }
-            //                        if(nodeNo == 6){
-            //                            namereal[5 +24*rt] = TEST_NAMES[i].append(" real ").append(" of node ").append(nodeid);
-
-            //                            data = test.namedItem("rab");
-            //                            rabreal[5 +24*rt] = data.toElement().text().toDouble();
-
-            //                            data = test.namedItem("rw");
-            //                            rwreal[5 +24*rt] = data.toElement().text().toDouble();
-            //                        }
-            //                        if(nodeNo == 12){
-            //                            namereal[6 +24*rt] = TEST_NAMES[i].append(" real ").append(" of node ").append(nodeid);
-
-            //                            data = test.namedItem("rab");
-            //                            rabreal[6 +24*rt] = data.toElement().text().toDouble();
-
-            //                            data = test.namedItem("rw");
-            //                            rwreal[6 +24*rt] = data.toElement().text().toDouble();
-            //                        }
-
-
-            //                    }else{
-            //                        return 0;
-            //                    }
-
-
-
-
-
-
-
-
-            //                    // ----------------- IMAG ------------------------------------
-            //                    real = n5.namedItem("Imag");
-
-            //                    test = real.namedItem("ADC");
-            //                    data = test.namedItem("Offset");
-            //                    nameimag[nodeNo +24] = QString("ADC ").append(data.toElement().tagName()).append(" imag ").append(" of node ").append(nodeid);
-            //                    offsetimag[nodeNo +24] = data.toElement().text().toDouble();
+            }
 
 
 
@@ -788,15 +720,6 @@ int io::importCalibrationValues(string filename_, CalibrationEditor* cal){
         return 0;
     }
 
-
-    //  QXmlInputSource source( &xmlFile );
-    //  QXmlSimpleReader reader;
-    //  CalibrationXMLHandler* handler = new CalibrationXMLHandler( cal );
-    //  reader.setContentHandler( handler );
-    //  if ( !reader.parse( source )){
-    //    cout << "Error parsing xml file!" << endl;
-    //    return 2;
-    //  }
 
     return 1;
 }
