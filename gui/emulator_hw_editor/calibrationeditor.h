@@ -3,8 +3,7 @@
 
 This class is part of the elab-tsaot project in the Electronics Laboratory of
 the Ecole Polytechnique Federal de Lausanne.
-
-\author Theodoros Kyriakidis, thekyria at gmail dot com, Electronics Laboratory
+\author Lilis Georgios, georgios.lilis at epfl dot ch, Elab
 EPFL
 */
 
@@ -18,6 +17,7 @@ class QwtPlot;
 class QCheckBox;
 class QSpinBox;
 class QByteArray;
+class QAction;
 
 #include <stdint.h>
 
@@ -40,6 +40,26 @@ class CalibrationEditor : public QSplitter{
 
   int init();
   int updt();
+  int calexport(QString filename);
+  int calimport(QString filename);
+  int hardreset();
+  Emulator* _emu;
+
+  //Master Store of all the devices
+  struct devicedata{
+    int device_id;
+    QString deviceName;
+    QVector <QVector<QString> > calibrationnamedatanew;
+    QVector <QVector<double> > calibrationoffsetdatanew;
+    QVector <QVector<double> > calibrationgaindatanew;
+    QVector <QVector<int> > calibrationidnew;
+    QVector <QVector<double> > calibrationrabnew;
+    QVector <QVector<double> > calibrationrwnew;
+    QVector <QVector <QVector<double> > > rawresultsnew;
+    QVector <QVector <QVector<double> > > lsqresultsnew;
+  };
+  QVector<devicedata*> _master_store;
+
 
  public slots:
 
@@ -53,6 +73,8 @@ class CalibrationEditor : public QSplitter{
   void checkCellSlot();
   void potTestSlot();
   void potTestErrorSlot();
+  void calibrationExportSlot();
+  void calibrationImportSlot();
 
  private:
 
@@ -74,6 +96,7 @@ class CalibrationEditor : public QSplitter{
                          QVector<QVector<double> > *decodedresultsimag ,int numofSamples);
   void _offsetGainHandling( QVector<uint32_t>* encodedinput, int gainoroffset);
   void _soft_reset();
+  void _hard_reset();
 
   // ------------------------- Variables -------------------------
   QVector <int> rescode;
@@ -100,20 +123,6 @@ class CalibrationEditor : public QSplitter{
   QVector<QVector<double> > P3resnew;
   QVector<QVector<double> > P1resnew;
 
-  //Master Store of all the devices
-  struct devicedata{
-    int device_id;
-    QVector <QVector<QString> > calibrationnamedatanew;
-    QVector <QVector<double> > calibrationoffsetdatanew;
-    QVector <QVector<double> > calibrationgaindatanew;
-    QVector <QVector<int> > calibrationidnew;
-    QVector <QVector<double> > calibrationrabnew;
-    QVector <QVector<double> > calibrationrwnew;
-    QVector <QVector <QVector<double> > > rawresultsnew;
-    QVector <QVector <QVector<double> > > lsqresultsnew;
-  };
-  QVector<devicedata*> _master_store;
-
   // ----- GUI widgets -----
   QCheckBox *chk0, *chk1, *chk2, *chk3;
   QCheckBox *chk4, *chk5, *chk6, *chk7;
@@ -131,10 +140,11 @@ class CalibrationEditor : public QSplitter{
   QLabel *offsetlabel;
   QLabel *gainlabel;
   QLabel *resistorlabel;
+  QAction *displayCurvesAct, *displayCalibrationDataAct, *setOptionsAct, *checkCellsAct;
+  QAction *potTestAct, *potTestErrorAct;
 
   // -----
   Logger* _log;
-  Emulator* _emu;
   EmulatorHw* _cal_emuhw;
 
 };

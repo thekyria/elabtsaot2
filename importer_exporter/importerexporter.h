@@ -7,6 +7,7 @@ the Ecole Polytechnique Federal de Lausanne.
 
 \author Fragkiskos Koufogiannis, fkoufis at gmail dot com
 \author Theodoros Kyriakidis, thekyria at gmail dot com, Electronics Laboratory
+\author Lilis Georgios, georgios.lilis at epfl dot ch, Elab
 EPFL
 */
 
@@ -24,6 +25,7 @@ class EmulatorHw;
 class Emulator;
 class ScenarioSet;
 class TDResults;
+class CalibrationEditor;
 
 namespace io{
 
@@ -44,13 +46,16 @@ int importMapping(std::string filename,
 int importEncoding(std::string filename, size_t sliceId, Emulator& emu, bool force);
 int importScenarioSet(std::string filename, ScenarioSet* scs);
 int importTDResults(std::string filename, TDResults* res);
+int importCalibrationValues(std::string filename_, CalibrationEditor* cal);
 int exportPowersystem(std::string filename, Powersystem const* pws);
 int exportSchematic(std::string filename, PwsSchematicModel const* smd);
 int exportMapping(std::string filename, PwsMapperModel const* mmd);
 int exportScenarioSet(std::string filename, ScenarioSet const* scs);
 int exportTDResults(std::string filename, TDResults const* res); //!< Exports a set of TDResults
+int exportCalibrationValues(std::string filename_, CalibrationEditor* cal);
 
 int validateSchema(std::string xsdPath, std::string xmlPath);
+
 
 } // end of namespace io
 } // end of namespace elabtsaot

@@ -1,0 +1,251 @@
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="calibration">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Info">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element type="xs:string" name="Name"/>
+              <xs:element type="xs:float" name="Devicenumber"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Devices">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Device">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element type="xs:float" name="Id"/>
+                    <xs:element type="xs:string" name="Name"/>
+                    <xs:element name="Nodes">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="Node" maxOccurs="unbounded" minOccurs="0">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element type="xs:float" name="Id"/>
+                                <xs:element name="Data">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element name="Real">
+                                        <xs:complexType>
+                                          <xs:sequence>
+                                            <xs:element name="ADC">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="Offset"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="DAC_ADC">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="Offset"/>
+                                                  <xs:element type="xs:float" name="Gain"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="Convertion">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="Internal">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P0Chip1-2">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P1Chip1-2">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P2Chip1-2">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P3Chip1-2">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P0P2Chip3">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P1P3Chip3">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P0P2EXT" minOccurs="0">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P1P3EXT" minOccurs="0">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                          </xs:sequence>
+                                        </xs:complexType>
+                                      </xs:element>
+                                      <xs:element name="Imag">
+                                        <xs:complexType>
+                                          <xs:sequence>
+                                            <xs:element name="ADC">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="Offset"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="DAC_ADC">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="Offset"/>
+                                                  <xs:element type="xs:float" name="Gain"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="Convertion">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="Internal">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P0Chip1-2">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P1Chip1-2">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P2Chip1-2">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P3Chip1-2">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P0P2Chip3">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P1P3Chip3">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P0P2EXT" minOccurs="0">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                            <xs:element name="P1P3EXT" minOccurs="0">
+                                              <xs:complexType>
+                                                <xs:sequence>
+                                                  <xs:element type="xs:float" name="rab"/>
+                                                  <xs:element type="xs:float" name="rw"/>
+                                                </xs:sequence>
+                                              </xs:complexType>
+                                            </xs:element>
+                                          </xs:sequence>
+                                        </xs:complexType>
+                                      </xs:element>
+                                    </xs:sequence>
+                                  </xs:complexType>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

@@ -90,6 +90,7 @@ SOURCES += \
   $$ELABTSAOT2_ROOT/importer_exporter/schematicxmlhandler.cpp \
   $$ELABTSAOT2_ROOT/importer_exporter/mappingxmlhandler.cpp \
   $$ELABTSAOT2_ROOT/importer_exporter/scenariosetxmlhandler.cpp \
+  $$ELABTSAOT2_ROOT/importer_exporter/calibrationxmlhandler.cpp \
   \
   $$ELABTSAOT2_ROOT/ss_analysis/ssengine.cpp \
   $$ELABTSAOT2_ROOT/ss_analysis/ssutils.cpp \
@@ -208,6 +209,7 @@ HEADERS += \
   $$ELABTSAOT2_ROOT/importer_exporter/schematicxmlhandler.h \
   $$ELABTSAOT2_ROOT/importer_exporter/mappingxmlhandler.h \
   $$ELABTSAOT2_ROOT/importer_exporter/scenariosetxmlhandler.h \
+  $$ELABTSAOT2_ROOT/importer_exporter/calibrationxmlhandler.h \
   \
   $$ELABTSAOT2_ROOT/ss_analysis/ssengine.h \
   $$ELABTSAOT2_ROOT/ss_analysis/ssutils.h \
@@ -340,6 +342,7 @@ CONFIG( debug, debug|release ) {
           -lboost_timerd \
           -lboost_systemd \
           -lboost_chronod
+
 } else {
   DEFINES += NDEBUG
   DEFINES += BOOST_UBLAS_NDEBUG
