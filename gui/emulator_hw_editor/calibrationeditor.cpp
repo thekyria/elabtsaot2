@@ -3006,7 +3006,7 @@ void CalibrationEditor::calibrationSetterSlot(){
     for( size_t sliceindex = 0 ; sliceindex < _cal_emuhw->sliceSet.size() ; ++sliceindex ){
         ans = _calibrationSetter( sliceindex );
         if ( ans ){
-            cout << "Storing calibration resutls to local emulator copy for deviceid " <<  _emu->sliceDeviceMap(sliceindex);
+            cout << "Storing calibration results to local emulator copy for deviceid " <<  _emu->sliceDeviceMap(sliceindex);
             cout << " failed with code " << ans << endl;
         }
     }

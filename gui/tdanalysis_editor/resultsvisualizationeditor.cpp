@@ -138,7 +138,7 @@ ResultsVisualizationEditor::ResultsVisualizationEditor( TDResultsBank* trb,
   QSplitter* mainSplitter = new QSplitter( Qt::Horizontal );
   addWidget( mainSplitter );
 
-  resultsDBBrowserBox = new QGroupBox( "ResutlsDB browser", this );
+  resultsDBBrowserBox = new QGroupBox( "ResultsDB browser", this );
   mainSplitter->addWidget( resultsDBBrowserBox );
   resultsDBBrowserLay = new QHBoxLayout();
   resultsDBBrowserBox->setLayout( resultsDBBrowserLay );
