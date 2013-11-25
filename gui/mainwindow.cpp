@@ -585,6 +585,7 @@ void MainWindow::importCalibrationValues( QString const& filename ){
 
 
   cout << "Calibration values was imported successfully." << endl;
+  cout << "Setting the new values to emulator." << endl;
   _cal->calibrationSetterSlot();
   return;
 }

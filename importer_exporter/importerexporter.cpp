@@ -590,12 +590,19 @@ int io::importCalibrationValues(string filename_, CalibrationEditor* cal){
     cal->hardreset();
 
     cout << "Importing from filename: " << filename.toStdString() << endl;
+    // Check xml's consistency according to schema
+
+    if( validateSchema( ":/xml_schemas/calibration.xsd", filename_ ) ){
+        cout << "The XML file is not built according to the calibration schema."
+             << endl;
+        return 0;
+    }
 
     // Cal is the object pointer of calibrator in the mainwindow
-    // We need the cal to writeback the xml
-
+    // We need the calibration editor object to writeback the xml
     if ( cal == NULL)
         return -1;
+
 
     QFile xmlfile( filename );
     int ans;

@@ -109,5 +109,6 @@
         <file alias="schematic.xsd">xml/schemas/schematic.xsd</file>
         <file alias="mapping.xsd">xml/schemas/mapping.xsd</file>
         <file alias="scenariosset.xsd">xml/schemas/scenariosset.xsd</file>
+        <file alias="calibration.xsd">xml/schemas/calibration.xsd</file>
     </qresource>
 </RCC>
