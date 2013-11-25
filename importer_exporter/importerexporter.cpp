@@ -23,9 +23,7 @@ using namespace elabtsaot;
 #include <QtXmlPatterns>
 #include <QXmlInputSource>
 #include <QXmlStreamReader>
-#include <QDomDocument>
-#include <QDomElement>
-#include <QDomNode>
+
 
 
 
@@ -589,139 +587,35 @@ int io::importTDResults( string filename_, TDResults* res ){
 
 int io::importCalibrationValues(string filename_, CalibrationEditor* cal){
     QString filename(QString::fromStdString(filename_));
+    cal->hardreset();
+
     cout << "Importing from filename: " << filename.toStdString() << endl;
 
     // Cal is the object pointer of calibrator in the mainwindow
     // We need the cal to writeback the xml
-    cal->hardreset();
+
     if ( cal == NULL)
         return -1;
 
-    // TODO TODO TODO Check xml's consistency according to schema
-
     QFile xmlfile( filename );
+    int ans;
     if (xmlfile.exists()){
-        QDomDocument doc("XMLFile");
-        if(!xmlfile.open(QIODevice::ReadOnly))
+        CalibrationXMLHandler calibration_importer(&xmlfile, cal);
+
+        ans = calibration_importer.importfile();
+        if (ans == 0){
+            cout << "Failed to open the file" << endl;
             return 0;
-        if( !doc.setContent( &xmlfile ) )
-        {
-            xmlfile.close();
+        } else if( ans == 1){
+            cout << "Something wrong with xml file format" << endl;
             return 0;
         }
-        xmlfile.close();
-
-        QDomElement root = doc.documentElement(); //Take the root
-        QDomNode n1,n2,n3,node ,n5,realimag,test, data; //6 nodes
-
-        n1 = root.firstChild(); //<Info>
-        cout << "Number of device in XML: " << n1.namedItem("Devicenumber").toElement().text().toStdString() <<endl;
-        n1 = n1.nextSibling(); //<Devices>
-        n2 = n1.firstChild(); //<Device>
-        while( !n2.isNull() ) //Enumerate the devices
-        {
-            QVector<QString> namereal;
-            QVector<double> offsetreal;
-            QVector<double> gainreal;
-            QVector<double> rabreal;
-            QVector<double> rwreal;
-
-            QVector<QString> nameimag;
-            QVector<double> offsetimag;
-            QVector<double> gainimag;
-            QVector<double> rabimag;
-            QVector<double> rwimag;
-
-            QVector <QVector<QString> > names;
-            QVector <QVector<double> > offsets;
-            QVector <QVector<double> > gains;
-            QVector <QVector<double> > rab;
-            QVector <QVector<double> > rw;
-            QString devName;
-
-            n3 = n2.namedItem("Id");
-            string devid = n3.toElement().text().toStdString();
-            n3 = n2.namedItem("Name");
-            string name = n3.toElement().text().toStdString();
-            cout << "Importing device: " << devid << " with name " <<  name << endl;
-            devName = QString::fromStdString(name);
-
-            n3 = n2.namedItem("Nodes"); //Nodes
-
-
-            QVector<QString> TEST_NAMES;
-            TEST_NAMES.append("ADC");//0
-            TEST_NAMES.append("DAC_ADC"); //1
-            TEST_NAMES.append("Convertion");//2
-            TEST_NAMES.append("Internal");//3
-            TEST_NAMES.append("P0Chip1-2");//4
-            TEST_NAMES.append("P1Chip1-2");//5
-            TEST_NAMES.append("P2Chip1-2");//6
-            TEST_NAMES.append("P3Chip1-2");//7
-            TEST_NAMES.append("P0P2Chip3");//8
-            TEST_NAMES.append("P1P3Chip3");//9
-            TEST_NAMES.append("P0P2EXT");//10
-            TEST_NAMES.append("P1P3EXT");//11
-
-            QVector <QString> REAL_IMAG;
-            REAL_IMAG.append("Real");
-            REAL_IMAG.append("Imag");
-
-
-
-            for(size_t i=0; i!=TEST_NAMES.size();++i){
-                node = n3.namedItem("Node"); //Node
-                while( !node.isNull() ) //Enumerate the nodes
-                {
-                    QString nodeid(node.namedItem("Id").toElement().text());
-                    n5 = node.namedItem("Data"); //Data
-                    // ----------------- REAL ------------------------------------
-                    for (size_t ri = 0; ri!=REAL_IMAG.size(); ++ri){
-                        realimag = n5.namedItem(REAL_IMAG[ri]);
-
-                        test = realimag.namedItem(TEST_NAMES[i]);
-                        if (!test.isNull()){
-                            QString testname(TEST_NAMES[i]);
-                            data = test.namedItem("Offset");
-                            if (!data.isNull()){
-                                namereal.append(testname.append(" real ").append(" of node ").append(nodeid));
-                                offsetreal.append(data.toElement().text().toDouble());
-                            }
-                            data = test.namedItem("Gain");
-                            if (!data.isNull()){//Only second has gain, the first is just 0
-                                gainreal.append(data.toElement().text().toDouble());
-                            }else if(data.isNull() && i ==0){
-                                gainreal.append(0); //Zero for the first test
-                            }
-
-                            data = test.namedItem("rab");
-                            if (!data.isNull()){
-                                namereal.append(testname.append(" real ").append(" of node ").append(nodeid));
-                                rabreal.append(data.toElement().text().toDouble());
-                            }
-                            data = test.namedItem("rw");
-                            if (!data.isNull()){
-                                rwreal.append(data.toElement().text().toDouble());
-                            }
-                        }
-                    }
-                    node = node.nextSibling();
-                }
-            }
-
-
-
-            n2 = n2.nextSibling(); //Next device
-
-        }
-
+        ans = calibration_importer.importXML();
     } else {
         cout << "File not found" <<endl;
         return 0;
     }
-
-
-    return 1;
+    return ans;
 }
 
 int io::exportPowersystem( string filename, Powersystem const* pws){
@@ -1157,10 +1051,169 @@ int io::exportTDResults( string filename, TDResults const* res ){
 }
 
 int io::exportCalibrationValues(std::string filename_, CalibrationEditor* cal){
+
+
     QString filename(QString::fromStdString(filename_));
-    int ans = cal->calexport(filename);
-    if (ans)
-        cout << "Exported successfully";
+    cout << "Exporting to: " << filename.toStdString() << endl;
+    char* cstr;
+    string fname = filename.toStdString();
+    cstr = new char [fname.size()+1];
+    strcpy( cstr, fname.c_str() );
+    FILE *f;
+    f = fopen( cstr, "w");
+
+    fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
+    fprintf(f, "<calibration xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
+
+    // --------------- Output devices's info ---------------
+    fprintf(f, "<Info>\n");
+    fprintf(f, "\t<Name> %s </Name>\n", "Calibration values of devices");
+    fprintf(f, "\t<Devicenumber> %zu </Devicenumber>\n", cal->_emu->getUSBDevicesCount());
+    fprintf(f, "</Info>\n");
+    fflush(f);
+
+    // --------------- Output devices' info ---------------
+    fprintf(f, "<Devices>\n");
+    if (cal->_emu->getUSBDevicesCount()!= cal->_master_store.size()){
+        cout<< "ERROR" << endl;
+        cout<< "Devices connected are more than stored in calibration data stractures" << endl;
+        return 0;
+    }
+
+    for(size_t devid = 0; devid != cal->_emu->getUSBDevicesCount(); ++devid){
+        //Check the names' vector for existence of data
+        if (cal->_master_store.at(devid)->calibrationnamedatanew.size()==0){
+            cout<<"None test was run, aborting..."<<endl;
+            return 0;
+        }
+        if (cal->_master_store.at(devid)->calibrationnamedatanew[0].size()!=254){
+            cout<<"Run all tests before exporting, aborting..."<<endl;
+            return 0;
+        }
+        //Take a copy of all device values
+        //The vectors look like that:
+        // Row1(Real): columns1..n(test1(n1 n2 n3 ... n24) + test2(n1 n2 n3 ... n24) ... test12(n1 n2 n3 ... n7))
+        // Row2(Imaginary): columns1..n(test1(n1 n2 n3 ... n24) + test2(n1 n2 n3 ... n24) ... test12(n1 n2 n3 ... n7))
+
+        // Please not the last two tests dont have 24 nodes
+        // As well as the gain offset vector are only 48 size long since they have only two test
+        // The resistor tests should they are full, they have 254 values for each(real/imag)
+
+        QVector <QVector<double> > offsets = cal->_master_store.at(devid)->calibrationoffsetdatanew;
+        QVector <QVector<double> > gains = cal->_master_store.at(devid)->calibrationgaindatanew;
+        QVector <QVector<double> > rab = cal->_master_store.at(devid)->calibrationrabnew;
+        QVector <QVector<double> > rw = cal->_master_store.at(devid)->calibrationrwnew;
+        QString devName = cal->_master_store.at(devid)->deviceName;
+
+        QVector <QString> TestNames;
+        TestNames.append("ADC");             //0
+        TestNames.append("DAC_ADC");    //1
+
+        fprintf(f, "\t<Device>\n");
+        fprintf(f, "\t\t<Id> %zu </Id>\n", devid);
+        fprintf(f, "\t\t<Name> %s </Name>\n", devName.toStdString().c_str());
+        // ----------- Output Nodes's info ---------------
+        fprintf(f, "\t\t<Nodes>\n");
+        for(size_t node=0; node!=24; ++node){
+            fprintf(f, "\t\t\t<Node>\n");
+            fprintf(f, "\t\t\t\t<Id> %zu </Id>\n", node);
+            fprintf(f, "\t\t\t\t<Data>\n");
+            QVector <QString> REAL_IMAG;
+            REAL_IMAG.append("Real");
+            REAL_IMAG.append("Imag");
+            for (size_t ri = 0; ri!=REAL_IMAG.size(); ++ri){
+                fprintf(f, "\t\t\t\t\t<%s>\n", REAL_IMAG[ri].toStdString().c_str());
+                // ---------- ADC offset -------
+                fprintf(f, "\t\t\t\t\t\t<%s>\n", TestNames[0].toStdString().c_str());
+                fprintf(f, "\t\t\t\t\t\t\t<%s> %.12f </%s>\n", string("Offset").c_str(), offsets[ri][node] , string("Offset").c_str());
+                fprintf(f, "\t\t\t\t\t\t</%s>\n", TestNames[0].toStdString().c_str());
+
+                // ---------- ADC/DAC offset gain-------
+                fprintf(f, "\t\t\t\t\t\t<%s>\n", TestNames[1].toStdString().c_str());
+                fprintf(f, "\t\t\t\t\t\t\t<%s> %.12f </%s>\n", string("Offset").c_str() , offsets[ri][node+24] , string("Offset").c_str());
+                fprintf(f, "\t\t\t\t\t\t\t<%s> %.12f </%s>\n", string("Gain").c_str() , gains[ri][node+24] , string("Gain").c_str());
+                fprintf(f, "\t\t\t\t\t\t</%s>\n", TestNames[1].toStdString().c_str());
+
+                QVector <QString> RESISTORS;
+                RESISTORS.append("Convertion");
+                RESISTORS.append("Internal");
+                RESISTORS.append("P0Chip1-2");
+                RESISTORS.append("P1Chip1-2");
+                RESISTORS.append("P2Chip1-2");
+                RESISTORS.append("P3Chip1-2");
+                RESISTORS.append("P0P2Chip3");
+                RESISTORS.append("P1P3Chip3");
+                //The external
+                RESISTORS.append("P0P2EXT"); // Index 8
+                RESISTORS.append("P1P3EXT"); // Index 9
+
+                // TestNames have an offset of 2, since there are two test before.
+
+                for (size_t rt = 0; rt!= (RESISTORS.size()-2); ++rt){ //Remove the ext
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[rt].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+rt*24]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+rt*24]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[rt].toStdString().c_str());
+                }
+
+                if (node==0|node==1|node==2|node==3|node==4){
+                    // ---------- P0P2EXT Resistor------- There are only in 7 nodes
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[8].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+192]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+192]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[8].toStdString().c_str());
+
+                    // ---------- P1P3EXT Resistor------- There are only in 7 nodes
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[9].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+199]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+199]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[9].toStdString().c_str());
+
+                }
+                if (node==6){
+                    // ---------- P0P2EXT Resistor------- There are only in 7 nodes
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[8].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][5+192]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][5+192]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[8].toStdString().c_str());
+
+                    // ---------- P1P3EXT Resistor------- There are only in 7 nodes
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[9].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][5+199]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][5+199]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[9].toStdString().c_str());
+
+                }
+                if (node==12){
+                    // ---------- P0P2EXT Resistor------- There are only in 7 nodes
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[8].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][6+192]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][6+192]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[8].toStdString().c_str());
+
+
+                    // ---------- P1P3EXT Resistor------- There are only in 7 nodes
+                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[9].toStdString().c_str());
+                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][6+199]);
+                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][6+199]);
+                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[9].toStdString().c_str());
+
+                }
+                fprintf(f, "\t\t\t\t\t</%s>\n", REAL_IMAG[ri].toStdString().c_str());
+            } //Real Imag write finish here
+            fprintf(f, "\t\t\t\t</Data>\n");
+            fprintf(f, "\t\t\t</Node>\n");
+        } // Nodes finish here
+        fprintf(f, "\t\t</Nodes>\n");
+        fprintf(f, "\t</Device>\n");
+    }//End of the devices
+    fprintf(f, "</Devices>\n\n");
+    fprintf(f, "</calibration>\n");
+
+    fflush(f);
+    fclose(f);
+    return 1;
+
 }
 
 int io::validateSchema(string xsdPath_, string xmlPath_){

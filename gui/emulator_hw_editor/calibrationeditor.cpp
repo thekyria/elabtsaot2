@@ -91,49 +91,57 @@ CalibrationEditor::CalibrationEditor( Emulator* emu, Logger* log,
     connect( endCalibrationModeAct, SIGNAL(triggered()),
              this, SLOT(endCalibrationModeSlot()) );
 
-    calibrationEditorToolbar->addSeparator(); // -----
-
-    QAction *displayCurvesAct = new QAction( QIcon(":/images/calcurv.png"),
-                                             "Display curve", this );
-    calibrationEditorToolbar->addAction(displayCurvesAct);
-    connect( displayCurvesAct, SIGNAL(triggered()),
-             this, SLOT(displayCurvesSlot()) );
-
     QAction *resetCalibrationAct = new QAction( QIcon(":/images/reset.png"),
                                                 "Reset calibration", this );
     calibrationEditorToolbar->addAction(resetCalibrationAct);
     connect( resetCalibrationAct, SIGNAL(triggered()),
              this, SLOT(resetCalibrationSlot()) );
 
-    QAction *displayCalibrationDataAct = new QAction( QIcon(":/images/list.png"),
+    calibrationEditorToolbar->addSeparator(); // -----
+
+    displayCurvesAct = new QAction( QIcon(":/images/calcurv.png"),
+                                             "Display curve", this );
+    calibrationEditorToolbar->addAction(displayCurvesAct);
+    connect( displayCurvesAct, SIGNAL(triggered()),
+             this, SLOT(displayCurvesSlot()) );
+    displayCurvesAct->setEnabled(false);
+
+    displayCalibrationDataAct = new QAction( QIcon(":/images/list.png"),
                                                       "Display all the calibration data", this );
     calibrationEditorToolbar->addAction(displayCalibrationDataAct);
     connect( displayCalibrationDataAct, SIGNAL(triggered()),
              this, SLOT(displayCalibrationDataSlot()) );
+    displayCalibrationDataAct->setEnabled(false);
 
-    QAction *setOptionsAct = new QAction( QIcon(":/images/debugconf.png"),
+    setOptionsAct = new QAction( QIcon(":/images/debugconf.png"),
                                           "Set calibration debug options", this );
     calibrationEditorToolbar->addAction(setOptionsAct);
     connect( setOptionsAct, SIGNAL(triggered()),
              this, SLOT(setOptionsSlot()) );
+    setOptionsAct->setEnabled(false);
 
-    QAction *checkCellsAct = new QAction (QIcon(":/images/checkcells.png"),
+    checkCellsAct = new QAction (QIcon(":/images/checkcells.png"),
                                           "Check working cells",this);
     calibrationEditorToolbar->addAction(checkCellsAct);
     connect( checkCellsAct, SIGNAL(triggered()),
              this, SLOT(checkCellSlot()) );
+    checkCellsAct->setEnabled(false);
 
-    QAction *potTestAct = new QAction (QIcon(":/images/pottest.png"),
+    potTestAct = new QAction (QIcon(":/images/pottest.png"),
                                        "Check the min and max achived values from potensiomenters",this);
     calibrationEditorToolbar->addAction(potTestAct);
     connect( potTestAct, SIGNAL(triggered()),
              this, SLOT(potTestSlot()) );
+    potTestAct->setEnabled(false);
 
-    QAction *potTestErrorAct = new QAction (QIcon(":/images/pottesterror.png"),
+    potTestErrorAct = new QAction (QIcon(":/images/pottesterror.png"),
                                             "Check the relative error of potensiomenters",this);
     calibrationEditorToolbar->addAction(potTestErrorAct);
     connect( potTestErrorAct, SIGNAL(triggered()),
              this, SLOT(potTestErrorSlot()) );
+    potTestErrorAct->setEnabled(false);
+
+    calibrationEditorToolbar->addSeparator(); // -----
 
     QAction *calibrationExportAct = new QAction (QIcon(":/images/export.png"),
                                                  "Export calibration values",this);
@@ -558,8 +566,7 @@ CalibrationEditor::~CalibrationEditor(){
 }
 
 int CalibrationEditor::init(){
-    _emu->assignSliceToDevice(0,0);
-    // Update local emulator according to _emu->emuhw()
+     // Update local emulator according to _emu->emuhw()
     _cal_emuhw->init( _emu->getHwSliceCount() );
 
     _master_store.clear();
@@ -581,16 +588,22 @@ int CalibrationEditor::init(){
     }
     for (size_t i=0;i<_emu->getUSBDevicesCount();++i){
         devices_set->at(i)->setChecked(true);
-        devices_set->at(i)->setText(QString::fromStdString(_emu->getUSBDevices().at(i).deviceName));
-        devices_set_labels->at(i)->setText(QString::fromStdString(_emu->getUSBDevices().at(i).deviceName));
+        devices_set->at(i)->setText(QString::fromStdWString(_emu->getUSBDevices().at(i).product));
+        devices_set_labels->at(i)->setText(QString::fromStdWString(_emu->getUSBDevices().at(i).product));
         References_Real->at(i)->setEnabled(true);
         References_Imag->at(i)->setEnabled(true);
         //Initialize the storing of all active devices
         devicedata* dd = new devicedata;
         dd->device_id = i;
-        dd->deviceName = QString::fromStdString(_emu->getUSBDevices().at(i).deviceName);
+        dd->deviceName = QString::fromStdWString(_emu->getUSBDevices().at(i).product);
         _master_store.append(dd);
     }
+    displayCurvesAct->setEnabled(false);
+    displayCalibrationDataAct->setEnabled(false);
+    setOptionsAct->setEnabled(false);
+    checkCellsAct->setEnabled(false);
+    potTestAct->setEnabled(false);
+    potTestErrorAct->setEnabled(false);
     return 0;
 }
 
@@ -2375,7 +2388,7 @@ int CalibrationEditor::_calibrationSetter( size_t sliceindex ){
     QVector <QVector<double> > calibrationrabnew = _master_store.at(devid)->calibrationrabnew;
     QVector <QVector<double> > calibrationrwnew = _master_store.at(devid)->calibrationrwnew;
     if (calibrationnamedatanew.size()==0){
-        cout<<"None test was run"<<endl;
+        cout<<"None test was run for this device"<<endl;
         return 3;
     }
     if (calibrationnamedatanew[0].size()!=254)
@@ -2763,7 +2776,6 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
 }
 
 void CalibrationEditor::_hard_reset(){
-    cout<<endl;
     cout<<"Reseting devices"<<endl;
     init();
     cout<<"Resetting calibration"<<endl<<endl;
@@ -2814,208 +2826,12 @@ int CalibrationEditor::hardreset(){
 }
 
 int CalibrationEditor::calexport(QString filename){
-
-    cout << "Exporting to: " << filename.toStdString() << endl;
-    char* cstr;
-    string fname = filename.toStdString();
-    cstr = new char [fname.size()+1];
-    strcpy( cstr, fname.c_str() );
-    FILE *f;
-    f = fopen( cstr, "w");
-
-    fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
-    fprintf(f, "<calibration xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
-
-    // --------------- Output devices's info ---------------
-    fprintf(f, "<Info>\n");
-    fprintf(f, "\t<Name> %s </Name>\n", "Calibration values of devices");
-    fprintf(f, "\t<Devicenumber> %zu </Devicenumber>\n", _emu->getUSBDevicesCount());
-    fprintf(f, "</Info>\n");
-    fflush(f);
-
-    // --------------- Output devices' info ---------------
-    fprintf(f, "<Devices>\n");
-    if (_emu->getUSBDevicesCount()!= _master_store.size()){
-        cout<< "ERROR" << endl;
-        cout<< "Devices connected are more than stored in calibration data stractures" << endl;
-        return 0;
+    int ans = io::exportCalibrationValues(filename.toStdString(), this);
+    if (ans == 1){
+        cout << "File written" << endl;
     }
+    return ans;
 
-    for(size_t devid = 0; devid != _emu->getUSBDevicesCount(); ++devid){
-        //Check the names' vector for existence of data
-        if (_master_store.at(devid)->calibrationnamedatanew.size()==0){
-            cout<<"None test was run"<<endl;
-            return 0;
-        }
-        if (_master_store.at(devid)->calibrationnamedatanew[0].size()!=254){
-            cout<<"Run all tests before exporting"<<endl;
-            return 0;
-        }
-
-
-        //Take a copy of all device values
-        //The vectors look like that:
-        // Row1(Real): columns1..n(test1(n1 n2 n3 ... n24) + test2(n1 n2 n3 ... n24) ... test12(n1 n2 n3 ... n7))
-        // Row2(Imaginary): columns1..n(test1(n1 n2 n3 ... n24) + test2(n1 n2 n3 ... n24) ... test12(n1 n2 n3 ... n7))
-
-        // Please not the last two tests dont have 24 nodes
-        // As well as the gain offset vector are only 48 size long since they have only two test
-        // The resistor tests should they are full, they have 254 values for each(real/imag)
-
-        QVector <QVector<double> > offsets = _master_store.at(devid)->calibrationoffsetdatanew;
-        QVector <QVector<double> > gains = _master_store.at(devid)->calibrationgaindatanew;
-        QVector <QVector<double> > rab = _master_store.at(devid)->calibrationrabnew;
-        QVector <QVector<double> > rw = _master_store.at(devid)->calibrationrwnew;
-        QString devName = _master_store.at(devid)->deviceName;
-
-        QVector <QString> TestNames;
-        TestNames.append("ADC");             //0
-        TestNames.append("DAC_ADC");    //1
-
-        fprintf(f, "\t<Device>\n");
-        fprintf(f, "\t\t<Id> %zu </Id>\n", devid);
-        fprintf(f, "\t\t<Name> %s </Name>\n", devName.toStdString().c_str());
-        // ----------- Output Nodes's info ---------------
-        fprintf(f, "\t\t<Nodes>\n");
-        for(size_t node=0; node!=24; ++node){
-            fprintf(f, "\t\t\t<Node>\n");
-            fprintf(f, "\t\t\t\t<Id> %zu </Id>\n", node);
-            fprintf(f, "\t\t\t\t<Data>\n");
-            QVector <QString> REAL_IMAG;
-            REAL_IMAG.append("Real");
-            REAL_IMAG.append("Imag");
-            for (size_t ri = 0; ri!=REAL_IMAG.size(); ++ri){
-                fprintf(f, "\t\t\t\t\t<%s>\n", REAL_IMAG[ri].toStdString().c_str());
-                // ---------- ADC offset -------
-                fprintf(f, "\t\t\t\t\t\t<%s>\n", TestNames[0].toStdString().c_str());
-                fprintf(f, "\t\t\t\t\t\t\t<%s> %.12f </%s>\n", string("Offset").c_str(), offsets[ri][node] , string("Offset").c_str());
-                fprintf(f, "\t\t\t\t\t\t</%s>\n", TestNames[0].toStdString().c_str());
-
-                // ---------- ADC/DAC offset gain-------
-                fprintf(f, "\t\t\t\t\t\t<%s>\n", TestNames[1].toStdString().c_str());
-                fprintf(f, "\t\t\t\t\t\t\t<%s> %.12f </%s>\n", string("Offset").c_str() , offsets[ri][node+24] , string("Offset").c_str());
-                fprintf(f, "\t\t\t\t\t\t\t<%s> %.12f </%s>\n", string("Gain").c_str() , gains[ri][node+24] , string("Gain").c_str());
-                fprintf(f, "\t\t\t\t\t\t</%s>\n", TestNames[1].toStdString().c_str());
-
-                QVector <QString> RESISTORS;
-                RESISTORS.append("Convertion");
-                RESISTORS.append("Internal");
-                RESISTORS.append("P0Chip1-2");
-                RESISTORS.append("P1Chip1-2");
-                RESISTORS.append("P2Chip1-2");
-                RESISTORS.append("P3Chip1-2");
-                RESISTORS.append("P0P2Chip3");
-                RESISTORS.append("P1P3Chip3");
-                //The external
-                RESISTORS.append("P0P2EXT"); // Index 8
-                RESISTORS.append("P1P3EXT"); // Index 9
-
-                // TestNames have an offset of 2, since there are two test before.
-
-                for (size_t rt = 0; rt!= (RESISTORS.size()-2); ++rt){ //Remove the ext
-                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[rt].toStdString().c_str());
-                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+rt*24]);
-                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+rt*24]);
-                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[rt].toStdString().c_str());
-                }
-                //                // ---------- Convertion Resistor-------
-                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[2].toStdString().c_str());
-                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node]);
-                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node]);
-
-                //                // ---------- Internal Resistor-------
-                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[3].toStdString().c_str());
-                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+24]);
-                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+24]);
-
-                //                // ---------- P0Chip1-2 Resistor-------
-                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[4].toStdString().c_str());
-                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+48]);
-                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+48]);
-
-                //                // ---------- P1Chip1-2 Resistor-------
-                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[5].toStdString().c_str());
-                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+72]);
-                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+72]);
-
-                //                // ---------- P2Chip1-2 Resistor-------
-                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[6].toStdString().c_str());
-                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+96]);
-                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+96]);
-
-                //                // ---------- P3Chip1-2 Resistor-------
-                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[7].toStdString().c_str());
-                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+120]);
-                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+120]);
-
-                //                // ---------- P0P2Chip3 Resistor-------
-                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[8].toStdString().c_str());
-                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+144]);
-                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+144]);
-
-                //                // ---------- P1P3Chip3 Resistor-------
-                //                fprintf(f, "\t\t\t\t\t\t<Name> %s </Name>\n", TestNames[9].toStdString().c_str());
-                //                fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+168]);
-                //                fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+168]);
-
-                if (node==0|node==1|node==2|node==3|node==4){
-                    // ---------- P0P2EXT Resistor------- There are only in 7 nodes
-                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[8].toStdString().c_str());
-                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+192]);
-                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+192]);
-                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[8].toStdString().c_str());
-
-                    // ---------- P1P3EXT Resistor------- There are only in 7 nodes
-                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[9].toStdString().c_str());
-                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][node+199]);
-                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][node+199]);
-                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[9].toStdString().c_str());
-
-                }
-                if (node==6){
-                    // ---------- P0P2EXT Resistor------- There are only in 7 nodes
-                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[8].toStdString().c_str());
-                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][5+192]);
-                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][5+192]);
-                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[8].toStdString().c_str());
-
-                    // ---------- P1P3EXT Resistor------- There are only in 7 nodes
-                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[9].toStdString().c_str());
-                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][5+199]);
-                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][5+199]);
-                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[9].toStdString().c_str());
-
-                }
-                if (node==12){
-                    // ---------- P0P2EXT Resistor------- There are only in 7 nodes
-                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[8].toStdString().c_str());
-                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][6+192]);
-                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][6+192]);
-                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[8].toStdString().c_str());
-
-
-                    // ---------- P1P3EXT Resistor------- There are only in 7 nodes
-                    fprintf(f, "\t\t\t\t\t\t<%s>\n", RESISTORS[9].toStdString().c_str());
-                    fprintf(f, "\t\t\t\t\t\t\t<rab> %.12f </rab>\n", rab[ri][6+199]);
-                    fprintf(f, "\t\t\t\t\t\t\t<rw> %.12f </rw>\n", rw[ri][6+199]);
-                    fprintf(f, "\t\t\t\t\t\t</%s>\n", RESISTORS[9].toStdString().c_str());
-
-                }
-                fprintf(f, "\t\t\t\t\t</%s>\n", REAL_IMAG[ri].toStdString().c_str());
-            } //Real Imag write finish here
-            fprintf(f, "\t\t\t\t</Data>\n");
-            fprintf(f, "\t\t\t</Node>\n");
-        } // Nodes finish here
-        fprintf(f, "\t\t</Nodes>\n");
-        fprintf(f, "\t</Device>\n");
-    }//End of the devices
-    fprintf(f, "</Devices>\n\n");
-    fprintf(f, "</calibration>\n");
-
-    fflush(f);
-    fclose(f);
-    cout << "File written" << endl;
-    return 1;
 }
 
 int CalibrationEditor::calimport(QString filename){
@@ -3030,6 +2846,12 @@ void CalibrationEditor::startCalibrationSlot(){
         cout << "Cannot validate Slice <-> Devices assignement, try to assign all slices to devices first" << endl;
     else{
         cout << "Slice <-> Devices assignement validated, proceeding to calibration! " << endl;
+        displayCurvesAct->setEnabled(true);
+        displayCalibrationDataAct->setEnabled(true);
+        setOptionsAct->setEnabled(true);
+        checkCellsAct->setEnabled(true);
+        potTestAct->setEnabled(true);
+        potTestErrorAct->setEnabled(true);
         vector<uint32_t> tempvector;
         for ( size_t i = 0 ; i < _cal_emuhw->sliceSet.size() ; ++i ){
             int devId = _emu->sliceDeviceMap(i);
@@ -3184,8 +3006,8 @@ void CalibrationEditor::calibrationSetterSlot(){
     for( size_t sliceindex = 0 ; sliceindex < _cal_emuhw->sliceSet.size() ; ++sliceindex ){
         ans = _calibrationSetter( sliceindex );
         if ( ans ){
-            cout << "Storing calibration resutls to local emulator copy ";
-            cout << "failed with code " << ans << endl;
+            cout << "Storing calibration resutls to local emulator copy for deviceid " <<  _emu->sliceDeviceMap(sliceindex);
+            cout << " failed with code " << ans << endl;
         }
     }
 
@@ -3691,7 +3513,7 @@ void CalibrationEditor::calibrationExportSlot(){
     QString filename = QDir::toNativeSeparators(currentdir.path()).append("\\calibrationfile.xml");
     int ans = calexport(filename);
     if (ans)
-        cout << "Exported successfully";
+        cout << "Exported successfully" << endl;
 }
 
 void CalibrationEditor::calibrationImportSlot(){
@@ -3700,7 +3522,13 @@ void CalibrationEditor::calibrationImportSlot(){
     currentdir.cdUp();
     QString filename = QDir::toNativeSeparators(currentdir.path()).append("\\calibrationfile.xml");
     int ans = calimport(filename);
-    if (ans)
-        cout << "Imported successfully";
+
+    if (ans==1){
+        cout << endl;
+        cout << "Import finished for the corresponding devices" <<endl;
+        cout << "Press the set calibration button to set the values in emulator" << endl;
+    }else{
+        cout << "Import failed with error: " << ans << endl;
+    }
 
 }

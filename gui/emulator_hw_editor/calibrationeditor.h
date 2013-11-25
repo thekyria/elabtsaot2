@@ -17,6 +17,7 @@ class QwtPlot;
 class QCheckBox;
 class QSpinBox;
 class QByteArray;
+class QAction;
 
 #include <stdint.h>
 
@@ -42,6 +43,23 @@ class CalibrationEditor : public QSplitter{
   int calexport(QString filename);
   int calimport(QString filename);
   int hardreset();
+  Emulator* _emu;
+
+  //Master Store of all the devices
+  struct devicedata{
+    int device_id;
+    QString deviceName;
+    QVector <QVector<QString> > calibrationnamedatanew;
+    QVector <QVector<double> > calibrationoffsetdatanew;
+    QVector <QVector<double> > calibrationgaindatanew;
+    QVector <QVector<int> > calibrationidnew;
+    QVector <QVector<double> > calibrationrabnew;
+    QVector <QVector<double> > calibrationrwnew;
+    QVector <QVector <QVector<double> > > rawresultsnew;
+    QVector <QVector <QVector<double> > > lsqresultsnew;
+  };
+  QVector<devicedata*> _master_store;
+
 
  public slots:
 
@@ -105,21 +123,6 @@ class CalibrationEditor : public QSplitter{
   QVector<QVector<double> > P3resnew;
   QVector<QVector<double> > P1resnew;
 
-  //Master Store of all the devices
-  struct devicedata{
-    int device_id;
-    QString deviceName;
-    QVector <QVector<QString> > calibrationnamedatanew;
-    QVector <QVector<double> > calibrationoffsetdatanew;
-    QVector <QVector<double> > calibrationgaindatanew;
-    QVector <QVector<int> > calibrationidnew;
-    QVector <QVector<double> > calibrationrabnew;
-    QVector <QVector<double> > calibrationrwnew;
-    QVector <QVector <QVector<double> > > rawresultsnew;
-    QVector <QVector <QVector<double> > > lsqresultsnew;
-  };
-  QVector<devicedata*> _master_store;
-
   // ----- GUI widgets -----
   QCheckBox *chk0, *chk1, *chk2, *chk3;
   QCheckBox *chk4, *chk5, *chk6, *chk7;
@@ -137,10 +140,11 @@ class CalibrationEditor : public QSplitter{
   QLabel *offsetlabel;
   QLabel *gainlabel;
   QLabel *resistorlabel;
+  QAction *displayCurvesAct, *displayCalibrationDataAct, *setOptionsAct, *checkCellsAct;
+  QAction *potTestAct, *potTestErrorAct;
 
   // -----
   Logger* _log;
-  Emulator* _emu;
   EmulatorHw* _cal_emuhw;
 
 };

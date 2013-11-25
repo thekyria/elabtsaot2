@@ -85,10 +85,12 @@ class MainWindow : public QMainWindow{
   void importSchematicSlot();
   void importMappingSlot();
   void importScenarioSetSlot();
+  void importCalibrationSlot();
   void exportPowersystemSlot();
   void exportSchematicSlot();
   void exportMappingSlot();
   void exportScenarioSetSlot();
+  void exportCalibrationSlot();
 
   void usbChangedSlot();
   void emuChangedSlot(bool complete);
@@ -109,6 +111,7 @@ class MainWindow : public QMainWindow{
   void importSchematic( QString const& filename );
   void importMapping( QString const& filename );
   void importScenarioSet( QString const& filename );
+  void importCalibrationValues( QString const& filename );
 
   //! Pointers to frontend classes
   QStackedWidget* topStack;

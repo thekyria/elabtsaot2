@@ -47,7 +47,6 @@ int importEncoding(std::string filename, size_t sliceId, Emulator& emu, bool for
 int importScenarioSet(std::string filename, ScenarioSet* scs);
 int importTDResults(std::string filename, TDResults* res);
 int importCalibrationValues(std::string filename_, CalibrationEditor* cal);
-
 int exportPowersystem(std::string filename, Powersystem const* pws);
 int exportSchematic(std::string filename, PwsSchematicModel const* smd);
 int exportMapping(std::string filename, PwsMapperModel const* mmd);
