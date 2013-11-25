@@ -416,8 +416,8 @@ void MainWindow::exportCalibrationSlot(){
   if( filename.isEmpty() )
     return;
 
-  int ans = io::exportCalibrationValues(filename.toStdString(), _scs );
-  if ( ans )
+  int ans = io::exportCalibrationValues(filename.toStdString(), _cal );
+  if ( ans != 1 )
     cout << "Error exporting calibration values." << endl;
   else
     cout << "Calibration values exported successfully." << endl;
@@ -572,11 +572,11 @@ void MainWindow::importScenarioSet( QString const& filename ){
   return;
 }
 
-void MainWindow::importScenarioSet( QString const& filename ){
+void MainWindow::importCalibrationValues( QString const& filename ){
   int ans;
   // ----- Update backend components -----
   ans = io::importCalibrationValues(filename.toStdString(), _cal );
-  if ( ans ){
+  if ( ans != 1 ){
     cout << "Importing calibration values failed with exit code " << ans << endl;
     return;
   }
@@ -585,5 +585,6 @@ void MainWindow::importScenarioSet( QString const& filename ){
 
 
   cout << "Calibration values was imported successfully." << endl;
+  _cal->calibrationSetterSlot();
   return;
 }

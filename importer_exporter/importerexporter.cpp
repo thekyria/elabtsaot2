@@ -1077,6 +1077,8 @@ int io::exportCalibrationValues(std::string filename_, CalibrationEditor* cal){
     if (cal->_emu->getUSBDevicesCount()!= cal->_master_store.size()){
         cout<< "ERROR" << endl;
         cout<< "Devices connected are more than stored in calibration data stractures" << endl;
+        fclose(f);
+        remove(cstr);
         return 0;
     }
 
@@ -1084,10 +1086,14 @@ int io::exportCalibrationValues(std::string filename_, CalibrationEditor* cal){
         //Check the names' vector for existence of data
         if (cal->_master_store.at(devid)->calibrationnamedatanew.size()==0){
             cout<<"None test was run, aborting..."<<endl;
+            fclose(f);
+            remove(cstr);
             return 0;
         }
         if (cal->_master_store.at(devid)->calibrationnamedatanew[0].size()!=254){
             cout<<"Run all tests before exporting, aborting..."<<endl;
+            fclose(f);
+            remove(cstr);
             return 0;
         }
         //Take a copy of all device values
