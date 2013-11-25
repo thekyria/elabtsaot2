@@ -2,9 +2,16 @@
 #include "sliceanalog.h"
 using namespace elabtsaot;
 
+#include <boost/numeric/ublas/operation.hpp> // for axpy_prod
+#include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/banded.hpp> // for diagonal_matrix
+
 using ublas::vector;
 #include <limits>
 using std::numeric_limits;
+#include <iostream>
+using std::cout;
+using std::endl;
 
 #define HORIZONTALNUMBEROFATOMS 6 //!< Default horizontal number of atoms
 #define VERTICALNUMBEROFATOMS 4   //!< Default vertical number of atoms
@@ -59,6 +66,28 @@ double SliceAnalog::getMinMaxAchievableR() const{
 }
 using namespace ublas;
 
+void SliceAnalog::buildG(matrix<double,column_major>& G, bool real) const{
+  // directed incidence matrix
+  matrix<int,column_major> Cd;
+  buildCd(Cd);
+  cout << "{DEBUG} Cd: " << Cd << endl;
+  // branch conductance vector
+  vector<double> Gbr;
+  buildGbr(Gbr,real);
+  cout << "{DEBUG} Gbr: " << Gbr << endl;
+  // branch status vector
+  vector<int> brStatus;
+  buildBrStatus(brStatus,real);
+  cout << "{DEBUG} brStatus: " << brStatus << endl;
+
+  Gbr = element_prod(Gbr,brStatus); // status-updated branch conductance
+  diagonal_matrix<double,column_major> diagGbr(Gbr.size(),Gbr.data()); // diagonalized br conductance
+  matrix<double,column_major> Gtemp;
+  axpy_prod(diagGbr,Cd,Gtemp,true); // Gtemp = diag(Gbr)*Cd
+  Cd = trans(Cd); // now Cd hold transpose of Cd
+  axpy_prod(Cd,Gtemp,G,true); // G = Cd'*Gtemp = Cd'*diag(Gbr)*Cd
+  cout << "{DEBUG} G: " << G << endl;
+}
 void SliceAnalog::buildCd(matrix<int,column_major>& Cd) const{
 
   size_t ver, hor;

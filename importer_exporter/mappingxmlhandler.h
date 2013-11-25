@@ -26,7 +26,7 @@ class MappingXMLHandler : public QXmlDefaultHandler{
 
  public:
 
-  MappingXMLHandler( PwsMapperModel* mmd = 0 );
+  MappingXMLHandler(PwsMapperModel* mmd=0);
   // Implementation of virtual functions
   bool characters(QString const& ch);
   bool startElement(QString const& namespaceURI, QString const& localName,

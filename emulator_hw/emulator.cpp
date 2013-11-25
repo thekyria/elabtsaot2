@@ -6,6 +6,9 @@ using namespace elabtsaot;
 #include "encoder.h"
 #include "auxiliary.h"
 #include "precisiontimer.h"
+#include "ssutils.h"
+
+#include <boost/numeric/ublas/operation.hpp> // for axpy_prod
 
 //#include <string>
 using std::string;
@@ -13,7 +16,6 @@ using std::wstring;
 //#include <vector>
 using std::vector;
 //#include <complex>
-using std::complex;
 using std::polar;
 //#include <map>
 using std::map;
@@ -33,19 +35,24 @@ using std::min;
 #define IMAG_VOLTAGE_REF_MEASURED_VAL 2.5
 #define DEVICE_CALIBRATION_SIGNATURE 36864
 //#define DEVICE_PIPELINES_SIGNARTURE 39320
-#define DEFRATIOZ 20000
-#define DEFRATIOV 1
-#define DEFMAXIPU 16
 
-Emulator::Emulator( Powersystem const* pws ) :
+#define DEFAULT_RATIOZ 20000
+#define DEFAULT_RATIOV 1
+#define DEFAULT_MAXI_PU 16
+
+#define DEFAULT_DCRATIOZ 20000
+#define DEFAULT_DCRATIOV 2
+#define DEFAULT_DCMAXI_PU 16
+
+Emulator::Emulator(Powersystem const* pws) :
     _emuhw(new EmulatorHw()),
     _pws(pws),
     _mmd(new PwsMapperModel(_pws,_emuhw)),
     _usb(new USBFPGAInterface()),
-    _ratioZ(DEFRATIOZ),
-    _ratioV(DEFRATIOV),
+    _ratioZ(DEFAULT_RATIOZ),
+    _ratioV(DEFAULT_RATIOV),
     _ratioI(_ratioV/_ratioZ),
-    _maxIpu(DEFMAXIPU),
+    _maxIpu(DEFAULT_MAXI_PU),
     _state(EMU_STATE_START),
     _state_calibration(EMU_CALSTATE_YES) {
 
@@ -81,7 +88,7 @@ Emulator::~Emulator(){
   delete _mmd;
 }
 
-int Emulator::init( Powersystem const* pws ){
+int Emulator::init(EmulatorOpType opType, Powersystem const* pws ){
 
   // Regardless of the previous state init() resets the state of the Emulator
   // to the initial state
@@ -101,10 +108,25 @@ int Emulator::init( Powersystem const* pws ){
   ans |= _usb->init();
 
   // init private members
-  _ratioZ = static_cast<double>(DEFRATIOZ);
-  _ratioV = static_cast<double>(DEFRATIOV);
-  _ratioI = static_cast<double>(_ratioV/_ratioZ);
-  _maxIpu = static_cast<double>(DEFMAXIPU);
+  switch (opType){
+  case EMU_OPTYPE_GPF:
+  case EMU_OPTYPE_TD:
+    _ratioZ = static_cast<double>(DEFAULT_RATIOZ);
+    _ratioV = static_cast<double>(DEFAULT_RATIOV);
+    _ratioI = static_cast<double>(_ratioV/_ratioZ);
+    _maxIpu = static_cast<double>(DEFAULT_MAXI_PU);
+    break;
+  case EMU_OPTYPE_DCPF:
+    _ratioZ = static_cast<double>(DEFAULT_DCRATIOZ);
+    _ratioV = static_cast<double>(DEFAULT_DCRATIOV);
+    _ratioI = static_cast<double>(_ratioV/_ratioZ);
+    _maxIpu = static_cast<double>(DEFAULT_DCMAXI_PU);
+    break;
+//  default:
+//    ans |= 77;
+//    break;
+  }
+
 
   return ans;
 }
@@ -208,7 +230,9 @@ int Emulator::preconditionEmulator(EmulatorOpType opType){
   return 0;
 }
 
-int Emulator::setSliceCount(size_t val){
+int Emulator::setSliceCount(size_t val, EmulatorOpType opType){
+
+  int ans(0);
 
 //  // Regardless of the previous state setSliceCount() resets the state of the
 //  // Emulator to the initial state
@@ -218,13 +242,27 @@ int Emulator::setSliceCount(size_t val){
     _state = EMU_STATE_USBINIT;
 
   // init private members
-  _ratioZ = static_cast<double>(DEFRATIOZ);
-  _ratioV = static_cast<double>(DEFRATIOV);
-  _ratioI = static_cast<double>( _ratioV / _ratioZ );
-  _maxIpu = static_cast<double>(DEFMAXIPU);
+  switch (opType){
+  case EMU_OPTYPE_GPF:
+  case EMU_OPTYPE_TD:
+    _ratioZ = static_cast<double>(DEFAULT_RATIOZ);
+    _ratioV = static_cast<double>(DEFAULT_RATIOV);
+    _ratioI = static_cast<double>(_ratioV/_ratioZ);
+    _maxIpu = static_cast<double>(DEFAULT_MAXI_PU);
+    break;
+  case EMU_OPTYPE_DCPF:
+    _ratioZ = static_cast<double>(DEFAULT_DCRATIOZ);
+    _ratioV = static_cast<double>(DEFAULT_DCRATIOV);
+    _ratioI = static_cast<double>(_ratioV/_ratioZ);
+    _maxIpu = static_cast<double>(DEFAULT_DCMAXI_PU);
+    break;
+//  default:
+//    ans |= 77;
+//    break;
+  }
 
   // Update emulator
-  int ans = _emuhw->init( val );
+  ans = _emuhw->init(val);
   if ( ans ) return 1;
 
   // Initialize mmd
@@ -239,17 +277,33 @@ int Emulator::setSliceCount(size_t val){
   return 0;
 }
 
-int Emulator::resetEmulator( bool complete ){
+int Emulator::resetEmulator(bool complete, EmulatorOpType opType){
 
-  // Reset private members
-  _ratioZ = static_cast<double>(DEFRATIOZ);
-  _ratioV = static_cast<double>(DEFRATIOV);
-  _ratioI = static_cast<double>( _ratioV / _ratioZ );
-  _maxIpu = static_cast<double>(DEFMAXIPU);
+  int ans(0);
+
+  // init private members
+  switch (opType){
+  case EMU_OPTYPE_GPF:
+  case EMU_OPTYPE_TD:
+    _ratioZ = static_cast<double>(DEFAULT_RATIOZ);
+    _ratioV = static_cast<double>(DEFAULT_RATIOV);
+    _ratioI = static_cast<double>(_ratioV/_ratioZ);
+    _maxIpu = static_cast<double>(DEFAULT_MAXI_PU);
+    break;
+  case EMU_OPTYPE_DCPF:
+    _ratioZ = static_cast<double>(DEFAULT_DCRATIOZ);
+    _ratioV = static_cast<double>(DEFAULT_DCRATIOV);
+    _ratioI = static_cast<double>(_ratioV/_ratioZ);
+    _maxIpu = static_cast<double>(DEFAULT_DCMAXI_PU);
+    break;
+//  default:
+//    ans |= 77;
+//    break;
+  }
 
   // Reset emulator hardware
-  int ans = _emuhw->reset( complete );
-  if ( ans ) return ans;
+  ans = _emuhw->reset( complete );
+  if (ans) return ans;
 
   // If a complete reset is asked for do not precalibrate slices
   if ( !complete ){
@@ -264,10 +318,11 @@ int Emulator::resetEmulator( bool complete ){
 
 size_t Emulator::getHwSliceCount() const{ return _emuhw->sliceSet.size(); }
 
-int Emulator::nodeSetPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus, bool slack){
+int Emulator::nodeSetGPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus){
   int ans = 0;
   Slice* slc = &_emuhw->sliceSet[id_tab];
 
+  bool slack = (bus.type==BUSTYPE_SLACK);
   // Disconnect everything from the node
   ans |= slc->dig.remove(id_ver,id_hor);
   if (ans) return 21;
@@ -278,28 +333,58 @@ int Emulator::nodeSetPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus, bo
   // Normal PQ (non-slack) bus
   if (!slack){
     // Normal (non-slack) bus inserted into PQ pipeline
-    ans = slc->dig.pipe_PFPQ.insert_element(id_ver,id_hor,bus,true);
+    ans = slc->dig.pipe_GPFPQ.insert_element(id_ver,id_hor,bus,true);
     if (ans) return 22;
     // Connect analog node as current source
     double Vmax = std::min(Vmaxreal,Vmaximag);
     double seriesR = Vmax/(_maxIpu*_ratioI);
-    slc->ana.nodeCurrentSource(id_ver,id_hor, seriesR, -1);
+    ans = slc->ana.nodeCurrentSource(id_ver,id_hor, seriesR, -1);
+//    if (ans) return 23;
   }
 
   // Slack bus
   else {
     // Adjust bus.P & .Q accordingly
-    complex<double> V(polar(bus.V,bus.theta));
+    complex V(polar(bus.V,bus.theta));
     double imagI = _maxIpu *  V.real()*_ratioV / Vmaxreal;
     double realI = _maxIpu *  V.imag()*_ratioV / Vmaximag;
-    complex<double> I(realI,imagI);
-    complex<double> S = V*conj(I);
+    complex I(realI,imagI);
+    complex S = V*conj(I);
     bus.P = S.real();
     bus.Q = S.imag();
     // Slack bus inserted into Slack pipeline
-    ans = slc->dig.pipe_PFslack.insert_element(id_ver,id_hor,bus,true);
+    ans = slc->dig.pipe_GPFslack.insert_element(id_ver,id_hor,bus,true);
     if (ans) return 31;
     // Connect analog node as voltage source
+    ans = slc->ana.nodeVoltageSource(id_ver, id_hor, -1);
+    if (ans) return 32;
+  }
+  return 0;
+}
+
+int Emulator::nodeSetDCPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus){
+  int ans = 0;
+  Slice* slc = &_emuhw->sliceSet[id_tab];
+
+  bool slack = (bus.type==BUSTYPE_SLACK);
+  // Disconnect everything from the node
+  ans |= slc->dig.remove(id_ver,id_hor);
+  if (ans) return 21;
+  slc->ana.nodeDisconnect(id_ver,id_hor);
+
+  double Vmaxreal = slc->ana.real_voltage_ref_val_max()- slc->ana.real_voltage_ref_val();
+  // Normal (non-slack) bus
+  if (!slack){
+    double seriesR = Vmaxreal/(_maxIpu*_ratioI);
+    slc->dig.IInjections[id_ver][id_hor] = bus.P*_ratioI;
+    ans = slc->ana.nodeCurrentSource(id_ver,id_hor, seriesR, -1);
+//    if (ans) return 23;
+  }
+
+  // Slack bus
+  else {
+    // TODO
+    slc->dig.VInjections[id_ver][id_hor] = bus.theta*_ratioV;
     ans = slc->ana.nodeVoltageSource(id_ver, id_hor, -1);
     if (ans) return 32;
   }
@@ -347,8 +432,8 @@ int Emulator::nodeSetTD(size_t id_tab, size_t id_ver, size_t id_hor, Generator c
     double realI = _maxIpu *  gen.Vss.imag()*_ratioV / Vmaximag;
     // So into the const I load pipeline we have to insert a fake "load" that
     // results in the above currents in [pu]
-    complex<double> I ( realI, imagI );
-    complex<double> S = gen.Vss * conj(I);
+    complex I ( realI, imagI );
+    complex S = gen.Vss * conj(I);
     Load temp_iload = Load();
     temp_iload.Pdemand = real(S);
     temp_iload.Qdemand = imag(S);
@@ -417,10 +502,19 @@ int Emulator::embrSet(size_t id_tab, size_t id_ver, size_t id_hor, size_t pos,
   Slice* slc = &_emuhw->sliceSet[id_tab];
   double r_near = br.X * _ratioZ * distanceOfGndFromNearEnd;
   double r_far  = br.X * _ratioZ * (1 - distanceOfGndFromNearEnd);
-  if (br.status)
-    return slc->ana.embrConnect(id_ver,id_hor,pos,r_near,r_far);
-  else
-    return slc->ana.embrDisconnect(id_ver, id_hor, pos);
+  if (br.status) return slc->ana.embrConnect(id_ver,id_hor,pos,r_near,r_far);
+  else           return slc->ana.embrDisconnect(id_ver, id_hor, pos);
+}
+
+int Emulator::embrSetXtimesTap(size_t id_tab, size_t id_ver, size_t id_hor, size_t pos, Branch const& br){
+  Slice* slc = &_emuhw->sliceSet[id_tab];
+  double tap = br.Xratio;
+  if (tap==0.) tap=1.; // assuming that (tap==0) => denotes line
+  double XtimesTap = br.X*tap;
+  double r_near = XtimesTap*_ratioZ*0.5;
+  double r_far  = XtimesTap*_ratioZ*0.5;
+  if (br.status) return slc->ana.embrConnect(id_ver,id_hor,pos,r_near,r_far);
+  else           return slc->ana.embrDisconnect(id_ver, id_hor, pos);
 }
 
 int Emulator::initializeUSB(){
@@ -531,7 +625,7 @@ int Emulator::autoAssignSlicesToDevices(){
   if (deviceCount > 2*MAX_SLICE_COUNT)
     return 2;
   size_t sliceCount = deviceCount;
-  ans = setSliceCount(sliceCount);
+  ans = setSliceCount(sliceCount,EMU_OPTYPE_TD);
   if (ans) return 3;
 
   // Assign slices to devices according to expected device names
@@ -692,43 +786,58 @@ void Emulator::set_ratioV(double val){
 }
 void Emulator::set_maxIpu(double val){ _maxIpu = val; }
 
-void Emulator::autoRatioZ(){
-  double maxX = _pws->getMaxX();
-  // the following cannot be 2 * POTENTIOMETER_RAB, as generator xd_1's have to
-  // be taken into account
-  double maxAchievableR = _emuhw->getMinMaxAchievableR();
-  double newRatioZ = maxAchievableR / maxX;
+void Emulator::autoRatioZ(EmulatorOpType opType){
+  double maxFlownetZ;
+  switch (opType){
+  case EMU_OPTYPE_GPF:
+  case EMU_OPTYPE_TD:
+    maxFlownetZ = _pws->getMaxX();
+    break;
+  case EMU_OPTYPE_DCPF:
+    maxFlownetZ = _pws->getMaxXTimesTap();
+    break;
+//  default:
+//    break;
+  }
+  double maxEmulatorR = _emuhw->getMinMaxAchievableR();
+  double newRatioZ = maxEmulatorR/maxFlownetZ;
   set_ratioZ( newRatioZ );
 }
 
 double Emulator::getMaxR() const{ return _emuhw->getMinMaxAchievableR(); }
 
-void Emulator::defaultRatios(){
-  _ratioZ = static_cast<double>(DEFRATIOZ);
-  _ratioV = static_cast<double>(DEFRATIOV);
-  _ratioI = static_cast<double>(_ratioV/_ratioZ);
-  _maxIpu = static_cast<double>(DEFMAXIPU);
+void Emulator::defaultRatios(EmulatorOpType opType){
+  switch (opType){
+  case EMU_OPTYPE_GPF:
+  case EMU_OPTYPE_TD:
+    _ratioZ = static_cast<double>(DEFAULT_RATIOZ);
+    _ratioV = static_cast<double>(DEFAULT_RATIOV);
+    _ratioI = static_cast<double>(_ratioV/_ratioZ);
+    _maxIpu = static_cast<double>(DEFAULT_MAXI_PU);
+    break;
+  case EMU_OPTYPE_DCPF:
+    _ratioZ = static_cast<double>(DEFAULT_DCRATIOZ);
+    _ratioV = static_cast<double>(DEFAULT_DCRATIOV);
+    _ratioI = static_cast<double>(_ratioV/_ratioZ);
+    _maxIpu = static_cast<double>(DEFAULT_DCMAXI_PU);
+    break;
+//  default:
+//    break;
+  }
 }
 
 int Emulator::resetMapping(){
-
-  // Calling resetMapping() downsets the state of the Emulator to
-  // EMU_STATE_SLCDEVASSIGNED
+  // Calling resetMapping() downsets the state of the Emulator to EMU_STATE_SLCDEVASSIGNED
   if ( _state > EMU_STATE_SLCDEVASSIGNED )
     _state = EMU_STATE_SLCDEVASSIGNED;
-
   return _mmd->resetMapping();
 }
 
-void Emulator::cleaMappingHints(){
-  _mmd->clearHints();
-  return;
-}
+void Emulator::cleaMappingHints(){ _mmd->clearHints(); }
 
 void Emulator::hintComponent( int type, unsigned int extId){
   int mdlId = _mmd->getElement_mdlId( type, extId );
   _mmd->hintComponent(type, mdlId);
-  return;
 }
 
 int Emulator::mapComponent( int type, unsigned int extId,
@@ -747,27 +856,20 @@ int Emulator::mapComponent( int type, unsigned int extId,
 }
 
 int Emulator::unmapComponent( int type, unsigned int extId){
-
-  // Calling unmapComponent() downsets the state of the Emulator to
-  // EMU_STATE_SLCDEVASSIGNED
+  // Calling unmapComponent() downsets the state of the Emulator to EMU_STATE_SLCDEVASSIGNED
   if ( _state > EMU_STATE_SLCDEVASSIGNED )
     _state = EMU_STATE_SLCDEVASSIGNED;
-
   return _mmd->unmapComponent( type, extId );
 }
 
 int Emulator::autoMapping(){
-
-  // Calling autoMapping() downsets the state of the Emulator to
-  // EMU_STATE_SLCDEVASSIGNED
+  // Calling autoMapping() downsets the state of the Emulator to EMU_STATE_SLCDEVASSIGNED
   if ( _state > EMU_STATE_SLCDEVASSIGNED )
     _state = EMU_STATE_SLCDEVASSIGNED;
-
   return _mmd->autoMapping();
 }
 
 int Emulator::validateMapping(){
-
   // Calling validateMapping() downsets the state of the Emulator to
   // EMU_STATE_SLCDEVASSIGNED
   if ( _state > EMU_STATE_SLCDEVASSIGNED )
@@ -795,17 +897,17 @@ int Emulator::autoFitting(EmulatorOpType opType, vector<string>* outputMsg){
   else if (_state<EMU_STATE_MAPOK) return -1;
 
   // ----- Fit branches -----
-  int ans = _fitBranches(outputMsg);
+  int ans = _fitBranches(opType,outputMsg);
   if (ans) return ans;
 
   switch (opType){
   case EMU_OPTYPE_GPF:
     // ----- Fit buses -----
-    ans = _fitBusesPF(outputMsg);
+    ans = _fitBusesGPF(outputMsg);
     if (ans) return ans;
     break;
   case EMU_OPTYPE_DCPF:
-    // TODO
+    ans = _fitBusesDCPF(outputMsg);
     break;
   case EMU_OPTYPE_TD:
     // ----- Fit generators -----
@@ -867,11 +969,11 @@ int Emulator::encodePowersystem(EmulatorOpType opType){
     int ans(0);
     switch (opType){
     case EMU_OPTYPE_GPF:
-      ans = encoder::encodeSlicePF( _emuhw->sliceSet[k],encoding[k]); break;
+      ans = encoder::encodeSliceGPF(_emuhw->sliceSet[k],encoding[k]); break;
     case EMU_OPTYPE_DCPF:
-      /* TODO: DCPF */ break;
+      ans = encoder::encodeSliceDCPF(_emuhw->sliceSet[k],encoding[k]); break;
     case EMU_OPTYPE_TD:
-      ans = encoder::encodeSliceTD( _emuhw->sliceSet[k],encoding[k]); break;
+      ans = encoder::encodeSliceTD(_emuhw->sliceSet[k],encoding[k]); break;
     }
     if (ans) return k;
   }
@@ -939,7 +1041,7 @@ int Emulator::state_calibration() const{ return _state_calibration; }
 int Emulator::_precalibrateSlice( size_t sliceId, bool toDefaultVoltage ){
 
   // Validate input argument
-  if ( sliceId >=  _emuhw->sliceSet.size() )
+  if (sliceId>=_emuhw->sliceSet.size())
     return 1;
 
   // Validate slice mapping
@@ -1014,18 +1116,15 @@ vector<bool> Emulator::_isAtCalibrationMode(){
   return ans;
 }
 
-int Emulator::_endCalibrationMode( size_t devId ){
-
+int Emulator::_endCalibrationMode(size_t devId){
   vector<uint32_t> tempvector;
   tempvector.push_back(5555);
   int ans = _usb->write( devId, 286, tempvector);
-  if ( ans )
-    return 1;
-
+  if (ans) return 1;
   return 0;
 }
 
-int Emulator::_fitBranches(vector<string>* outputMsg){
+int Emulator::_fitBranches(EmulatorOpType opType, vector<string>* outputMsg){
   size_t fit_embrpos;
   size_t fit_tab;     // tab where the component is to be fitted to
   size_t fit_row;     // row where the component is to be fitted to
@@ -1143,18 +1242,24 @@ int Emulator::_fitBranches(vector<string>* outputMsg){
     if (ans) return 45;
 
     // Fit
-    ans = embrSet(fit_tab, fit_row, fit_col, fit_embrpos, *pBr, 0.5);
+    switch (opType){
+    case EMU_OPTYPE_DCPF:
+      ans = embrSetXtimesTap(fit_tab, fit_row, fit_col, fit_embrpos, *pBr); break;
+    case EMU_OPTYPE_GPF:
+    case EMU_OPTYPE_TD:
+      ans = embrSet(fit_tab, fit_row, fit_col, fit_embrpos, *pBr, 0.5); break;
+    }
+
     if (ans){
       string msg( "Fitting branch with ext id " + auxiliary::to_string(cdBr->extId)
                   + " failed with code " + auxiliary::to_string(ans) );
-      if ( outputMsg )
-        outputMsg->push_back(msg);
+      if (outputMsg) outputMsg->push_back(msg);
     }
   }
   return 0;
 }
 
-int Emulator::_fitBusesPF(vector<string>* outputMsg){
+int Emulator::_fitBusesGPF(vector<string>* outputMsg){
   for (size_t k=0; k!=_mmd->busElements_size(); ++k){
     PwsMapperModelElement const* cdBus = _mmd->elementByIndex(PWSMODELELEMENTTYPE_BUS,k);
     if (!cdBus->mapped) return 60;
@@ -1170,7 +1275,7 @@ int Emulator::_fitBusesPF(vector<string>* outputMsg){
     if (ans) return 61;
 
     // Fit
-    ans = nodeSetPF(fit_tab,fit_row,fit_col, *pBus, pBus->type==BUSTYPE_SLACK);
+    ans = nodeSetGPF(fit_tab,fit_row,fit_col, *pBus);
     if (ans){
       string msg( "Fitting but with ext id " + auxiliary::to_string(cdBus->extId)
                   + " failed with code " + auxiliary::to_string(ans) );
@@ -1179,6 +1284,68 @@ int Emulator::_fitBusesPF(vector<string>* outputMsg){
   }
   return 0;
 }
+
+int Emulator::_fitBusesDCPF(vector<string>* outputMsg){
+
+  size_t N(_pws->getBusCount());
+
+  // Active power due to phase shifters
+  ublas::vector<double> Pshift(N);
+  size_t Nbr(_pws->getBranchCount());
+  ublas::vector<double> branchB(Nbr);
+  ssutils::buildBranchB(*_pws,branchB);
+  ublas::vector<double> Pshiftf(Nbr);
+  for (size_t k(0); k!=Nbr; ++k){
+    Branch const* branch = _pws->getBranch(k);
+    Pshiftf(k) = -branchB(k)*branch->Xshift;
+  }
+  ublas::matrix<int,ublas::column_major> Cd(Nbr,N);
+  ssutils::buildCd(*_pws,Cd);
+  ublas::axpy_prod(trans(Cd),Pshiftf,Pshift,true); // updates Pshift
+
+  std::vector<Bus> tempBus(N);     // local non-const bus storage
+  ublas::vector<double> Pset(N);   // bus active power setpoint
+  ublas::vector<double> Pshunt(N); // bus active power lost to shunt conductances
+  ublas::vector<double> P(N);      // adjusted bus active power setpoint
+  for (size_t k(0); k!=N; ++k){
+    tempBus[k] = *_pws->getBus(k);  // instantiate local copy by
+    // Reset voltage magnitudes to 1
+    tempBus[k].V = 1;
+    // Active power injected to bus by gens and loads
+    Pset(k) = tempBus[k].P;
+    // Active power lost to shunt conductance
+    Pshunt(k) = tempBus[k].Gsh;    // When V=(1.0+j0.0), Pshunt = Gsh
+    // Adjust bus power injections for phase shifters and shunt conductances
+    P(k) = Pset(k) - Pshift(k) - Pshunt(k);
+    // Update bus power injection
+    tempBus[k].P = P(k);
+    tempBus[k].Q = 0;              // we are interested only in active power injection
+  }
+
+  for (size_t k=0; k!=_mmd->busElements_size(); ++k){
+    PwsMapperModelElement const* cdBus = _mmd->elementByIndex(PWSMODELELEMENTTYPE_BUS,k);
+    if (!cdBus->mapped) return 60;
+
+    // Determine fitting position
+    size_t fit_tab = static_cast<size_t>(cdBus->tab) / 2;
+    size_t fit_row = static_cast<size_t>(cdBus->row) / 2;
+    size_t fit_col = static_cast<size_t>(cdBus->col) / 2;
+
+    // Retrieve intId of bus to be fitted
+    int busIntId = _pws->getBus_intId(cdBus->extId);
+    if (busIntId<0) return 61;
+
+    // Fit
+    int ans = nodeSetDCPF(fit_tab,fit_row,fit_col, tempBus[busIntId]);
+    if (ans){
+      string msg( "Fitting but with ext id " + auxiliary::to_string(cdBus->extId)
+                  + " failed with code " + auxiliary::to_string(ans) );
+      if (outputMsg) outputMsg->push_back(msg);
+    }
+  }
+  return 0;
+}
+
 
 int Emulator::_fitGeneratorsTD(vector<string>* outputMsg){
   for (size_t k=0 ; k!=_mmd->genElements_size() ; ++k){

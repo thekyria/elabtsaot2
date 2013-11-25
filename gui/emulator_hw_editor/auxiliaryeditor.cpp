@@ -89,27 +89,31 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
   globalParamsLay->addRow(autoRatioZLabel, autoRatioZBut);
 
   // Default ratios
-  QLabel* defaultRatiosLabel = new QLabel("Default Ratios");
-  QPushButton* defaultRatiosBut = new QPushButton("Default Ratios");
-  globalParamsLay->addRow(defaultRatiosLabel, defaultRatiosBut);
+  QLabel* defaultRatiosTDLabel = new QLabel("Default Ratios (TD)");
+  QPushButton* defaultRatiosTDBut = new QPushButton("Default Ratios (TD)");
+  globalParamsLay->addRow(defaultRatiosTDLabel, defaultRatiosTDBut);
+
+  QLabel* defaultRatiosDCPFLabel = new QLabel("Default Ratios (DCPF)");
+  QPushButton* defaultRatiosDCPFBut = new QPushButton("Default Ratios (DCPF)");
+  globalParamsLay->addRow(defaultRatiosDCPFLabel, defaultRatiosDCPFBut);
 
   QLabel* getMaxRLabel = new QLabel("Get max R");
   QPushButton* getMaxRBut = new QPushButton("Get max R");
   globalParamsLay->addRow(getMaxRLabel, getMaxRBut);
 
+  QLabel* buildGSlicesLabel = new QLabel("Build G slices");
+  QPushButton* buildGSlicesBut= new QPushButton("Build G slices");
+  globalParamsLay->addRow(buildGSlicesLabel,buildGSlicesBut);
+
   // ----------------- Connect signals -----------------
-  connect( ratioZForm, SIGNAL(valueChanged(double)),
-           this, SLOT(ratioZSlot(double)) );
-  connect( ratioVForm, SIGNAL(valueChanged(double)),
-           this, SLOT(ratioVSlot(double)) );
-  connect( maxIpuForm, SIGNAL(valueChanged(double)),
-           this, SLOT(maxIpuSlot(double)) );
-  connect( autoRatioZBut, SIGNAL(clicked()),
-           this, SLOT(autoRatioZSlot()) );
-  connect( defaultRatiosBut, SIGNAL(clicked()),
-           this, SLOT(defaultRatiosSlot()) );
-  connect( getMaxRBut, SIGNAL(clicked()),
-           this, SLOT(getMinMaxResistorSlot()) );
+  connect( ratioZForm, SIGNAL(valueChanged(double)), this, SLOT(ratioZSlot(double)) );
+  connect( ratioVForm, SIGNAL(valueChanged(double)), this, SLOT(ratioVSlot(double)) );
+  connect( maxIpuForm, SIGNAL(valueChanged(double)), this, SLOT(maxIpuSlot(double)) );
+  connect( autoRatioZBut, SIGNAL(clicked()), this, SLOT(autoRatioZTDSlot()) );
+  connect( defaultRatiosTDBut, SIGNAL(clicked()), this, SLOT(defaultRatiosTDSlot()) );
+  connect( defaultRatiosDCPFBut, SIGNAL(clicked()), this, SLOT(defaultRatiosDCPFSlot()) );
+  connect( getMaxRBut, SIGNAL(clicked()), this, SLOT(getMinMaxResistorSlot()) );
+  connect( buildGSlicesBut, SIGNAL(clicked()), this, SLOT(buildGSlicesSlot()) );
 
   // ---------------------------------------------------------------------------
   // ----- Raw usb operations group box -----
@@ -138,10 +142,15 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
   QFormLayout* encodingLay = new QFormLayout(encodingBox);
   encodingBox->setLayout(encodingLay);
 
-  // Encode (PF) powersystem
-  QLabel* encodePowersystemPFLabel = new QLabel("Encode (PF) powersystem");
-  QPushButton* encodePowersystemPFBut = new QPushButton("Encode powersystem");
-  encodingLay->addRow(encodePowersystemPFLabel,encodePowersystemPFBut);
+  // Encode (GPF) powersystem
+  QLabel* encodePowersystemGPFLabel = new QLabel("Encode powersystem (GPF)");
+  QPushButton* encodePowersystemGPFBut = new QPushButton("Encode powersystem (GPF)");
+  encodingLay->addRow(encodePowersystemGPFLabel,encodePowersystemGPFBut);
+
+  // Encode (DCPF) powersystem
+  QLabel* encodePowersystemDCPFLabel = new QLabel("Encode powersystem (DCPF)");
+  QPushButton* encodePowersystemDCPFBut = new QPushButton("Encode powersystem (DCPF)");
+  encodingLay->addRow(encodePowersystemDCPFLabel,encodePowersystemDCPFBut);
 
   // Encode (TD) powersystem
   QLabel* encodePowersystemTDLabel = new QLabel("Encode (TD) powersystem");
@@ -169,7 +178,8 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
   encodingLay->addRow(importEncodingLabel,importEncodingBut);
 
   // ----------------- Connect signals -----------------
-  connect(encodePowersystemPFBut, SIGNAL(clicked()), this, SLOT(encodePowersystemPFSlot()));
+  connect(encodePowersystemGPFBut, SIGNAL(clicked()), this, SLOT(encodePowersystemGPFSlot()));
+  connect(encodePowersystemDCPFBut, SIGNAL(clicked()), this, SLOT(encodePowersystemDCPFSlot()));
   connect(encodePowersystemTDBut, SIGNAL(clicked()), this, SLOT(encodePowersystemTDSlot()));
   connect(writeEncodingBut, SIGNAL(clicked()), this, SLOT(writeEncodingSlot()));
   connect(logEncodingBut, SIGNAL(clicked()), this, SLOT(logPowersystemEncodingSlot()));
@@ -270,16 +280,28 @@ void AuxiliaryEditor::maxIpuSlot(double val){
   _emu->set_maxIpu(val);
   ratioIForm->setValue(_emu->ratioI());
 }
-void AuxiliaryEditor::autoRatioZSlot(){
-  _emu->autoRatioZ();
+void AuxiliaryEditor::autoRatioZTDSlot(){
+  _emu->autoRatioZ(EMU_OPTYPE_TD);
   _updtGlobals();
 }
-void AuxiliaryEditor::defaultRatiosSlot(){
-  _emu->defaultRatios();
+void AuxiliaryEditor::defaultRatiosTDSlot(){
+  _emu->defaultRatios(EMU_OPTYPE_TD);
   _updtGlobals();
 }
+void AuxiliaryEditor::defaultRatiosDCPFSlot(){
+  _emu->defaultRatios(EMU_OPTYPE_DCPF);
+  _updtGlobals();
+}
+
 void AuxiliaryEditor::getMinMaxResistorSlot() const{
   cout << "Maximum achievable R: " << _emu->getMaxR() << endl;
+}
+
+void AuxiliaryEditor::buildGSlicesSlot() const{
+  size_t sliceCount = _emu->getHwSliceCount();
+  ublas::matrix<double,ublas::column_major> G; // temp container
+  for (size_t k(0); k!=sliceCount; ++k)
+    _emu->emuhw()->sliceSet[k].ana.buildG(G,true); // debug-prints results
 }
 
 void AuxiliaryEditor::rawReadFromDeviceSlot(){
@@ -349,17 +371,24 @@ void AuxiliaryEditor::rawWriteToDeviceSlot(){
   return;
 }
 
-void AuxiliaryEditor::encodePowersystemPFSlot(){
+void AuxiliaryEditor::encodePowersystemGPFSlot(){
   int ans = _emu->encodePowersystem(EMU_OPTYPE_GPF);
-  if ( ans ) cout << "Encode (PF) powersyetem failed with code " << ans << endl;
-  else cout << "Encode powersyetem was successful!" << endl;
+  if ( ans ) cout << "Encode (GPF) powersyetem failed with code " << ans << endl;
+  else cout << "Encode powersyetem (GPF) was successful!" << endl;
+  return;
+}
+
+void AuxiliaryEditor::encodePowersystemDCPFSlot(){
+  int ans = _emu->encodePowersystem(EMU_OPTYPE_DCPF);
+  if ( ans ) cout << "Encode (DCPF) powersyetem failed with code " << ans << endl;
+  else cout << "Encode powersyetem (DCPF) was successful!" << endl;
   return;
 }
 
 void AuxiliaryEditor::encodePowersystemTDSlot(){
   int ans = _emu->encodePowersystem(EMU_OPTYPE_TD);
   if ( ans ) cout << "Encode (TD) powersyetem failed with code " << ans << endl;
-  else cout << "Encode powersyetem was successful!" << endl;
+  else cout << "Encode powersyetem (TD) was successful!" << endl;
   return;
 }
 

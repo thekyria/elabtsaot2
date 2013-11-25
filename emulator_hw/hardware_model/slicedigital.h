@@ -12,12 +12,15 @@ EPFL
 #ifndef SLICEDIGITAL_H
 #define SLICEDIGITAL_H
 
-#include "generatorpipeline.h"
-#include "constzloadpipeline.h"
-#include "constiloadpipeline.h"
-#include "constploadpipeline.h"
-#include "pqpipeline.h"
-#include "slackpipeline.h"
+#include "gpfpqpipeline.h"
+#include "gpfslackpipeline.h"
+#include "tdgeneratorpipeline.h"
+#include "tdconstzloadpipeline.h"
+#include "tdconstiloadpipeline.h"
+#include "tdconstploadpipeline.h"
+
+#define MAX_VERATOMCOUNT 4 //!< Default vertical number of atoms
+#define MAX_HORATOMCOUNT 6 //!< Default horizontal number of atoms
 
 namespace elabtsaot{
 
@@ -30,14 +33,17 @@ class SliceDigital{
   int remove(size_t ver, size_t hor); //!< Remove all (ver,hor) pipeline entries
 
   // PF specific pipelines
-  PQPipeline pipe_PFPQ;
-  SlackPipeline pipe_PFslack;
+  GPFPQPipeline pipe_GPFPQ;
+  GPFSlackPipeline pipe_GPFslack;
 
   // TD specific pipelines
-  GeneratorPipeline pipe_TDgen;
-  ConstZLoadPipeline pipe_TDzload;
-  ConstILoadPipeline pipe_TDiload;
-  ConstPLoadPipeline pipe_TDpload;
+  TDGeneratorPipeline pipe_TDgen;
+  TDConstZLoadPipeline pipe_TDzload;
+  TDConstILoadPipeline pipe_TDiload;
+  TDConstPLoadPipeline pipe_TDpload;
+
+  double IInjections[MAX_VERATOMCOUNT][MAX_HORATOMCOUNT];
+  double VInjections[MAX_VERATOMCOUNT][MAX_HORATOMCOUNT];
 };
 
 } // end of namespace elabtsaot

@@ -57,18 +57,29 @@ string Powersystem::serialize() const{
 
 double Powersystem::getMaxX() const{
   double maxX = -1;
-
   // Check branch set
   for ( size_t k = 0 ; k != _brSet.size() ; ++k )
     if ( _brSet[k].X > maxX )
       maxX = _brSet[k].X;
-
   // Check generator set
   for ( size_t k = 0 ; k != _genSet.size(); ++k )
     if ( _genSet[k].xd_1 > maxX )
       maxX = _genSet[k].xd_1;
-
   return maxX;
+}
+
+double Powersystem::getMaxXTimesTap() const{
+  double maxXtimesTap = -1;
+  // Check branch set
+  for ( size_t k = 0 ; k != _brSet.size() ; ++k ){
+    Branch const* branch = &_brSet[k];
+    double tap = branch->Xratio;
+    if (tap==0.) tap=1.; // assuming that (tap==0) => denotes line
+    double tempMaxXtimesTap = branch->X*tap;
+    if ( tempMaxXtimesTap > maxXtimesTap )
+      maxXtimesTap = tempMaxXtimesTap;
+  }
+  return maxXtimesTap;
 }
 
 void Powersystem::clear(){

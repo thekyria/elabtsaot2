@@ -117,12 +117,12 @@ SOURCES += \
   $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/emulatorbranch.cpp \
   $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/emulatorhw.cpp \
   $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/atom.cpp \
-  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/pqpipeline.cpp \
-  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/slackpipeline.cpp \
-  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/generatorpipeline.cpp \
-  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/constzloadpipeline.cpp \
-  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/constploadpipeline.cpp \
-  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/constiloadpipeline.cpp \
+  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/gpfpqpipeline.cpp \
+  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/gpfslackpipeline.cpp \
+  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/tdgeneratorpipeline.cpp \
+  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/tdconstzloadpipeline.cpp \
+  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/tdconstploadpipeline.cpp \
+  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/tdconstiloadpipeline.cpp \
   $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/pipeline.cpp \
   $$ELABTSAOT2_ROOT/emulator_hw/powersystem_model/pwsmappermodel.cpp \
   $$ELABTSAOT2_ROOT/emulator_hw/powersystem_model/pwsmappermodelelement.cpp \
@@ -235,12 +235,12 @@ HEADERS += \
   $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/emulatorbranch.h \
   $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/emulatorhw.h \
   $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/atom.h \
-  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/pqpipeline.h \
-  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/slackpipeline.h \
-  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/generatorpipeline.h \
-  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/constzloadpipeline.h \
-  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/constploadpipeline.h \
-  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/constiloadpipeline.h \
+  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/gpfpqpipeline.h \
+  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/gpfslackpipeline.h \
+  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/tdgeneratorpipeline.h \
+  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/tdconstzloadpipeline.h \
+  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/tdconstploadpipeline.h \
+  $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/tdconstiloadpipeline.h \
   $$ELABTSAOT2_ROOT/emulator_hw/hardware_model/pipeline.h \
   $$ELABTSAOT2_ROOT/emulator_hw/powersystem_model/pwsmappermodel.h \
   $$ELABTSAOT2_ROOT/emulator_hw/powersystem_model/pwsmappermodelelement.h \

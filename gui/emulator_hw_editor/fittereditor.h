@@ -39,10 +39,13 @@ class FitterEditor : public QSplitter{
  public slots:
 
   void updt();
-  void resetFittingSlot();
-  void autoFittingPFSlot();
+  void resetFittingTDSlot();
+  void resetFittingDCPFSlot();
+  void autoFittingGPFSlot();
+  void autoFittingDCPFSlot();
   void autoFittingTDSlot();
-  void validateFittingPFSlot();
+  void validateFittingGPFSlot();
+  void validateFittingDCPFSlot();
   void validateFittingTDSlot();
   void fittingPositionClickedSlot(int emu_tab, int emu_row, int emu_col, int emu_elm );
 

@@ -35,14 +35,17 @@ class AuxiliaryEditor : public QSplitter{
   void ratioZSlot(double val);
   void ratioVSlot(double val);
   void maxIpuSlot(double val);
-  void autoRatioZSlot();
-  void defaultRatiosSlot();
+  void autoRatioZTDSlot();
+  void defaultRatiosTDSlot();
+  void defaultRatiosDCPFSlot();
   void getMinMaxResistorSlot() const;
+  void buildGSlicesSlot() const;
 
   void rawReadFromDeviceSlot();
   void rawWriteToDeviceSlot();
 
-  void encodePowersystemPFSlot();
+  void encodePowersystemGPFSlot();
+  void encodePowersystemDCPFSlot();
   void encodePowersystemTDSlot();
   void writeEncodingSlot();
   void logPowersystemEncodingSlot();

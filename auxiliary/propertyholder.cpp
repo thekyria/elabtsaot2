@@ -11,8 +11,7 @@ using std::map;
 
 vector<property_type> PropertyHolder::getPropertyTypes() const{
   vector<property_type> options;
-  for ( property_tuples::const_iterator it = _properties.begin() ;
-        it != _properties.end() ; ++it )
+  for (property_tuples::const_iterator it=_properties.begin(); it!= _properties.end();++it)
     options.push_back( it->first );
   return options;
 }

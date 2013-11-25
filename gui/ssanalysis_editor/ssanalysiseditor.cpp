@@ -94,7 +94,7 @@ void SSAnalysisEditor::SSEngineSelectionSlot(int index){
 }
 
 void SSAnalysisEditor::SSsetOptionsSlot(){
-  list<elabtsaot::property> optionValues;
+  list<elabtsaot::property> optionValues = _sse->getPropertyList();
   vector<property_type> availableOptions = _sse->getPropertyTypes();
   PropertyDialog dialog( availableOptions, optionValues );
   int ans = dialog.exec();

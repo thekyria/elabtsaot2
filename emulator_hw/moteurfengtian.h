@@ -18,8 +18,9 @@ class MoteurFengtian : public SSEngine {
 private:
 
   int do_solvePowerFlow(Powersystem const& pws, ublas::vector<complex>& V) const;
-  void _getOptions( double& beta1, double& beta2, double& Ptolerance, double& Qtolerance,
-                    size_t& maxIterCount, int& method ) const;
+  void _getOptions(bool& flatStart, double& beta1, double& beta2,
+                   double& Ptolerance, double& Qtolerance,
+                   size_t& maxIterCount, int& method ) const;
   int _waitForGPFConvergence(double timeout_, bool& converged) const;
   void _parseVoltage(std::vector<uint32_t> const& val, std::vector<complex>& out) const;
 

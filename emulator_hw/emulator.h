@@ -66,21 +66,23 @@ class Emulator {
   Emulator(Powersystem const* pws);
   virtual ~Emulator();
 
-  int init(Powersystem const* pws = NULL);
+  int init(EmulatorOpType opType, Powersystem const* pws = NULL);
   int set_pws(Powersystem const* pws);
   void hardResetPressed();
   int preconditionEmulator(EmulatorOpType opType);
 
   // EmulatorHw
-  int setSliceCount(size_t val);
-  int resetEmulator(bool complete);
+  int setSliceCount(size_t val, EmulatorOpType opType);
+  int resetEmulator(bool complete, EmulatorOpType opType);
   size_t getHwSliceCount() const;
   // EmulatorHw-Mapping related
-  int nodeSetPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus, bool slack);
+  int nodeSetGPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus);
+  int nodeSetDCPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus);
   int nodeSetTD(size_t id_tab, size_t id_ver, size_t id_hor, Generator const& gen);
   int nodeSetTD(size_t id_tab, size_t id_ver, size_t id_hor, Load const& load);
   int embrSet(size_t id_tab, size_t id_ver, size_t id_hor, size_t pos, Branch const& br,
               double distanceOfGndFromNearEnd);
+  int embrSetXtimesTap(size_t id_tab, size_t id_ver, size_t id_hor, size_t pos, Branch const& br);
 
   // USB
   int initializeUSB();
@@ -100,9 +102,9 @@ class Emulator {
   void set_ratioZ(double val); //!< sets _ratioZ [Ohms/pu]; sets _ratioI=_ratioV/_ratioZ;
   void set_ratioV(double val); //!< sets _ratioZ [Volt/pu]; sets _ratioI=_ratioV/_ratioZ;
   void set_maxIpu(double val);
-  void autoRatioZ();
+  void autoRatioZ(EmulatorOpType opType);
   double getMaxR() const;
-  void defaultRatios();
+  void defaultRatios(EmulatorOpType opType);
   int resetMapping();
   void cleaMappingHints();
   void hintComponent(int type, unsigned int extId);
@@ -145,8 +147,9 @@ class Emulator {
   std::vector<bool> _isAtCalibrationMode();
   int _endCalibrationMode( size_t devId );
   // Fitting
-  int _fitBranches(std::vector<std::string>* outputMsg = 0);
-  int _fitBusesPF(std::vector<std::string>* outputMsg = 0);
+  int _fitBranches(EmulatorOpType opType, std::vector<std::string>* outputMsg = 0);
+  int _fitBusesGPF(std::vector<std::string>* outputMsg = 0);
+  int _fitBusesDCPF(std::vector<std::string>* outputMsg = 0);
   int _fitGeneratorsTD(std::vector<std::string>* outputMsg = 0);
   int _fitLoadsTD(std::vector<std::string>* outputMsg =0);
   // Encoding functions
@@ -160,11 +163,37 @@ class Emulator {
   // Encoding
   std::map<std::string, std::pair<unsigned int, unsigned int> > _vRefsPrecalibrationMap;
   std::map<std::wstring, std::pair<unsigned int, unsigned int> > _vRefsPrecalibrationMapW;
-  // Mapping variables
-  double _ratioZ;   //!< emulator_Z / physical_Z [Ohm/pu]
-  double _ratioV;   //!< emulator_V / physical_V [V/pu]
-  double _ratioI;   //!< emulator_I/physical_I [A/pu]: calculated as _ratioV/Z
-  double _maxIpu;   //!< Maximum current [p.u.] output by a pipeline
+  /*   Mapping variables
+   * emulator_Z: is the real resistance of an emulator branch; it is
+   *             determined by the reconfigurable potentiometers and is measured
+   *             in Ohms
+   * emulator_V: is the real voltage of an emulator node; it is measured in
+   *             Volts by the ADC
+   * emulator_I: is the real current injected into an emulator node; it is what
+   *             injected by the dac through a voltage-to-current conversion
+   *             resistance, plus all current flows into/outof the node through
+   *             connecting emulator branches; it is measured in Amperes
+   * flownet_Z:  is the real resistance of the flownet; it is measured in pu; eg.
+   *             in the case of the simplified power systems (R neglected)
+   *             it is the X of the branch and is measured in [pu] (in the
+   *             impedance base)
+   * flownet_V:  is the real potential of the flownet; it is measured in pu; eg.
+   *             in the case of the simplified power systems (R neglected)
+   *             it is the V(_real or _imag) of the node and is measured in [pu]
+   *             (in the voltage base); eg. in the case of the DC simplified
+   *             power systems it is the theta (angle) of the node and is
+   *             measured in [rad]
+   * flownet_I:  is the real flow of the flownet; it is measured in pu; eg. in
+   *             the case of the simplified power systems (R neglected) it is the
+   *             (real or imag) current injected to the node and is measured in
+   *             [pu] (in the curent base); eg. in the case of the DC simplified
+   *             power system it is the active power injected into the node and
+   *             is measured in [pu] (in the power base)
+   */
+  double _ratioZ;   //!< emulator_Z/flownet_Z [Ohm / pu of flownet_Z]
+  double _ratioV;   //!< emulator_V/flownet_V [V / pu of flownet_V]
+  double _ratioI;   //!< emulator_I/flownet_I [A / pu of flownet_I]: calculated as _ratioV/_ratioZ
+  double _maxIpu;   //!< Maximum current [pu] output by a pipeline
   std::map<size_t, int> _sliceDeviceMap;
   // Internal state machine variables
   int _state;

@@ -31,9 +31,9 @@ int main(int argc, char *argv[]){
   Powersystem* pws( new Powersystem("unnamed power system", 100, 50) );
 
   qDebug() << "Creating hardware platform representation ... ";
-  Emulator* emu( new Emulator(pws) );
+  Emulator* emu(new Emulator(pws));
   qDebug() << "Initializing hardware platform representation ... ";
-  ans = emu->init();
+  ans = emu->init(EMU_OPTYPE_TD);
   if (ans) qDebug() << "Hardware platform representation init failed: " << ans;
 
   // Steady state engines

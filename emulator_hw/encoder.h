@@ -50,10 +50,13 @@ namespace encoder{
 
 //! Performs the encoding of one of the slices of the emulator hardware into a
 //! bitstream suitable for PF analysis using the method of Guillaume Lanz
-int encodeSlicePF(const Slice &sl, std::vector<uint32_t>& sliceConf);
+int encodeSliceGPF(Slice const& sl, std::vector<uint32_t>& sliceConf);
+//! Performs the encoding of one of the slices of the emulator hardware into a
+//! bitstream suitable for PF analysis using the DC power flow method
+int encodeSliceDCPF(Slice const& sl, std::vector<uint32_t>& sliceConf);
 //! Performs the encoding of one of the slices of the emulator hardware into a
 //! bitstream suitable for TD emulation
-int encodeSliceTD( Slice const& sl, std::vector<uint32_t>& sliceConf );
+int encodeSliceTD(Slice const& sl, std::vector<uint32_t>& sliceConf );
 
 //! Stamps (bitwise OR) an unsigned 32 bit integer word with the confirm stamp
 void stamp_NIOS_confirm( uint32_t& word, uint32_t confirm_stamp = 0xC0000000 );
@@ -68,15 +71,24 @@ int encode_vref( Slice const& sl, std::vector<uint32_t>& vref_conf );
 int encode_resistors( Slice const& sl, std::vector<uint32_t>& res_conf, std::vector<uint32_t>& res_tcon_conf );
 int encode_switches( Slice const& sl, std::vector<uint32_t>& switches_conf );
 
-// PF specific encoding functions
-int encode_PFgot( Slice const& sl, std::vector<uint32_t>& got_conf );
-int encode_PFpositions( Slice const& sl, std::vector<uint32_t>& pos_conf, std::vector<uint32_t>& slpos_conf );
-void encode_PFauxiliary( Slice const& sl,
+// GPF specific encoding functions
+int encode_GPFgot( Slice const& sl, std::vector<uint32_t>& got_conf );
+int encode_GPFpositions( Slice const& sl, std::vector<uint32_t>& pos_conf, std::vector<uint32_t>& slpos_conf );
+void encode_GPFauxiliary(Slice const& sl,
                          std::vector<uint32_t>& conf_conf,
                          std::vector<uint32_t>& starter_conf,
-                         std::vector<uint32_t>& nios_conf );
-void encode_PFIinit( Slice const& sl, std::vector<uint32_t>& icar_conf, std::vector<uint32_t>& ipol_conf );
-void encode_PQsetpoints( Slice const& sl, std::vector<uint32_t>& pqset_conf );
+                         std::vector<uint32_t>& nios_conf);
+void encode_GPFIinit( Slice const& sl, std::vector<uint32_t>& icar_conf, std::vector<uint32_t>& ipol_conf );
+void encode_GPFPQsetpoints( Slice const& sl, std::vector<uint32_t>& pqset_conf );
+
+// DCPF specific encoding functions
+int encode_DCPFgot(Slice const& sl, std::vector<uint32_t>& got_conf);
+int encode_DCPFpositions(Slice const& sl, std::vector<uint32_t>& ppos_conf, std::vector<uint32_t>& thpos_conf);
+void encode_DCPFI(Slice const& sl, std::vector<uint32_t>& i_conf);
+void encode_DCPFauxiliary(Slice const& sl,
+                          std::vector<uint32_t>& starter_conf,
+                          std::vector<uint32_t>& conf_conf,
+                          std::vector<uint32_t>& nios_conf);
 
 // TD specific encoding functions
 int encode_TDgenerators( Slice const& sl,

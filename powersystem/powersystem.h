@@ -41,6 +41,7 @@ class Powersystem {
 
   std::string serialize() const;
   double getMaxX() const;
+  double getMaxXTimesTap() const;
 
   void clear();
   void addBus(Bus const& newBus);

@@ -29,7 +29,7 @@ using std::pair;
 
 //#define VERBOSE_ENC
 
-int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
+int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
 
   sliceConf.clear();
 
@@ -37,25 +37,25 @@ int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
 
   // Vector        | vec.add | cyp.add [num.of.words] corresponing func.
   //---------------|---------|-------------------------------------------------
-  // got_conf      |   0: 47 |   1: 48 [ 48] detail::encode_got
+  // got_conf      |   0: 47 |   1: 48 [ 48] detail::encode_GPFgot
   //  none         |  48:338 |  49:339 [291]  none
-  // pos_conf      | 339:342 | 340:343 [  4] detail::encode_PFpositions
+  // pos_conf      | 339:342 | 340:343 [  4] detail::encode_GPFpositions
   //  none         | 343:350 | 344:351 [  8]  none
-  // slpos_conf    |     351 |     352 [  1] detail::encode_PFpositions
+  // slpos_conf    |     351 |     352 [  1] detail::encode_GPFpositions
   //  none         | 352:353 | 353:354 [  2]  none
-  // conf_conf     |     354 |     355 [  1] detail::encode_PFauxiliary
+  // conf_conf     |     354 |     355 [  1] detail::encode_GPFauxiliary
   // vref_conf     | 355:356 | 356:357 [  2] detail::encode_vref
-  // icar_conf     | 357:380 | 358:381 [ 24] detail::encode_iinit
-  // starter_conf  |     381 |     382 [  1] detail::encode_PFauxiliary
+  // icar_conf     | 357:380 | 358:381 [ 24] detail::encode_GPFIinit
+  // starter_conf  |     381 |     382 [  1] detail::encode_GPFauxiliary
   // res_conf      | 382:485 | 383:486 [104] detail::encode_resistors
   // res_tcon_conf | 486:537 | 487:538 [ 52] detail::encode_resistors
   // switches_conf | 538:550 | 539:551 [ 13] detail::encode_switches
   //  none         | 551:553 | 552:554 [  3]  none
-  // conf_conf     |     554 |     555 [  1] detail::encode_PFauxiliary
-  // pqset_conf    | 555:578 | 556:579 [ 24] detail::encode_PQsetpoints
-  // ipol_conf     | 579:602 | 580:603 [ 24] detail::encode_iinit
+  // conf_conf     |     554 |     555 [  1] detail::encode_GPFauxiliary
+  // pqset_conf    | 555:578 | 556:579 [ 24] detail::encode_GPFPQsetpoints
+  // ipol_conf     | 579:602 | 580:603 [ 24] detail::encode_GPFIinit
   //  none         | 603:606 | 604:607 [  4]  none
-  // nios_conf     |     607 |     608 [  1] detail::encode_PFauxiliary
+  // nios_conf     |     607 |     608 [  1] detail::encode_GPFauxiliary
   //  none         |     608 |     609 [  1]  none
 
   vector<uint32_t> got_conf;
@@ -73,14 +73,14 @@ int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
   vector<uint32_t> ipol_conf;
   vector<uint32_t> nios_conf;
 
-  ans |= detail::encode_PFgot(sl, got_conf);
-  ans |= detail::encode_PFpositions(sl, pos_conf, slpos_conf);
-  detail::encode_PFauxiliary(sl, conf_conf, starter_conf, nios_conf);
+  ans |= detail::encode_GPFgot(sl, got_conf);
+  ans |= detail::encode_GPFpositions(sl, pos_conf, slpos_conf);
+  detail::encode_GPFauxiliary(sl, conf_conf, starter_conf, nios_conf);
   ans |= detail::encode_vref(sl, vref_conf);
-  detail::encode_PFIinit(sl, icar_conf, ipol_conf);
+  detail::encode_GPFIinit(sl, icar_conf, ipol_conf);
   ans |= detail::encode_resistors(sl, res_conf, res_tcon_conf );
   ans |= detail::encode_switches(sl, switches_conf);
-  detail::encode_PQsetpoints(sl, pqset_conf);
+  detail::encode_GPFPQsetpoints(sl, pqset_conf);
   if (ans) return ans;
 
   sliceConf.insert(sliceConf.end(), got_conf.begin(), got_conf.end() );
@@ -103,6 +103,67 @@ int encoder::encodeSlicePF(Slice const& sl, vector<uint32_t>& sliceConf){
   none.resize(4,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
   sliceConf.insert(sliceConf.end(), nios_conf.begin(), nios_conf.end() );
   none.resize(1,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+
+  return 0;
+}
+
+int encoder::encodeSliceDCPF(Slice const& sl, vector<uint32_t>& sliceConf){
+  sliceConf.clear();
+  int ans(0);
+  // Vector        | vec.add | cyp.add [num.of.words] corresponing func.
+  //---------------|---------|-------------------------------------------------
+  // got_conf      |   0: 47 |   1: 48 [ 48] detail::encode_DCPFgot
+  //  none         |  48:338 |  49:339 [291]
+  // ppos_conf     | 339:342 | 340:355 [  4] detail::encode_DCPFpositions
+  //  none         | 343:350 | 344:351 [  8]
+  // thpos_conf    | 351:354 | 352:355 [  4] detail::encode_DCPFpositions
+  // vref_conf     | 355:356 | 356:357 [  2] detail::encode_vref
+  // i_conf        | 357:380 | 358:381 [ 24] detail::encode_DCPFI
+  // starter_conf  |     381 |     382 [  1] detail::encode_DCPFauxiliary
+  // res_conf      | 382:485 | 383:486 [104] detail::encode_resistors
+  // res_tcon_conf | 486:537 | 487:538 [ 52] detail::encode_resistors
+  // switches_conf | 538:550 | 539:551 [ 13] detail::encode_switches
+  //  none         | 551:553 | 552:554 [  3]
+  // conf_conf     |     554 |     555 [  1] detail::encode_DCPFauxiliary
+  //  none         | 555:605 | 556:606 [ 51]
+  // nios_conf     | 606:607 | 607:608 [  2] detail::encode_DCPFauxiliary
+  vector<uint32_t> got_conf;
+  vector<uint32_t> none;
+  vector<uint32_t> ppos_conf;
+  vector<uint32_t> thpos_conf;
+  vector<uint32_t> vref_conf;
+  vector<uint32_t> i_conf;
+  vector<uint32_t> starter_conf;
+  vector<uint32_t> res_conf;
+  vector<uint32_t> res_tcon_conf;
+  vector<uint32_t> switches_conf;
+  vector<uint32_t> conf_conf;
+  vector<uint32_t> nios_conf;
+
+  ans |= detail::encode_DCPFgot(sl, got_conf);
+  ans |= detail::encode_DCPFpositions(sl, ppos_conf, thpos_conf);
+  ans |= detail::encode_vref(sl, vref_conf);
+  detail::encode_DCPFI(sl, i_conf);
+  detail::encode_DCPFauxiliary(sl, starter_conf, conf_conf, nios_conf);
+  ans |= detail::encode_resistors(sl, res_conf, res_tcon_conf );
+  ans |= detail::encode_switches(sl, switches_conf);
+
+
+  sliceConf.insert(sliceConf.end(), got_conf.begin(), got_conf.end() );
+  none.resize(291,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  sliceConf.insert(sliceConf.end(), ppos_conf.begin(), ppos_conf.end() );
+  none.resize(  8,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  sliceConf.insert(sliceConf.end(), thpos_conf.begin(), thpos_conf.end() );
+  sliceConf.insert(sliceConf.end(), vref_conf.begin(), vref_conf.end() );
+  sliceConf.insert(sliceConf.end(), i_conf.begin(), i_conf.end() );
+  sliceConf.insert(sliceConf.end(), starter_conf.begin(), starter_conf.end() );
+  sliceConf.insert(sliceConf.end(), res_conf.begin(), res_conf.end() );
+  sliceConf.insert(sliceConf.end(), res_tcon_conf.begin(), res_tcon_conf.end() );
+  sliceConf.insert(sliceConf.end(), switches_conf.begin(), switches_conf.end() );
+  none.resize(  3,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  sliceConf.insert(sliceConf.end(), conf_conf.begin(), conf_conf.end() );
+  none.resize( 51,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  sliceConf.insert(sliceConf.end(), nios_conf.begin(), nios_conf.end() );
 
   return 0;
 }
@@ -1028,7 +1089,7 @@ int encoder::detail::encode_switches( Slice const& sl, vector<uint32_t>& switche
   return 0;
 }
 
-int encoder::detail::encode_PFgot( Slice const& sl, vector<uint32_t>& got_conf ){
+int encoder::detail::encode_GPFgot( Slice const& sl, vector<uint32_t>& got_conf ){
   got_conf.clear();
 
   size_t k;
@@ -1044,7 +1105,7 @@ int encoder::detail::encode_PFgot( Slice const& sl, vector<uint32_t>& got_conf )
   size_t rows, cols;
   sl.ana.size(rows,cols);
   size_t atomCount = rows*cols;
-  vector<pair<int,int> > pos = sl.dig.pipe_PFPQ.position();
+  vector<pair<int,int> > pos = sl.dig.pipe_GPFPQ.position();
   double real_gain, imag_gain;
   for (k=0 ; k!=atomCount; ++k){
     Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
@@ -1095,7 +1156,7 @@ int encoder::detail::encode_PFgot( Slice const& sl, vector<uint32_t>& got_conf )
   return 0;
 }
 
-int encoder::detail::encode_PFpositions( Slice const& sl,
+int encoder::detail::encode_GPFpositions( Slice const& sl,
                                          vector<uint32_t>& pos_conf,
                                          vector<uint32_t>& slpos_conf ){
   pos_conf.clear();
@@ -1109,17 +1170,17 @@ int encoder::detail::encode_PFpositions( Slice const& sl,
   for (size_t k=0; k!=18; ++k){ // for some weird reason 18 positions are needed
     // update position for k'th gen (5 bits: [0 unused] 1 - 24 [-31 unused])
     temp5bit = 0;
-    if ( k < sl.dig.pipe_PFPQ.element_count() )
+    if ( k < sl.dig.pipe_GPFPQ.element_count() )
       temp5bit = static_cast<int32_t>(
-          sl.dig.pipe_PFPQ.position()[k].first * sl.dig.pipe_PFPQ.hor_id_max() +
-          sl.dig.pipe_PFPQ.position()[k].second + 1 );
+          sl.dig.pipe_GPFPQ.position()[k].first * sl.dig.pipe_GPFPQ.hor_id_max() +
+          sl.dig.pipe_GPFPQ.position()[k].second + 1 );
     temp5bit &= mask5bit;
 
     // update position word with the position of the k'th gen (if any) - else 0
     temp |= ( temp5bit << (5 *(k%6)) );
     // push position word back into conf and reset temp
-    if ( (k+1)%6 == 0 ){
-      pos_conf.push_back( static_cast<uint32_t> (temp) );
+    if ((k+1)%6==0){
+      pos_conf.push_back(static_cast<uint32_t>(temp));
       temp = 0;
     }
   }
@@ -1127,7 +1188,7 @@ int encoder::detail::encode_PFpositions( Slice const& sl,
   // ***** nodes number *****
   temp = 0;
   // number of PQ nodes
-  temp5bit = static_cast<int32_t>( sl.dig.pipe_PFPQ.element_count() );
+  temp5bit = static_cast<int32_t>( sl.dig.pipe_GPFPQ.element_count() );
   temp5bit &= mask5bit;
   temp |= ( temp5bit << 0*5 );
   // zero
@@ -1147,15 +1208,15 @@ int encoder::detail::encode_PFpositions( Slice const& sl,
 
 
   // ***** slack (represented as const I load) positions *****
-  temp =  sl.dig.pipe_PFslack.position()[0].first * sl.dig.pipe_PFslack.hor_id_max()
-          + sl.dig.pipe_PFslack.position()[0].second + 1;
+  temp =  sl.dig.pipe_GPFslack.position()[0].first * sl.dig.pipe_GPFslack.hor_id_max()
+          + sl.dig.pipe_GPFslack.position()[0].second + 1;
   temp &= mask5bit;
   slpos_conf.push_back(static_cast<uint32_t>(temp));
 
   return 0;
 }
 
-void encoder::detail::encode_PFauxiliary( Slice const& sl,
+void encoder::detail::encode_GPFauxiliary( Slice const& sl,
                                           vector<uint32_t>& conf_conf,
                                           vector<uint32_t>& starter_conf,
                                           vector<uint32_t>& nios_conf ){
@@ -1165,8 +1226,8 @@ void encoder::detail::encode_PFauxiliary( Slice const& sl,
   conf_conf.push_back(temp);
 
   starter_conf.clear();
-  if (   sl.dig.pipe_PFPQ.element_count()   ==0
-      && sl.dig.pipe_PFslack.element_count()==0)  // if all pipelines empty
+  if (   sl.dig.pipe_GPFPQ.element_count()   ==0
+      && sl.dig.pipe_GPFslack.element_count()==0)  // if all pipelines empty
     temp = 0U;
   else
     temp = 1050U;
@@ -1178,9 +1239,9 @@ void encoder::detail::encode_PFauxiliary( Slice const& sl,
   nios_conf.push_back(temp);
 }
 
-void encoder::detail::encode_PFIinit( Slice const& sl,
-                                      vector<uint32_t>& icar_conf,
-                                      vector<uint32_t>& ipol_conf ){
+void encoder::detail::encode_GPFIinit( Slice const& sl,
+                                       vector<uint32_t>& icar_conf,
+                                       vector<uint32_t>& ipol_conf ){
   size_t rows, cols;
   sl.ana.size(rows, cols);
   size_t atomCount = rows*cols;
@@ -1204,7 +1265,7 @@ void encoder::detail::encode_PFIinit( Slice const& sl,
   // [  tempMBS    ] [  tempLSB    ]
   // [            temp             ]
   // -------------------------------
-  PQPipeline const& pipePQ(sl.dig.pipe_PFPQ);
+  GPFPQPipeline const& pipePQ(sl.dig.pipe_GPFPQ);
   vector<pair<int,int> > pos = pipePQ.position();
   for (size_t k=0; k!=pipePQ.element_count(); ++k){
     I0 = pipePQ.I0[k];
@@ -1231,8 +1292,8 @@ void encoder::detail::encode_PFIinit( Slice const& sl,
   // the loads, whereas for the real emulator DAC, the convention is that there
   // is a flow OUT OF the DAC (into the grid). Therefore, currents of loads have
   // to be negated.
-  I0 = sl.dig.pipe_PFslack.I0[0];
-  pair<int,int> posSl =  sl.dig.pipe_PFslack.position()[0];
+  I0 = sl.dig.pipe_GPFslack.I0[0];
+  pair<int,int> posSl =  sl.dig.pipe_GPFslack.position()[0];
   nodeId = pipePQ.calculate_pseudo_id(posSl.first,posSl.second);
   detail::form_word(  -I0.real() , 12, 7, true, &tempLSB );
   detail::form_word(-(-I0.imag()) , 12, 7, true, &tempMSB );
@@ -1243,7 +1304,7 @@ void encoder::detail::encode_PFIinit( Slice const& sl,
   stamp_NIOS_confirm(icar_conf.back());
 }
 
-void encoder::detail::encode_PQsetpoints(Slice const& sl, vector<uint32_t>& pqset_conf){
+void encoder::detail::encode_GPFPQsetpoints(Slice const& sl, vector<uint32_t>& pqset_conf){
   size_t rows, cols;
   sl.ana.size(rows, cols);
   size_t atomCount = rows*cols;
@@ -1257,7 +1318,7 @@ void encoder::detail::encode_PQsetpoints(Slice const& sl, vector<uint32_t>& pqse
   // [  tempMBS    ] [  tempLSB    ]
   // [            temp             ]
   // -------------------------------
-  PQPipeline const& pipePQ(sl.dig.pipe_PFPQ);
+  GPFPQPipeline const& pipePQ(sl.dig.pipe_GPFPQ);
   for (size_t k=0; k!=pipePQ.element_count(); ++k){
     S = pipePQ.Sset[k];
     detail::form_word(S.real(), 16, 11, true, &tempLSB);
@@ -1265,6 +1326,218 @@ void encoder::detail::encode_PQsetpoints(Slice const& sl, vector<uint32_t>& pqse
     temp = (tempMSB<<16)|(tempLSB);
     pqset_conf[k] = static_cast<uint32_t>(temp);
   }
+}
+
+int encoder::detail::encode_DCPFgot(Slice const& sl, vector<uint32_t>& got_conf){
+  got_conf.clear();
+
+  // ***** got_conf *****
+  vector<uint32_t> gain_conf;
+  // ----------- GOT gain -----------
+  // 31  26 25        13 12         0
+  // 000000 [Q3.10 imag] [Q3.10 real]
+  // 000000 [ tempMSB  ] [ tempLSB  ]
+  // 000000 [         temp          ]
+  // --------------------------------
+  vector<uint32_t> offset_conf;
+  // --------- GOT offset ---------
+  // 31    24 23      12 11       0
+  // 00000000 [12b imag] [12b real]
+  // 00000000 [tempMSB ] [tempLSB ]
+  // 00000000 [       temp        ]
+  // ------------------------------
+  int32_t tempMSB, tempLSB, temp;
+  int32_t mask12 = (1 << 12) - 1;
+  for (size_t k(0);k!=MAX_VERATOMCOUNT;++k){
+    for (size_t m(0);m!=MAX_HORATOMCOUNT;++m){
+      // An element is added into the P-node pipeline only if there is a
+      // non-zero IInjection at the position [k][m]
+      if (sl.dig.IInjections[k][m]!=0.){
+        Atom const* am = sl.ana.getAtom(k,m);
+
+        // gain
+        double imag_gain = sl.ana.got_gain() * am->node_imag_adc_gain_corr();
+        double real_gain = sl.ana.got_gain() * am->node_real_adc_gain_corr();
+        temp = 0;
+        detail::form_word(imag_gain, 13, 10, true, &tempMSB);
+        detail::form_word(real_gain, 13, 10, true, &tempLSB);
+        temp = (tempMSB << 13) | (tempLSB);
+        gain_conf.push_back(static_cast<uint32_t>(temp));
+
+        // offset
+        double imag_offset = sl.ana.got_offset() + am->node_imag_adc_offset_corr();
+        double real_offset = sl.ana.got_offset() + am->node_real_adc_offset_corr();
+        temp = 0;
+        tempMSB = static_cast<int32_t>(auxiliary::round(imag_offset/DAC_DEF_OUTMAX*pow(2,12)));
+        tempMSB &= mask12;
+        tempLSB = static_cast<int32_t>(auxiliary::round(real_offset/DAC_DEF_OUTMAX*pow(2,12)));
+        tempLSB &= mask12;
+        temp = (tempMSB << 12) | (tempLSB);
+        offset_conf.push_back(static_cast<uint32_t>(temp));
+      }
+      // th-node elements are not considered; for them got correction is not
+      // required as we do not make any measurements with the ADC for those nodes
+      // (got corrections are needed for ADC reads)
+    }
+  }
+  // Resize to the correct size
+  gain_conf.resize(MAX_VERATOMCOUNT*MAX_HORATOMCOUNT, sl.ana.got_gain());
+  offset_conf.resize(MAX_VERATOMCOUNT*MAX_HORATOMCOUNT, sl.ana.got_offset());
+  // Note: in the hereinabove resizing with value 0; would be the same; extra
+  // values are actually never read
+
+  // append gain_conf and offset_conf to (the output argument) got_conf
+  got_conf.insert(got_conf.end(), gain_conf.begin(), gain_conf.end() );
+  got_conf.insert(got_conf.end(), offset_conf.begin(), offset_conf.end() );
+  return 0;
+}
+
+int encoder::detail::encode_DCPFpositions(Slice const& sl,
+                                          vector<uint32_t>& ppos_conf,
+                                          vector<uint32_t>& thpos_conf){
+  ppos_conf.clear();
+  thpos_conf.clear();
+
+  int32_t temp     = 0;         // (32bit) word to be appended to p/th-pos_conf
+  int32_t temp5bit = 0;         // 5bit-pos of the element currently under examination
+  int32_t mask5bit = (1<<5)-1;  // 0b00000000000000000000000000011111
+
+  // ----- P-nodes as IInjections -----
+  size_t Ielements(0);
+  for (size_t k(0);k!=MAX_VERATOMCOUNT;++k){
+    for (size_t m(0);m!=MAX_HORATOMCOUNT;++m){
+      // An element is added into the P-node pipeline only if there is a
+      // non-zero IInjection at the position [k][m]
+      if (sl.dig.IInjections[k][m]!=0.){
+        // update position for Ielements'th P-node (5 bits: [0 unused] 1-24 [-31 unused])
+        temp5bit = static_cast<int32_t>(k*MAX_HORATOMCOUNT+m+1);
+        temp5bit &= mask5bit;
+        temp |= (temp5bit << (5*(Ielements%6)));
+        // push position word back into conf and reset temp
+        if ((Ielements+1)%6==0){
+          ppos_conf.push_back(static_cast<uint32_t>(temp));
+          temp = 0;
+        }
+        Ielements++; // increase the number of Ielements found
+      }
+    }
+  }
+  // Flush remaining entries into ppos_conf
+  if (temp!=0){
+    ppos_conf.push_back(static_cast<uint32_t>(temp));
+    temp=0;
+  }
+  ppos_conf.resize(3,0); // arrange size of ppos_conf
+  stamp_NIOS_confirm(ppos_conf.back()); // stamp NIOS confirmation on the last word of ppos_conf
+
+  // ----- th-nodes as VInjection -----
+  size_t Velements(0);
+  for (size_t k(0);k!=MAX_VERATOMCOUNT;++k){
+    for (size_t m(0);m!=MAX_HORATOMCOUNT;++m){
+      // An element is added into the th-node pipeline only if there is a
+      // non-zero VInjection at position [k][m]
+      if (sl.dig.VInjections[k][m]!=0.){
+        // update position for Velements'th th-node (5 bits: [0 unused] 1-24 [-31 unused])
+        temp5bit = static_cast<int32_t>(k*MAX_HORATOMCOUNT+m+1);
+        temp5bit &= mask5bit;
+        temp |= (temp5bit << (5*(Velements%6)));
+        // push position word back into conf and reset temp
+        if ((Velements+1)%6==0){
+          thpos_conf.push_back(static_cast<uint32_t>(temp));
+          temp = 0;
+        }
+        Velements++; // increase the number of Velements found
+      }
+    }
+  }
+  // Flush remaining entries into thpos_conf
+  if (temp!=0){
+    thpos_conf.push_back(static_cast<uint32_t>(temp));
+    temp=0;
+  }
+  thpos_conf.resize(4,0);
+
+  // ----- nodes count -----
+  temp = 0;
+  // number of P-nodes
+  temp5bit = static_cast<int32_t>(Ielements);
+  temp5bit &= mask5bit;
+  temp |= (temp5bit<<0*5 );
+  // zero
+  temp5bit = 0;
+  temp5bit &= mask5bit;
+  temp |= (temp5bit<<1*5 );
+  // zero
+  temp5bit = 0;
+  temp5bit &= mask5bit;
+  temp |= (temp5bit<<2*5 );
+  // number of th-nodes
+  temp5bit = static_cast<int32_t>(Velements);
+  temp5bit &= mask5bit;
+  temp |= (temp5bit<<3*5);
+  ppos_conf.push_back(static_cast<uint32_t>(temp));
+
+  return 0;
+}
+
+void encoder::detail::encode_DCPFI(Slice const& sl, vector<uint32_t>& i_conf){
+
+  i_conf.resize(MAX_VERATOMCOUNT*MAX_HORATOMCOUNT,0);
+
+  // --------- Icartesian -------
+  // 31    24 23    12 11       0
+  // 00000000 00000000 [12b real]
+  // 00000000 00000000 [  temp  ]
+  // ----------------------------
+  int32_t temp;
+  for (size_t k(0); k!=MAX_VERATOMCOUNT; ++k){
+    for (size_t m(0); m!=MAX_HORATOMCOUNT; ++m){
+      size_t nodeId = static_cast<size_t>(k*MAX_HORATOMCOUNT+m+1);
+      if (sl.dig.IInjections[k][m]!=0.){
+        // TODO!!!!!
+        detail::form_word(sl.dig.IInjections[k][m], 12, 7, true, &temp);
+        i_conf[nodeId] = temp;
+      } else if (sl.dig.VInjections[k][m]!=0.){
+        // TODO!!!!!
+        detail::form_word(sl.dig.VInjections[k][m], 12, 7, true, &temp);
+        i_conf[nodeId] = temp;
+      }
+    }
+  }
+}
+
+void encoder::detail::encode_DCPFauxiliary(Slice const& sl,
+                                           vector<uint32_t>& starter_conf,
+                                           vector<uint32_t>& conf_conf,
+                                           vector<uint32_t>& nios_conf){
+  uint32_t temp(0U);
+
+  // ----- starter_conf -----
+  starter_conf.clear();
+  // Check if slice is empty (DCPF-wise)
+  bool empty(true);
+  for (size_t k(0); k!=MAX_VERATOMCOUNT; ++k){
+    for (size_t m(0); m!=MAX_HORATOMCOUNT; ++m){
+      if (sl.dig.IInjections[k][m]!=0.){
+        empty=false;
+        k=MAX_VERATOMCOUNT; // to break the outer loop
+        break;              // to break the inner loop
+      }
+    }
+  }
+  if (empty) temp = 0U;
+  else       temp = 1U;
+  stamp_NIOS_confirm(temp);
+  starter_conf.push_back(temp);
+
+  // ----- conf_conf -----
+  conf_conf.clear();
+  temp = 0U;
+  stamp_NIOS_confirm(temp);
+  conf_conf.push_back(temp);
+
+  // ----- nios_conf -----
+  nios_conf.resize(2,1U);
 }
 
 int encoder::detail::encode_TDgenerators( Slice const& sl,

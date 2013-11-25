@@ -20,7 +20,7 @@ bool PowersystemXMLHandler::characters(QString const& ch){
 
   QString value = ch.trimmed();
 
-  if( value.length()==0 )
+  if(value.length()==0)
     return true;
 
   // Fill in info
@@ -167,20 +167,19 @@ bool PowersystemXMLHandler::startElement(QString const& namespaceURI,
                                          QXmlAttributes const& atts){
   _tags.append(qName);
   // Parse whether a new net component is instantiated
-  if( qName=="bus" ){
+  if(qName=="bus"){
     _resetState();
     _p_bus = new Bus();
-  }else if( qName=="generator" ){
+  }else if(qName=="generator"){
     _resetState();
     _p_gen = new Generator();
-  }else if( qName=="load" ){
+  }else if(qName=="load"){
     _resetState();
     _p_load = new Load();
-  }else if( qName=="branch" ){
+  }else if(qName=="branch"){
     _resetState();
     _p_br = new Branch();
   }
-
   return true;
 }
 
@@ -224,19 +223,19 @@ Powersystem* PowersystemXMLHandler::p_ps() const{  return _p_ps; }
 void PowersystemXMLHandler::_resetState(){ // Reset handler to its first stage
   if( _p_bus ){
     delete _p_bus;
-    _p_bus = 0;
+    _p_bus = NULL;
   }
   if( _p_gen ){
     delete _p_gen;
-    _p_gen = 0;
+    _p_gen = NULL;
   }
   if( _p_load ){
     delete _p_load;
-    _p_load = 0;
+    _p_load = NULL;
   }
   if( _p_br ){
     delete _p_br;
-    _p_br = 0;
+    _p_br = NULL;
   }
   return;
 }

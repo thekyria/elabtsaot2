@@ -46,30 +46,47 @@ FitterEditor::FitterEditor( Emulator* emu, QWidget* parent ) :
 
   fitToolbar->addSeparator(); // -- Separator
 
-  // Reset fitting act
-  QAction* resetFittingAct = new QAction( QIcon(":/images/reset.png"),
-                                          "Reset fitting", fitToolbar );
-  fitToolbar->addAction(resetFittingAct);
-  connect( resetFittingAct, SIGNAL(triggered()),
-           this, SLOT(resetFittingSlot()) );
+  // Reset fitting (GPF/TD) act
+  QAction* resetFittingTDAct = new QAction( QIcon(":/images/reset.png"),
+                                            "Reset fitting (GPF/TD)", fitToolbar );
+  fitToolbar->addAction(resetFittingTDAct);
+  connect( resetFittingTDAct, SIGNAL(triggered()), this, SLOT(resetFittingTDSlot()) );
 
-  // Auto fitting (PF) act
-  QAction* autoFittingPFAct = new QAction( QIcon(":/images/execute.png"),
-                                         "Auto fitting (PF)", fitToolbar );
-  fitToolbar->addAction(autoFittingPFAct);
-  connect(autoFittingPFAct, SIGNAL(triggered()), this, SLOT(autoFittingPFSlot()));
+  // Reset fitting (DCPF) act
+  QAction* resetFittingDCPFAct = new QAction( QIcon(":/images/reset.png"),
+                                              "Reset fitting (DCPF)", fitToolbar );
+  fitToolbar->addAction(resetFittingDCPFAct);
+  connect( resetFittingDCPFAct, SIGNAL(triggered()), this, SLOT(resetFittingDCPFSlot()) );
+
+  // Auto fitting (GPF) act
+  QAction* autoFittingGPFAct = new QAction( QIcon(":/images/execute.png"),
+                                            "Auto fitting (GPF)", fitToolbar );
+  fitToolbar->addAction(autoFittingGPFAct);
+  connect(autoFittingGPFAct, SIGNAL(triggered()), this, SLOT(autoFittingGPFSlot()));
+
+  // Auto fitting (DCPF) act
+  QAction* autoFittingDCPFAct = new QAction( QIcon(":/images/execute.png"),
+                                             "Auto fitting (DCPF)", fitToolbar );
+  fitToolbar->addAction(autoFittingDCPFAct);
+  connect(autoFittingDCPFAct, SIGNAL(triggered()), this, SLOT(autoFittingDCPFSlot()));
 
   // Auto fitting (TD) act
   QAction* autoFittingTDAct = new QAction( QIcon(":/images/execute.png"),
-                                         "Auto fitting (TD)", fitToolbar );
+                                           "Auto fitting (TD)", fitToolbar );
   fitToolbar->addAction(autoFittingTDAct);
   connect(autoFittingTDAct, SIGNAL(triggered()), this, SLOT(autoFittingTDSlot()));
 
-  // Validate fitting (PF) act
-  QAction* validateFittingPFAct = new QAction( QIcon(":/images/validate.png"),
-                                               "Validate fitting (PF)", fitToolbar );
-  fitToolbar->addAction(validateFittingPFAct);
-  connect(validateFittingPFAct, SIGNAL(triggered()), this, SLOT(validateFittingPFSlot()));
+  // Validate fitting (GPF) act
+  QAction* validateFittingGPFAct = new QAction( QIcon(":/images/validate.png"),
+                                               "Validate fitting (GPF)", fitToolbar );
+  fitToolbar->addAction(validateFittingGPFAct);
+  connect(validateFittingGPFAct, SIGNAL(triggered()), this, SLOT(validateFittingGPFSlot()));
+
+  // Validate fitting (DCPF) act
+  QAction* validateFittingDCPFAct = new QAction( QIcon(":/images/validate.png"),
+                                                 "Validate fitting (DCPF)", fitToolbar );
+  fitToolbar->addAction(validateFittingDCPFAct);
+  connect(validateFittingDCPFAct, SIGNAL(triggered()), this, SLOT(validateFittingDCPFSlot()));
 
   // Validate fitting (TD) act
   QAction* validateFittingTDAct = new QAction( QIcon(":/images/validate.png"),
@@ -104,41 +121,52 @@ FitterEditor::FitterEditor( Emulator* emu, QWidget* parent ) :
   connect( zoomFitAct, SIGNAL(triggered()), fee, SLOT(zoomFit()) );
 }
 
-int FitterEditor::init(){
-  //_encoding.clear();
-  return fee->init();
-}
+int FitterEditor::init(){ return fee->init(); }
 
-void FitterEditor::updt(){
-  return fee->updt();
-}
+void FitterEditor::updt(){ return fee->updt(); }
 
-void FitterEditor::resetFittingSlot(){
-
-  int ans = _emu->resetEmulator( false );
-  if ( ans )
-    cout << "Reset the emulator failed with code: " << ans << endl;
-  else
-    cout << "Reseting the emulator succeded" << endl;
-
+void FitterEditor::resetFittingTDSlot(){
+  int ans = _emu->resetEmulator(false,EMU_OPTYPE_TD);
+  if (ans) cout << "Reset the emulator (GPF/TD) failed with code: " << ans << endl;
+  else     cout << "Reseting the emulator (GPF/TD) succeded" << endl;
   fee->updt();
-
-  return;
 }
 
-void FitterEditor::autoFittingPFSlot(){
+void FitterEditor::resetFittingDCPFSlot(){
+  int ans = _emu->resetEmulator(false,EMU_OPTYPE_DCPF);
+  if (ans) cout << "Reset the emulator (DCPF) failed with code: " << ans << endl;
+  else     cout << "Reseting the emulator (DCPF) succeded" << endl;
+  fee->updt();
+}
+
+void FitterEditor::autoFittingGPFSlot(){
   vector<string> outputMsg;
   int ans = _emu->autoFitting(EMU_OPTYPE_GPF, &outputMsg);
   if ( ans ){
-    cout << "Auto-fitting (PF) failed with code " << ans << endl;
+    cout << "Auto-fitting (GPF) failed with code " << ans << endl;
   } else {
-    cout << "Auto-fitting (PF) succeeded!" << endl;
+    cout << "Auto-fitting (GPF) succeeded!" << endl;
     fee->updt();
   }
-  cout << "Auto-fitting (PF) warning messages: " << endl;
+  cout << "Auto-fitting (GPF) warning messages: " << endl;
   for (size_t k=0; k!=outputMsg.size(); ++k)
     cout << outputMsg[k] << endl;
 }
+
+void FitterEditor::autoFittingDCPFSlot(){
+  vector<string> outputMsg;
+  int ans = _emu->autoFitting(EMU_OPTYPE_DCPF, &outputMsg);
+  if ( ans ){
+    cout << "Auto-fitting (DCPF) failed with code " << ans << endl;
+  } else {
+    cout << "Auto-fitting (DCPF) succeeded!" << endl;
+    fee->updt();
+  }
+  cout << "Auto-fitting (DCPF) warning messages: " << endl;
+  for (size_t k=0; k!=outputMsg.size(); ++k)
+    cout << outputMsg[k] << endl;
+}
+
 
 void FitterEditor::autoFittingTDSlot(){
   vector<string> outputMsg;
@@ -154,10 +182,16 @@ void FitterEditor::autoFittingTDSlot(){
     cout << outputMsg[k] << endl;
 }
 
-void FitterEditor::validateFittingPFSlot(){
+void FitterEditor::validateFittingGPFSlot(){
   int ans = _emu->validateFitting(EMU_OPTYPE_GPF);
-  if (ans) cout << "Validate fitting (PF) failed with code " << ans << endl;
-  else cout << "Validate fitting (PF) succeeded!" << endl;
+  if (ans) cout << "Validate fitting (GPF) failed with code " << ans << endl;
+  else cout << "Validate fitting (GPF) succeeded!" << endl;
+}
+
+void FitterEditor::validateFittingDCPFSlot(){
+  int ans = _emu->validateFitting(EMU_OPTYPE_DCPF);
+  if (ans) cout << "Validate fitting (DCPF) failed with code " << ans << endl;
+  else cout << "Validate fitting (DCPF) succeeded!" << endl;
 }
 
 void FitterEditor::validateFittingTDSlot(){
@@ -166,10 +200,10 @@ void FitterEditor::validateFittingTDSlot(){
   else cout << "Validate fitting (TD) succeeded!" << endl;
 }
 
-void FitterEditor::fittingPositionClickedSlot( int emulator_tab,
-                                               int emulator_row,
-                                               int emulator_col,
-                                               int emulator_elm ){
+void FitterEditor::fittingPositionClickedSlot(int emulator_tab,
+                                              int emulator_row,
+                                              int emulator_col,
+                                              int emulator_elm){
 
   /*
     emulator_elm follows the following convention for the element clicked:

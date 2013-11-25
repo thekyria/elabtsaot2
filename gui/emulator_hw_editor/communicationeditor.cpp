@@ -154,14 +154,12 @@ void CommunicationEditor::devicesTestSlot(){
 }
 
 void CommunicationEditor::slicesSetSlot(){
-
   int sliceCount = _emu->getHwSliceCount();
   int ans = guiauxiliary::askInt("Set slice count", sliceCount, 0,4);
-  if ( ans )
-    return;
+  if (ans) return;
 
   // ----- Update backend components -----
-  ans = _emu->setSliceCount(sliceCount);
+  ans = _emu->setSliceCount(sliceCount,EMU_OPTYPE_TD);
   if (ans){
     cout << "Updating the slice count failed with code " << ans << endl;
     return;
@@ -170,15 +168,10 @@ void CommunicationEditor::slicesSetSlot(){
 
   // ----- Update frontend components -----
   emit emuChanged(true); // true to denote topological change in the emu
-
-  // Update slicesList
-  _updateSlicesList();
-
-  return;
+  _updateSlicesList(); // Update slicesList
 }
 
 void CommunicationEditor::slicesAssignSlot(){
-
   int sliceId = slicesList->currentRow();
   if ( sliceId < 0 )
     // No slice selected; nothing to do
@@ -198,8 +191,6 @@ void CommunicationEditor::slicesAssignSlot(){
     cout << "Slice " <<sliceId<< " successfully mapped to device "<<devId<<endl;
     _updateSlicesList();
   }
-
-  return;
 }
 
 void CommunicationEditor::slicesClearAssignSlot(){
@@ -234,10 +225,9 @@ void CommunicationEditor::slicesValidateSlot(){
 }
 
 void CommunicationEditor::updateDevicesAndSlicesSlot(){
-
   devicesUpdateSlot();
 
-  int ans = _emu->setSliceCount( _emu->getUSBDevices().size() );
+  int ans = _emu->setSliceCount(_emu->getUSBDevicesCount(),EMU_OPTYPE_TD);
   if ( ans ){
     cout << "Updating the slice count failed with code " << ans << endl;
     return;
@@ -247,13 +237,9 @@ void CommunicationEditor::updateDevicesAndSlicesSlot(){
 
   emit emuChanged(true); // update frontend components
   _updateSlicesList();   // update slicesList
-
-  return;
-
 }
 
 void CommunicationEditor::autoAssignSlicesToDevicesSlot(){
-
   int ans = _emu->autoAssignSlicesToDevices();
   if ( ans )
     cout << "Auto-assignment of slices to devices failed with code " << ans << endl;
@@ -263,8 +249,6 @@ void CommunicationEditor::autoAssignSlicesToDevicesSlot(){
   emit emuChanged(true); // update frontend components
   _updateDevicesList();
   _updateSlicesList();   // update slicesList
-
-  return;
 }
 
 void CommunicationEditor::_updateDevicesList(){

@@ -54,9 +54,10 @@ class SliceAnalog{
   void size(size_t& ver, size_t& hor) const;
 
   double getMinMaxAchievableR() const; //!< Get min over max achievable R of the slice
+  void buildG(ublas::matrix<double,ublas::column_major>& G, bool real) const;
   void buildCd(ublas::matrix<int,ublas::column_major>& Cd) const;
   void buildGbr(ublas::vector<double>& Gbr, bool real) const;
-  void buildBrStatus(ublas::vector<int>& BrStatus, bool real) const;
+  void buildBrStatus(ublas::vector<int>& brStatus, bool real) const;
 
   void calibrate(SliceAnalog const& cal_sl);
 
