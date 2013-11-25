@@ -102,11 +102,13 @@
         <file alias="cct_checks.png">images/cct_checks.png</file>
         <file alias="tsa_checks.png">images/tsa_checks.png</file>
         <file alias="reset_red.png">images/reset_red.png</file>
+        <file alias="end.png">images/end.png</file>
     </qresource>
     <qresource prefix="/xml_schemas">
         <file alias="powersystem.xsd">xml/schemas/powersystem.xsd</file>
         <file alias="schematic.xsd">xml/schemas/schematic.xsd</file>
         <file alias="mapping.xsd">xml/schemas/mapping.xsd</file>
         <file alias="scenariosset.xsd">xml/schemas/scenariosset.xsd</file>
+        <file alias="calibration.xsd">xml/schemas/calibration.xsd</file>
     </qresource>
 </RCC>

@@ -152,6 +152,11 @@ MainWindow::MainWindow( Powersystem*& pws,
   connect( importScenarioSetAct, SIGNAL(triggered()),
            this, SLOT(importScenarioSetSlot()) );
 
+  QAction* importCalibrationValuesAct = new QAction( "Import Calibration Values", this );
+  projectMenu->addAction( importCalibrationValuesAct );
+  connect( importCalibrationValuesAct, SIGNAL(triggered()),
+           this, SLOT(importCalibrationSlot()) );
+
   projectMenu->addSeparator();
 
   QAction* exportPowersystemAct  = new QAction( "Export Powersystem", this );
@@ -173,6 +178,11 @@ MainWindow::MainWindow( Powersystem*& pws,
   projectMenu->addAction( exportScenarioSetAct );
   connect( exportScenarioSetAct, SIGNAL(triggered()),
            this, SLOT(exportScenarioSetSlot()) );
+
+  QAction* exportCalibrationValuesAct = new QAction( "Export Calibration Values", this );
+  projectMenu->addAction( exportCalibrationValuesAct );
+  connect( exportCalibrationValuesAct, SIGNAL(triggered()),
+           this, SLOT(exportCalibrationSlot()) );
 
   // Help menu
   QMenu* helpMenu = menuBar()->addMenu("Help");
@@ -332,6 +342,14 @@ void MainWindow::importScenarioSetSlot(){
   return importScenarioSet(filename);
 }
 
+void MainWindow::importCalibrationSlot(){
+    QString filename = guiauxiliary::askFileName("xml", true);
+    if (filename.isEmpty() )
+      return;
+
+    return importCalibrationValues(filename);
+}
+
 void MainWindow::exportPowersystemSlot(){
 
   QString filename = guiauxiliary::askFileName("xml", false);
@@ -388,6 +406,21 @@ void MainWindow::exportScenarioSetSlot(){
     cout << "Error exporting scenario set." << endl;
   else
     cout << "Scenario set exported successfully." << endl;
+
+  return;
+}
+
+void MainWindow::exportCalibrationSlot(){
+
+  QString filename = guiauxiliary::askFileName("xml", false);
+  if( filename.isEmpty() )
+    return;
+
+  int ans = io::exportCalibrationValues(filename.toStdString(), _cal );
+  if ( ans != 1 )
+    cout << "Error exporting calibration values." << endl;
+  else
+    cout << "Calibration values exported successfully." << endl;
 
   return;
 }
@@ -536,5 +569,23 @@ void MainWindow::importScenarioSet( QString const& filename ){
   _sce->updt(); // Update ScenarioEditor _map - according to _scs changes
 
   cout << "Scenario set imported successfully." << endl;
+  return;
+}
+
+void MainWindow::importCalibrationValues( QString const& filename ){
+  int ans;
+  // ----- Update backend components -----
+  ans = io::importCalibrationValues(filename.toStdString(), _cal );
+  if ( ans != 1 ){
+    cout << "Importing calibration values failed with exit code " << ans << endl;
+    return;
+  }
+
+  // ----- Update frontend (GUI) components -----
+
+
+  cout << "Calibration values was imported successfully." << endl;
+  cout << "Setting the new values to emulator." << endl;
+  _cal->calibrationSetterSlot();
   return;
 }
