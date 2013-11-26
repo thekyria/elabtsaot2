@@ -594,7 +594,7 @@ int io::importCalibrationValues(string filename_, CalibrationEditor* cal){
 
     if( validateSchema( ":/xml_schemas/calibration.xsd", filename_ ) ){
         cout << "The XML file is not built according to the calibration schema."
-             << endl;
+             << endl; 
         return 0;
     }
 
