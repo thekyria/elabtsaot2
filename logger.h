@@ -17,7 +17,7 @@ class Logger {
 
 public:
 
-  virtual void notifyProgress(double val ) = 0;
+  virtual void notifyProgress(double val) = 0;
 
 };
 
