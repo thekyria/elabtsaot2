@@ -103,16 +103,12 @@ MainWindow::MainWindow( Powersystem*& pws,
   _SSanl = new SSAnalysisEditor( _pws, sse, sse_mrn, sse_mlp, sse_fen, this );
   _sce = new ScenarioEditor( _scs, _pws, this );
   _TDanl = new TDAnalysisEditor( _net->smd(), _scs, tde, tde_hwe, tde_swe, trb, this );
-//  connect( _anl, SIGNAL(mmdChanged()),
-//           this, SLOT(mmdChangedSlot()) );
-//  connect( _anl, SIGNAL(emuChanged(bool)),
-//           this, SLOT(emuChangedSlot(bool)) );
+//  connect( _anl, SIGNAL(mmdChanged()), this, SLOT(mmdChangedSlot()) );
+//  connect( _anl, SIGNAL(emuChanged(bool)), this, SLOT(emuChangedSlot(bool)) );
   // Hardware related editors
   _com = new CommunicationEditor( _emu, this );
-  connect( _com, SIGNAL(usbChanged()),
-           this, SLOT(usbChangedSlot()) );
-  connect( _com, SIGNAL(emuChanged(bool)),
-           this, SLOT(emuChangedSlot(bool)) );
+  connect( _com, SIGNAL(usbChanged()), this, SLOT(usbChangedSlot()) );
+  connect( _com, SIGNAL(emuChanged(bool)), this, SLOT(emuChangedSlot(bool)) );
   _cal = new CalibrationEditor( _emu, _con );
   _map = new MapperEditor( _emu, this );
   _fit = new FitterEditor( _emu, this );
@@ -264,8 +260,7 @@ void MainWindow::loadSlot(){
 
   // Ask for project filename
   QString filename = guiauxiliary::askFileName("etp", true);
-  if( filename.isEmpty() )
-    return;
+  if (filename.isEmpty()) return;
 
   // Parse project file and determine pws, map and scs filenames
   string pwsfilename, schfilename, mapfilename, scsfilename;
@@ -302,166 +297,108 @@ void MainWindow::loadSlot(){
   if ( scsinfo.exists() ){
     importScenarioSet( QString::fromStdString(scsfilename) );
   }
-
-  return;
 }
 
 void MainWindow::importPowersystemSlot(){
-
   QString filename = guiauxiliary::askFileName("xml", true);
-  if( filename.isEmpty() )
-    return;
-
+  if (filename.isEmpty()) return;
   return importPowersystem(filename);
 }
 
 void MainWindow::importSchematicSlot(){
-
   QString filename = guiauxiliary::askFileName("xml", true);
-  if( filename.isEmpty() )
-    return;
-
+  if (filename.isEmpty()) return;
   return importSchematic(filename);
 }
 
 void MainWindow::importMappingSlot(){
-
   QString filename = guiauxiliary::askFileName("xml", true);
-  if( filename.isEmpty() )
-    return;
-
+  if (filename.isEmpty()) return;
   return importMapping(filename);
 }
 
 void MainWindow::importScenarioSetSlot(){
-
   QString filename = guiauxiliary::askFileName("xml", true);
-  if (filename.isEmpty() )
-    return;
-
+  if (filename.isEmpty()) return;
   return importScenarioSet(filename);
 }
 
 void MainWindow::importCalibrationSlot(){
-    QString filename = guiauxiliary::askFileName("xml", true);
-    if (filename.isEmpty() )
-      return;
-
-    return importCalibrationValues(filename);
+  QString filename = guiauxiliary::askFileName("xml", true);
+  if (filename.isEmpty()) return;
+  return importCalibrationValues(filename);
 }
 
 void MainWindow::exportPowersystemSlot(){
-
   QString filename = guiauxiliary::askFileName("xml", false);
-  if( filename.isEmpty() )
-    return;
+  if (filename.isEmpty()) return;
 
   int ans = io::exportPowersystem( filename.toStdString(), _pws );
-  if ( ans )
-    cout << "Error exporting topology." << endl;
-  else
-    cout << "Topology exported successfully." << endl;
-
-  return;
+  if (ans) cout << "Error exporting topology." << endl;
+  else     cout << "Topology exported successfully." << endl;
 }
 
 void MainWindow::exportSchematicSlot(){
-
   QString filename = guiauxiliary::askFileName("xml", false);
-  if( filename.isEmpty() )
-    return;
+  if (filename.isEmpty()) return;
 
   int ans = io::exportSchematic( filename.toStdString(), _net->smd() );
-  if ( ans )
-    cout << "Error exporting schematic." << endl;
-  else
-    cout << "Schematic exported successfully." << endl;
-
-  return;
+  if (ans) cout << "Error exporting schematic." << endl;
+  else     cout << "Schematic exported successfully." << endl;
 }
 
 void MainWindow::exportMappingSlot(){
-
   QString filename = guiauxiliary::askFileName("xml", false);
-  if( filename.isEmpty() )
-    return;
+  if (filename.isEmpty()) return;
 
   int ans = io::exportMapping( filename.toStdString(), _emu->mmd() );
-  if ( ans )
-    cout << "Error exporting mapping." << endl;
-  else
-    cout << "Mapping exported successfully." << endl;
-
-  return;
+  if (ans) cout << "Error exporting mapping." << endl;
+  else     cout << "Mapping exported successfully." << endl;
 }
 
 void MainWindow::exportScenarioSetSlot(){
-
   QString filename = guiauxiliary::askFileName("xml", false);
-  if( filename.isEmpty() )
-    return;
+  if (filename.isEmpty()) return;
 
   int ans = io::exportScenarioSet( filename.toStdString(), _scs );
-  if ( ans )
-    cout << "Error exporting scenario set." << endl;
-  else
-    cout << "Scenario set exported successfully." << endl;
-
-  return;
+  if (ans) cout << "Error exporting scenario set." << endl;
+  else     cout << "Scenario set exported successfully." << endl;
 }
 
 void MainWindow::exportCalibrationSlot(){
 
   QString filename = guiauxiliary::askFileName("xml", false);
-  if( filename.isEmpty() )
-    return;
+  if (filename.isEmpty()) return;
 
   int ans = io::exportCalibrationValues(filename.toStdString(), _cal );
-  if ( ans != 1 )
-    cout << "Error exporting calibration values." << endl;
-  else
-    cout << "Calibration values exported successfully." << endl;
-
-  return;
+  if (ans) cout << "Error exporting calibration values:" << ans << endl;
+  else     cout << "Calibration values exported successfully." << endl;
 }
 
 void MainWindow::usbChangedSlot(){
-
   // Update calibration editor (directly bound to the emulator)
   int ans = _cal->init();
-  if ( ans ){
-    cout << "Updating calibration editor failed with code " << ans << endl;
-  } else {
-    cout << "Calibration editor successfully updated" << endl;
-  }
-
-  return;
+  if (ans) cout << "Updating calibration editor failed with code " << ans << endl;
+  else     cout << "Calibration editor successfully updated" << endl;
 }
 
-void MainWindow::emuChangedSlot( bool complete ){
-
+void MainWindow::emuChangedSlot(bool complete){
   // If change in the emulator is complete reinitialize mapper and fitter
   // editors (rebuild the respective GUI)
-  if ( complete ){
+  if (complete){
     // Update calibration editor (directly bound to the emulator)
     int ans = _cal->init(); // TODO check when to use _cal->init()/updt()
     _cal->updt();           // TODO check when to use _cal->init()/updt()
 
     // Reinitialize mapper editor (directly bound to emulator)
     ans = _map->init();
-    if ( ans ){
-      cout << "Updating mapper editor failed with code " << ans << endl;
-    } else {
-      cout << "Mapper editor successfully updated" << endl;
-    }
+    if (ans) cout << "Updating mapper editor failed with code " << ans << endl;
+    else     cout << "Mapper editor successfully updated" << endl;
 
     // Reinitialize fitter editor (directly bound to emulator)
     ans = _fit->init();
-    if ( ans ){
-      cout << "Updating fitter editor failed with code " << ans << endl;
-    } else {
-      cout << "Fitter editor successfully updated" << endl;
-    }
+    if (ans) cout << "Updating fitter editor failed with code " << ans << endl;
+    else     cout << "Fitter editor successfully updated" << endl;
   }
 
   // Else, just update the fitter editor to incorporate any changes
@@ -470,8 +407,6 @@ void MainWindow::emuChangedSlot( bool complete ){
 //    _cal->init();
     _fit->updt();
   }
-
-  return;
 }
 
 void MainWindow::mmdChangedSlot(){
@@ -534,7 +469,6 @@ void MainWindow::importSchematic( QString const& filename ){
   }
 
   cout << "Schematic imported successfully." << endl;
-  return;
 }
 
 void MainWindow::importMapping(const QString& filename){
@@ -553,7 +487,6 @@ void MainWindow::importMapping(const QString& filename){
   _map->updt(); // Update MapperEditor _map - according to mmd changes
 
   cout << "Mapping imported successfully." << endl;
-  return;
 }
 
 void MainWindow::importScenarioSet( QString const& filename ){
@@ -569,23 +502,22 @@ void MainWindow::importScenarioSet( QString const& filename ){
   _sce->updt(); // Update ScenarioEditor _map - according to _scs changes
 
   cout << "Scenario set imported successfully." << endl;
-  return;
 }
 
 void MainWindow::importCalibrationValues( QString const& filename ){
-  int ans;
+
   // ----- Update backend components -----
-  ans = io::importCalibrationValues(filename.toStdString(), _cal );
-  if ( ans != 1 ){
-    cout << "Importing calibration values failed with exit code " << ans << endl;
+  // Import raw calibration values into CalibrationEditor stores
+  int ans = io::importCalibrationValues(filename.toStdString(), _cal);
+  if (ans){
+    cout << "Importing calibration values failed with code " << ans << endl;
     return;
   }
+  cout << "Raw calibration values were imported successfully." << endl;
 
-  // ----- Update frontend (GUI) components -----
-
-
-  cout << "Calibration values was imported successfully." << endl;
-  cout << "Setting the new values to emulator." << endl;
+  // Parse raw calibration results & copy them into the real (global) EmulatorHw
+  // (The following is done through the CalibrationEditor, and so, updates the
+  // GUI ass well)
   _cal->calibrationSetterSlot();
-  return;
+  cout << "Calibrating the emulator completed" << endl;
 }

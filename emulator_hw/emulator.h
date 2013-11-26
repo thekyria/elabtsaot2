@@ -73,7 +73,7 @@ class Emulator {
 
   // EmulatorHw
   int setSliceCount(size_t val, EmulatorOpType opType);
-  int resetEmulator(bool complete, EmulatorOpType opType);
+  int reset(bool complete, EmulatorOpType opType);
   size_t getHwSliceCount() const;
   // EmulatorHw-Mapping related
   int nodeSetGPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus);

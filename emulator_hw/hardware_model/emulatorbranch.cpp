@@ -43,27 +43,16 @@ bool EmulatorBranch::pot_far_swA() const{ return _pot_far.swA(); }
 void EmulatorBranch::set_sw_sc(bool val){ _sw_sc = val; }
 void EmulatorBranch::set_sw_mid(bool val){ _sw_mid = val; }
 
-int EmulatorBranch::set_pot_near_rab( double val, bool updateTap){
-  return _pot_near.set_rab( val, updateTap );
-}
-int EmulatorBranch::set_pot_near_rw( double val, bool updateTap){
-  return _pot_near.set_rw( val, updateTap );
-}
-int EmulatorBranch::set_pot_near_r(double pot_near_r,
-                                   double* p_r_mismatch ){
-  return _pot_near.set_r(pot_near_r, p_r_mismatch);
-}
-int EmulatorBranch::set_pot_near_tap( unsigned int val ){
-  return _pot_near.set_tap(val);
-}
+int EmulatorBranch::set_pot_near_rab( double val, bool updateTap){ return _pot_near.set_rab( val, updateTap ); }
+int EmulatorBranch::set_pot_near_rw( double val, bool updateTap){ return _pot_near.set_rw( val, updateTap ); }
+int EmulatorBranch::set_pot_near_r(double pot_near_r, double* p_r_mismatch ){ return _pot_near.set_r(pot_near_r, p_r_mismatch); }
+int EmulatorBranch::set_pot_near_tap( unsigned int val ){ return _pot_near.set_tap(val); }
 void EmulatorBranch::set_pot_near_sw(bool val){ _pot_near.set_sw(val); }
 int EmulatorBranch::set_pot_near_swA(bool val, bool updateTap){ return _pot_near.set_swA(val, updateTap); }
 
 int EmulatorBranch::set_pot_far_rab( double val, bool updateTap){ return _pot_far.set_rab( val, updateTap ); }
 int EmulatorBranch::set_pot_far_rw( double val, bool updateTap){ return _pot_far.set_rw( val, updateTap ); }
-int EmulatorBranch::set_pot_far_r(double pot_far, double* p_rMismatch_far){
-  return _pot_far.set_r(pot_far, p_rMismatch_far);
-}
+int EmulatorBranch::set_pot_far_r(double pot_far, double* p_rMismatch_far){ return _pot_far.set_r(pot_far, p_rMismatch_far); }
 int EmulatorBranch::set_pot_far_tap( unsigned int val ){ return _pot_far.set_tap(val); }
 void EmulatorBranch::set_pot_far_sw(bool val){ _pot_far.set_sw(val); }
 int EmulatorBranch::set_pot_far_swA(bool val, bool updateTap){ return _pot_far.set_swA(val, updateTap); }

@@ -27,6 +27,7 @@ class Logger;
 class EmulatorHw;
 class Emulator;
 class USBFPGAInterface;
+struct deviceCalibrationData;
 
 class CalibrationEditor : public QSplitter{
 
@@ -39,35 +40,19 @@ class CalibrationEditor : public QSplitter{
   ~CalibrationEditor();
 
   int init();
-  int updt();
-  int calexport(QString filename);
-  int calimport(QString filename);
-  int hardreset();
-  Emulator* _emu;
+  void updt();
+  int exportFile(QString filename);
+  int importFile(QString filename);
 
-  //Master Store of all the devices
-  struct devicedata{
-    int device_id;
-    QString deviceName;
-    QVector <QVector<QString> > calibrationnamedatanew;
-    QVector <QVector<double> > calibrationoffsetdatanew;
-    QVector <QVector<double> > calibrationgaindatanew;
-    QVector <QVector<int> > calibrationidnew;
-    QVector <QVector<double> > calibrationrabnew;
-    QVector <QVector<double> > calibrationrwnew;
-    QVector <QVector <QVector<double> > > rawresultsnew;
-    QVector <QVector <QVector<double> > > lsqresultsnew;
-  };
-  QVector<devicedata*> _master_store;
-
+  Emulator const* emu() const;
 
  public slots:
 
+  void hardReset();
   void startCalibrationSlot();
   void calibrationSetterSlot();
   void endCalibrationModeSlot();
   void displayCurvesSlot();
-  void resetCalibrationSlot();
   void displayCalibrationDataSlot();
   void setOptionsSlot();
   void checkCellSlot();
@@ -76,52 +61,57 @@ class CalibrationEditor : public QSplitter{
   void calibrationExportSlot();
   void calibrationImportSlot();
 
+ public:
+
+  QVector<deviceCalibrationData*> _master_store;
+
  private:
 
-  //---Calibration components functions-----
-  int _ADCOffsetConverterCalibration(int devid);
-  int _convertersCalibration(int devid);
-  int _conversionResistorCalibrationNew(int devid);
-  int _gridResistorCalibrationNew( int devid,int testid );
+  // --- Calibration components functions-----
+  int _ADCOffsetConverterCalibration(int devId);
+  int _convertersCalibration(int devId);
+  int _conversionResistorCalibrationNew(int devId);
+  int _gridResistorCalibrationNew(int devId,int testid);
 
-  //---Other essential functions-------------
+  // --- Other essential functions-------------
   void _displayCurveNew();
-  int _calibrationSetter( size_t sliceindex );
-  void _displayCalibrationData( QVector<bool> dialogoptions,int devid );
-  void _leastSquares( QVector<double> const& data,
-                      QVector<double> const& xdata,
-                      double* alpha, double* beta);
-  void _resultsHandling( QVector<uint32_t> const& nodedata, int node,
-                         QVector<QVector<double> > *decodedresultsreal,
-                         QVector<QVector<double> > *decodedresultsimag ,int numofSamples);
-  void _offsetGainHandling( QVector<uint32_t>* encodedinput, int gainoroffset);
-  void _soft_reset();
-  void _hard_reset();
+  int _parseRawResults(size_t sliceindex);
+  void _displayCalibrationData(QVector<bool> dialogoptions,int devId);
+  void _leastSquares(QVector<double> const& data,
+                     QVector<double> const& xdata,
+                     double* alpha, double* beta);
+  void _resultsHandling(QVector<uint32_t> const& nodedata, int node,
+                        QVector<QVector<double> > *decodedresultsreal,
+                        QVector<QVector<double> > *decodedresultsimag ,int numofSamples);
+  void _offsetGainHandling(QVector<uint32_t>* encodedinput, int gainoroffset);
+  void _softReset();
 
   // ------------------------- Variables -------------------------
-  QVector <int> rescode;
-  QVector <int> DACcodefirst;
-  QVector <int> DACcodesecond;
-  QVector <uint32_t> confvector;
-  QByteArray options;
-  int _convertionrescodereal;
-  int _convertionrescodeimag;
+  Emulator* _emu;
+  Logger* _log;
+  EmulatorHw* _cal_emuhw;
 
-  //24 first positions are the ADC/DAC values
-  //NEW
-  //Stores
-  QVector <QVector<QString> > calibrationnamedatanew;
-  QVector <QVector<double> > calibrationoffsetdatanew;
-  QVector <QVector<double> > calibrationgaindatanew;
-  QVector <QVector<int> > calibrationidnew;
-  QVector <QVector<double> > calibrationrabnew;
-  QVector <QVector<double> > calibrationrwnew;
-  QVector <QVector <QVector<double> > > rawresultsnew;
-  QVector <QVector <QVector<double> > > lsqresultsnew;
+  QVector<int> _resCode;
+  QVector<int> _DACCodeFirst;
+  QVector<int> _DACCodeSecond;
+  QVector<uint32_t> _confVector;
+  QByteArray _options;
+  int _conversionResCodeReal;
+  int _conversionResCodeImag;
+
+  // 24 first positions are the ADC/DAC values
+  QVector<QVector<QString> > _calibrationNameDataNew;
+  QVector<QVector<double> > _calibrationOffsetDataNew;
+  QVector<QVector<double> > _calibrationGainDataNew;
+  QVector<QVector<int> > _calibrationIdNew;
+  QVector<QVector<double> > _calibrationRabNew;
+  QVector<QVector<double> > _calibrationRwNew;
+  QVector<QVector<QVector<double> > > _rawResultsNew;
+  QVector<QVector<QVector<double> > > _lsqResultsNew;
 
   //Some extra
-  QVector<QVector<double> > P3resnew;
-  QVector<QVector<double> > P1resnew;
+  QVector<QVector<double> > _P3ResNew;
+  QVector<QVector<double> > _P1ResNew;
 
   // ----- GUI widgets -----
   QCheckBox *chk0, *chk1, *chk2, *chk3;
@@ -142,11 +132,19 @@ class CalibrationEditor : public QSplitter{
   QLabel *resistorlabel;
   QAction *displayCurvesAct, *displayCalibrationDataAct, *setOptionsAct, *checkCellsAct;
   QAction *potTestAct, *potTestErrorAct;
+};
 
-  // -----
-  Logger* _log;
-  EmulatorHw* _cal_emuhw;
-
+struct deviceCalibrationData{
+  int devId;
+  QString deviceName;
+  QVector<QVector<QString> > nameDataNew;
+  QVector<QVector<double> > offsetDataNew;
+  QVector<QVector<double> > gainDataNew;
+  QVector<QVector<int> > idNew;
+  QVector<QVector<double> > rabNew;
+  QVector<QVector<double> > rwNew;
+  QVector<QVector<QVector<double> > > rawResultsNew;
+  QVector<QVector<QVector<double> > > lsqResultsNew;
 };
 
 } // end of namespace elabtsaot

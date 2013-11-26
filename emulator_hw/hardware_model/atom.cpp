@@ -258,19 +258,13 @@ void Atom::set_embr_real_sw_sc(size_t pos, bool val){ _embr_real[pos].set_sw_sc(
 void Atom::set_embr_real_sw_mid(size_t pos, bool val){ _embr_real[pos].set_sw_mid(val); }
 int Atom::set_embr_real_pot_near_rab(size_t pos, double val, bool updateTap){ return _embr_real[pos].set_pot_near_rab( val, updateTap ); }
 int Atom::set_embr_real_pot_near_rw( size_t pos, double val, bool updateTap){ return _embr_real[pos].set_pot_near_rw( val, updateTap ); }
-int Atom::set_embr_real_pot_near_r(size_t pos, double val){
-  double rMismatch_near;
-  return _embr_real[pos].set_pot_near_r(val, &rMismatch_near);
-}
+int Atom::set_embr_real_pot_near_r(size_t pos, double val){ double rMismatch_near; return _embr_real[pos].set_pot_near_r(val, &rMismatch_near); }
 int Atom::set_embr_real_pot_near_tap(size_t pos, unsigned int val){ return _embr_real[pos].set_pot_near_tap(val); }
 void Atom::set_embr_real_pot_near_sw(size_t pos, bool val){ return _embr_real[pos].set_pot_near_sw(val); }
 int Atom::set_embr_real_pot_near_swA(size_t pos, bool val, bool updateTap){ return _embr_real[pos].set_pot_near_swA(val,updateTap); }
 int Atom::set_embr_real_pot_far_rab(size_t pos, double val, bool updateTap){ return _embr_real[pos].set_pot_far_rab( val, updateTap ); }
 int Atom::set_embr_real_pot_far_rw( size_t pos, double val, bool updateTap){ return _embr_real[pos].set_pot_far_rw( val, updateTap ); }
-int Atom::set_embr_real_pot_far_r(size_t pos, double val){
-  double rMismatch_far;
-  return _embr_real[pos].set_pot_far_r(val, &rMismatch_far);
-}
+int Atom::set_embr_real_pot_far_r(size_t pos, double val){ double rMismatch_far; return _embr_real[pos].set_pot_far_r(val, &rMismatch_far); }
 int Atom::set_embr_real_pot_far_tap(size_t pos, unsigned int val){ return _embr_real[pos].set_pot_far_tap(val); }
 void Atom::set_embr_real_pot_far_sw(size_t pos, bool val){ return _embr_real[pos].set_pot_far_sw(val); }
 int Atom::set_embr_real_pot_far_swA(size_t pos, bool val, bool updateTap){ return _embr_real[pos].set_pot_far_swA(val,updateTap); }
@@ -279,19 +273,13 @@ void Atom::set_embr_imag_sw_sc(size_t pos, bool val){ _embr_imag[pos].set_sw_sc(
 void Atom::set_embr_imag_sw_mid(size_t pos, bool val){ _embr_imag[pos].set_sw_mid(val); }
 int Atom::set_embr_imag_pot_near_rab(size_t pos, double val, bool updateTap){ return _embr_imag[pos].set_pot_near_rab( val, updateTap ); }
 int Atom::set_embr_imag_pot_near_rw( size_t pos, double val, bool updateTap){ return _embr_imag[pos].set_pot_near_rw( val, updateTap ); }
-int Atom::set_embr_imag_pot_near_r(size_t pos, double val){
-  double rMismatch_near;
-  return _embr_imag[pos].set_pot_near_r(val, &rMismatch_near);
-}
+int Atom::set_embr_imag_pot_near_r(size_t pos, double val){ double rMismatch_near; return _embr_imag[pos].set_pot_near_r(val, &rMismatch_near); }
 int Atom::set_embr_imag_pot_near_tap(size_t pos, unsigned int val){ return _embr_imag[pos].set_pot_near_tap(val); }
 void Atom::set_embr_imag_pot_near_sw( size_t pos, bool val){ return _embr_imag[pos].set_pot_near_sw(val); }
 int Atom::set_embr_imag_pot_near_swA( size_t pos, bool val, bool updateTap){ return _embr_imag[pos].set_pot_near_swA(val,updateTap); }
 int Atom::set_embr_imag_pot_far_rab(size_t pos, double val, bool updateTap){ return _embr_imag[pos].set_pot_far_rab( val, updateTap ); }
 int Atom::set_embr_imag_pot_far_rw( size_t pos, double val, bool updateTap){ return _embr_imag[pos].set_pot_far_rw( val, updateTap ); }
-int Atom::set_embr_imag_pot_far_r(size_t pos, double val){
-  double rMismatch_far;
-  return _embr_imag[pos].set_pot_far_r(val, &rMismatch_far);
-}
+int Atom::set_embr_imag_pot_far_r(size_t pos, double val){ double rMismatch_far; return _embr_imag[pos].set_pot_far_r(val, &rMismatch_far); }
 int Atom::set_embr_imag_pot_far_tap(size_t pos, unsigned int val){ return _embr_imag[pos].set_pot_far_tap(val); }
 void Atom::set_embr_imag_pot_far_sw(size_t pos, bool val){ return _embr_imag[pos].set_pot_far_sw(val); }
 int Atom::set_embr_imag_pot_far_swA(size_t pos, bool val, bool updateTap){ return _embr_imag[pos].set_pot_far_swA(val, updateTap); }

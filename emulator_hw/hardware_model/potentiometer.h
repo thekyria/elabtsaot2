@@ -12,34 +12,11 @@ EPFL
 #ifndef POTENTIOMETER_H
 #define POTENTIOMETER_H
 
-#ifndef POTENTIOMETER_SWA
-//! Default status of the terminal A pin switch
-#define POTENTIOMETER_SWA false
-#endif // POTENTIOMETER_SWA
-
-#ifndef POTENTIOMETER_RAB
-//! Resistance from A to B terminal [Ohm] of the potentiometer used in the
-//! analog part of the hardware emulator
-#define POTENTIOMETER_RAB 10000
-#endif // POTENTIOMETER_RAB
-
-#ifndef POTENTIOMETER_RW
-//! Resistance of the wiper [Ohm] of the potentiometer used in the analog part
-//! of the hardware emulator
-#define POTENTIOMETER_RW 75
-#endif // POTENTIOMETER_RW
-
-#ifndef POTENTIOMETER_RESOLUTION
-//! Resolution [bits] of the potentiometer used in the analog part of the
-//! hardware emulator
-#define POTENTIOMETER_RESOLUTION 8
-#endif // POTENTIOMETER_RESOLUTION
-
-#ifndef POTENTIOMETER_DEFTAPVALUE
-//! Default tap value of the potentiometer used in the analog part of the
-//! hardware emulator
-#define POTENTIOMETER_DEFTAPVALUE 128
-#endif // POTENTIOMETER_DEFTAPVALUE
+#define POTENTIOMETER_SWA false //!< Default status of the terminal A pin switch
+#define POTENTIOMETER_RAB 10000 //!< Resistance from A to B terminal [Ohm]
+#define POTENTIOMETER_RW 75 //!< Resistance of the wiper [Ohm]
+#define POTENTIOMETER_RESOLUTION 8 //!< Resolution [bits]
+#define POTENTIOMETER_DEFTAPVALUE 128 //!< Default tap value
 
 namespace elabtsaot{
 

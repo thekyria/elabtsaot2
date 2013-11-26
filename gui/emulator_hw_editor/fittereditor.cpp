@@ -126,14 +126,14 @@ int FitterEditor::init(){ return fee->init(); }
 void FitterEditor::updt(){ return fee->updt(); }
 
 void FitterEditor::resetFittingTDSlot(){
-  int ans = _emu->resetEmulator(false,EMU_OPTYPE_TD);
+  int ans = _emu->reset(false,EMU_OPTYPE_TD);
   if (ans) cout << "Reset the emulator (GPF/TD) failed with code: " << ans << endl;
   else     cout << "Reseting the emulator (GPF/TD) succeded" << endl;
   fee->updt();
 }
 
 void FitterEditor::resetFittingDCPFSlot(){
-  int ans = _emu->resetEmulator(false,EMU_OPTYPE_DCPF);
+  int ans = _emu->reset(false,EMU_OPTYPE_DCPF);
   if (ans) cout << "Reset the emulator (DCPF) failed with code: " << ans << endl;
   else     cout << "Reseting the emulator (DCPF) succeded" << endl;
   fee->updt();

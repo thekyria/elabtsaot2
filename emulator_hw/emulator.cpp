@@ -127,7 +127,6 @@ int Emulator::init(EmulatorOpType opType, Powersystem const* pws ){
 //    break;
   }
 
-
   return ans;
 }
 
@@ -153,15 +152,11 @@ int Emulator::set_pws( Powersystem const* pws ){
 }
 
 void Emulator::hardResetPressed(){
-
   // Downset the state of the Emulator to EMU_STATE_SLCDEVASSIGNED
   if ( _state > EMU_STATE_SLCDEVASSIGNED )
     _state = EMU_STATE_SLCDEVASSIGNED;
-
   // Set the calibration state of the Emulator to EMU_CALSTATE_YES
   _state_calibration = EMU_CALSTATE_YES;
-
-  return;
 }
 
 int Emulator::preconditionEmulator(EmulatorOpType opType){
@@ -277,7 +272,7 @@ int Emulator::setSliceCount(size_t val, EmulatorOpType opType){
   return 0;
 }
 
-int Emulator::resetEmulator(bool complete, EmulatorOpType opType){
+int Emulator::reset(bool complete, EmulatorOpType opType){
 
   int ans(0);
 
@@ -302,13 +297,13 @@ int Emulator::resetEmulator(bool complete, EmulatorOpType opType){
   }
 
   // Reset emulator hardware
-  ans = _emuhw->reset( complete );
+  ans = _emuhw->reset(complete);
   if (ans) return ans;
 
   // If a complete reset is asked for do not precalibrate slices
-  if ( !complete ){
+  if (!complete){
     // Precalibrate the slices according to premade measurements
-    for(size_t k = 0; k != _emuhw->sliceSet.size(); ++k){
+    for (size_t k = 0; k != _emuhw->sliceSet.size(); ++k){
       _precalibrateSlice(k , true );
     }
   }

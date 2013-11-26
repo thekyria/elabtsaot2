@@ -50,22 +50,19 @@ int Potentiometer::reset( bool complete ){
     _rw = POTENTIOMETER_RW;
     _swA = POTENTIOMETER_SWA;
   }
-
-  return set_tap( POTENTIOMETER_DEFTAPVALUE );
+  return set_tap(POTENTIOMETER_DEFTAPVALUE);
 }
 
 int Potentiometer::set_rab(double rab, bool updateTap){
-
-  if ( rab <= 0 )
-    // Invalid new rab value!
-    return 1;
+  // Invalid new rab value!
+  if (rab<=0) return 1;
 
   _rab = rab;
   // If the update tap flag is set then the tap setting is updated in order to
   // retain the resistance value _r in the potentiometer. Otherwise, _r is
   // changes due to the change in _rab.
   int ans;
-  if ( updateTap ){
+  if (updateTap){
     ans = set_r( _r, 0, true );
   } else {
     int temp_r = r_from_tap( _tap, _rab, _rw, _swA );
@@ -159,7 +156,6 @@ int Potentiometer::set_tap(unsigned int tap){
   } else{
     _tap = tap;
     _r = r_from_tap( _tap, _rab, _rw, _swA );
-
     return 0;
   }
 }
@@ -202,15 +198,9 @@ double Potentiometer::getRMax() const{
 }
 
 // --- static calculator functions ---
-double Potentiometer::parallel_r( double r1 , double r2 ){
-  return r1 * r2 / (r1 + r2);
-}
+double Potentiometer::parallel_r(double r1, double r2){ return r1*r2/(r1+r2); }
 
-double Potentiometer::r_from_tap( unsigned int tap,
-                                  double rab,
-                                  double rw,
-                                  bool swA,
-                                  unsigned int resolution ) {
+double Potentiometer::r_from_tap( unsigned int tap, double rab, double rw, bool swA, unsigned int resolution ) {
 
   unsigned int tap_max = pow(2, resolution);
 
