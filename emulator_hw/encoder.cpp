@@ -15,7 +15,7 @@ using std::set;
 #include <iostream>
 using std::cout;
 using std::endl;
-#include <cmath>            // Required for M_PI constant
+#include <cmath>            // M_PI, double pow(double,double)
 #define _USE_MATH_DEFINES
 #include <bitset>
 using std::bitset;
@@ -1352,7 +1352,7 @@ int encoder::detail::encode_DCPFgot(Slice const& sl, vector<uint32_t>& got_conf)
     for (size_t m(0);m!=MAX_HORATOMCOUNT;++m){
       // An element is added into the P-node pipeline only if there is a
       // non-zero IInjection at the position [k][m]
-      if (sl.dig.IInjections[k][m]!=0.){
+      if (sl.dig.injectionTypes[k][m]==NODE_IINJECTION){
         Atom const* am = sl.ana.getAtom(k,m);
 
         // gain
@@ -1380,9 +1380,18 @@ int encoder::detail::encode_DCPFgot(Slice const& sl, vector<uint32_t>& got_conf)
       // (got corrections are needed for ADC reads)
     }
   }
-  // Resize to the correct size
-  gain_conf.resize(MAX_VERATOMCOUNT*MAX_HORATOMCOUNT, sl.ana.got_gain());
-  offset_conf.resize(MAX_VERATOMCOUNT*MAX_HORATOMCOUNT, sl.ana.got_offset());
+  // Resize gain_conf to the correct size
+  detail::form_word(sl.ana.got_gain(), 13, 10, true, &tempMSB);
+  detail::form_word(sl.ana.got_gain(), 13, 10, true, &tempLSB);
+  temp = (tempMSB << 13) | (tempLSB);
+  gain_conf.resize(MAX_VERATOMCOUNT*MAX_HORATOMCOUNT, temp);
+  // Resize offset_conf to the correct size
+  tempMSB = static_cast<int32_t>(auxiliary::round(sl.ana.got_offset()/DAC_DEF_OUTMAX*pow(2,12)));
+  tempMSB &= mask12;
+  tempLSB = static_cast<int32_t>(auxiliary::round(sl.ana.got_offset()/DAC_DEF_OUTMAX*pow(2,12)));
+  tempLSB &= mask12;
+  temp = (tempMSB << 12) | (tempLSB);
+  offset_conf.resize(MAX_VERATOMCOUNT*MAX_HORATOMCOUNT, temp);
   // Note: in the hereinabove resizing with value 0; would be the same; extra
   // values are actually never read
 
@@ -1408,7 +1417,7 @@ int encoder::detail::encode_DCPFpositions(Slice const& sl,
     for (size_t m(0);m!=MAX_HORATOMCOUNT;++m){
       // An element is added into the P-node pipeline only if there is a
       // non-zero IInjection at the position [k][m]
-      if (sl.dig.IInjections[k][m]!=0.){
+      if (sl.dig.injectionTypes[k][m]==NODE_IINJECTION){
         // update position for Ielements'th P-node (5 bits: [0 unused] 1-24 [-31 unused])
         temp5bit = static_cast<int32_t>(k*MAX_HORATOMCOUNT+m+1);
         temp5bit &= mask5bit;
@@ -1428,7 +1437,6 @@ int encoder::detail::encode_DCPFpositions(Slice const& sl,
     temp=0;
   }
   ppos_conf.resize(3,0); // arrange size of ppos_conf
-  stamp_NIOS_confirm(ppos_conf.back()); // stamp NIOS confirmation on the last word of ppos_conf
 
   // ----- th-nodes as VInjection -----
   size_t Velements(0);
@@ -1436,7 +1444,7 @@ int encoder::detail::encode_DCPFpositions(Slice const& sl,
     for (size_t m(0);m!=MAX_HORATOMCOUNT;++m){
       // An element is added into the th-node pipeline only if there is a
       // non-zero VInjection at position [k][m]
-      if (sl.dig.VInjections[k][m]!=0.){
+      if (sl.dig.injectionTypes[k][m]==NODE_VINJECTION){
         // update position for Velements'th th-node (5 bits: [0 unused] 1-24 [-31 unused])
         temp5bit = static_cast<int32_t>(k*MAX_HORATOMCOUNT+m+1);
         temp5bit &= mask5bit;
@@ -1456,6 +1464,7 @@ int encoder::detail::encode_DCPFpositions(Slice const& sl,
     temp=0;
   }
   thpos_conf.resize(4,0);
+  stamp_NIOS_confirm(thpos_conf.back()); // stamp NIOS confirmation on the last word of thpos_conf
 
   // ----- nodes count -----
   temp = 0;
@@ -1490,17 +1499,27 @@ void encoder::detail::encode_DCPFI(Slice const& sl, vector<uint32_t>& i_conf){
   // 00000000 00000000 [  temp  ]
   // ----------------------------
   int32_t temp;
+  int32_t mask12bit = (1<<12)-1;  // 0b00000000000000000000111111111111
   for (size_t k(0); k!=MAX_VERATOMCOUNT; ++k){
     for (size_t m(0); m!=MAX_HORATOMCOUNT; ++m){
       size_t nodeId = static_cast<size_t>(k*MAX_HORATOMCOUNT+m+1);
-      if (sl.dig.IInjections[k][m]!=0.){
-        // TODO!!!!!
+      if (sl.dig.injectionTypes[k][m]==NODE_IINJECTION){
+        // see Emulator::nodeSetDCPF for what is written in IInjections
         detail::form_word(sl.dig.IInjections[k][m], 12, 7, true, &temp);
         i_conf[nodeId] = temp;
-      } else if (sl.dig.VInjections[k][m]!=0.){
-        // TODO!!!!!
-        detail::form_word(sl.dig.VInjections[k][m], 12, 7, true, &temp);
-        i_conf[nodeId] = temp;
+      } else if (sl.dig.injectionTypes[k][m]==NODE_VINJECTION){
+        // The corrected DAC code has to be written in i_conf, if the node is a V injection
+        double realV = sl.dig.VInjections[k][m]+sl.ana.real_voltage_ref_val();
+        // Node DAC value 4095 is max tap setting, giving 5Volts * 4095/4096 as max V out
+        double Vmax = NODEDAC_MAXOUT*(pow(2,NODEDAC_RES)-1)/pow(2,NODEDAC_RES);
+        double normalizedRealV = realV/Vmax; // [0,1]
+        double VtapD = normalizedRealV*(pow(2,NODEDAC_RES)-1); // convert to tap (double)
+        VtapD = auxiliary::round(VtapD); // round double
+        temp = static_cast<int32_t>(VtapD); // cast into uint
+        temp -= - pow(2,NODEDAC_RES)/2; // subtract midrange (2048) Guillaume requires that!
+        if (temp<0) temp+=pow(2,NODEDAC_RES); // bring into [0,4095] range
+        temp &= mask12bit;
+        i_conf[nodeId] = static_cast<uint32_t>(temp);
       }
     }
   }
@@ -1516,9 +1535,9 @@ void encoder::detail::encode_DCPFauxiliary(Slice const& sl,
   starter_conf.clear();
   // Check if slice is empty (DCPF-wise)
   bool empty(true);
-  for (size_t k(0); k!=MAX_VERATOMCOUNT; ++k){
+  for (size_t k(0); k<MAX_VERATOMCOUNT; k++){
     for (size_t m(0); m!=MAX_HORATOMCOUNT; ++m){
-      if (sl.dig.IInjections[k][m]!=0.){
+      if (sl.dig.injectionTypes[k][m]==NODE_IINJECTION){
         empty=false;
         k=MAX_VERATOMCOUNT; // to break the outer loop
         break;              // to break the inner loop

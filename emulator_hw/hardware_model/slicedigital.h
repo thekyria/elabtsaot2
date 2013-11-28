@@ -22,6 +22,12 @@ EPFL
 #define MAX_VERATOMCOUNT 4 //!< Default vertical number of atoms
 #define MAX_HORATOMCOUNT 6 //!< Default horizontal number of atoms
 
+enum NodeInjectionType{
+  NODE_NOINJECTION,
+  NODE_VINJECTION,
+  NODE_IINJECTION
+};
+
 namespace elabtsaot{
 
 class SliceDigital{
@@ -42,8 +48,9 @@ class SliceDigital{
   TDConstILoadPipeline pipe_TDiload;
   TDConstPLoadPipeline pipe_TDpload;
 
-  double IInjections[MAX_VERATOMCOUNT][MAX_HORATOMCOUNT];
+  NodeInjectionType injectionTypes[MAX_VERATOMCOUNT][MAX_HORATOMCOUNT];
   double VInjections[MAX_VERATOMCOUNT][MAX_HORATOMCOUNT];
+  double IInjections[MAX_VERATOMCOUNT][MAX_HORATOMCOUNT];
 };
 
 } // end of namespace elabtsaot

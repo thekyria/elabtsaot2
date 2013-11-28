@@ -51,7 +51,8 @@ enum MoteurFengtianMethod{
 
 // ---------------------------------
 
-#define DCPF_ADDR_START 605
+#define DCPF_ADDR_START   605
+#define DCPF_ADDR_RESULTS 611
 
 #define DCPF_WRCODE_START 1111
 #define DCPF_WRCODE_HIZ   6666
@@ -311,7 +312,7 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
     // Reset voltage magnitudes to 1
     size_t N = busCount;
     for (size_t k(0); k!=N; ++k)
-      Vm(k) = 1;
+      Vm(k) = 1.;
 
     // Map & fit & encode pws & end calib. mode
     int ans = _emu->preconditionEmulator(EMU_OPTYPE_DCPF);
@@ -335,9 +336,9 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
     vector<bool> empty(sliceCount, true);
     for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
       Slice* sl = &_emu->emuhw()->sliceSet[sliceId_];
-      for (size_t k(0); k!=MAX_VERATOMCOUNT; ++k){
+      for (size_t k(0); k<MAX_VERATOMCOUNT; k++){
         for (size_t m(0); m!=MAX_HORATOMCOUNT; ++m){
-          if (sl->dig.IInjections[k][m]!=0.){
+          if (sl->dig.injectionTypes[k][m]==NODE_IINJECTION){
             empty[sliceId_]=false;
             k=MAX_VERATOMCOUNT; // to break the outer loop
             break;              // to break the inner loop
@@ -378,7 +379,7 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
     // Read and actual voltage results & update results
     vector<uint32_t> readBuffer;
     cout << "Reading results ... " << endl;
-    address = GPF_ADDR_RESULTS;
+    address = DCPF_ADDR_RESULTS;
     for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
       using auxiliary::operator <<;
 

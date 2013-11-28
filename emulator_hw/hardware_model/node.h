@@ -14,6 +14,9 @@ EPFL
 
 #include "potentiometer.h"
 
+#define NODEDAC_RES 12
+#define NODEDAC_MAXOUT 5.0
+
 namespace elabtsaot{
 
 //! Class representing a node of the hardware emulator
@@ -60,9 +63,7 @@ class Node{
   int reset( bool complete );
 
   // --- getters ---
-  /*! \name Getters
-    Getters of private members of the class
-  */
+  /*! \name Getters */
   //@{
   double real_adc_offset_corr() const;          //!< getter for _real_adc_offset_corr
   double real_adc_gain_corr() const;            //!< getter for _real_adc_gain_corr
@@ -108,9 +109,7 @@ class Node{
   //@}
 
   // --- setters ---
-  /*! @name Setters
-    Setters of private members of the class
-  */
+  /*! @name Setters */
   //@{
   void set_real_adc_offset_corr( double val ); //!< setter for _real_adc_offset_corr
   void set_real_adc_gain_corr( double val ); //!< setter for _real_adc_gain_corr

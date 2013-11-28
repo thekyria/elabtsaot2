@@ -169,42 +169,42 @@ int Emulator::preconditionEmulator(EmulatorOpType opType){
   switch (_state){
   case EMU_STATE_START:
     ans = initializeUSB(); // would change _state to EMU_STATE_USBINIT
-    if ( ans ) return 10;
+    if (ans) return 10;
     cout << "Emulator::_preconditionEmulator(): ";
     cout << "initialize usb " << timer.Stop() << " s" << endl;
     timer.Start();
   case EMU_STATE_USBINIT:
     ans = autoAssignSlicesToDevices(); // would change _state to EMU_STATE_SLCDEVASSIGNED
-    if ( ans ) return 11;
+    if (ans) return 11;
     cout << "Emulator::_preconditionEmulator(): ";
     cout << "auto assign slices to devices " << timer.Stop() << " s" << endl;
     timer.Start();
   case EMU_STATE_SLCDEVASSIGNED:
     ans = autoMapping();
-    if ( ans ) return 12;
+    if (ans) return 12;
     cout << "Emulator::_preconditionEmulator(): ";
     cout << "auto mapping " << timer.Stop() << " s" << endl;
     timer.Start();
     ans = validateMapping(); // would change _state to EMU_STATE_MAPOK
-    if ( ans ) return 13;
+    if (ans) return 13;
     cout << "Emulator::_preconditionEmulator(): ";
     cout << "validate mapping " << timer.Stop() << " s" << endl;
     timer.Start();
 
   case EMU_STATE_MAPOK:
     ans = autoFitting(opType);
-    if ( ans ) return 14;
+    if (ans) return 14;
     cout << "Emulator::_preconditionEmulator(): ";
     cout << "auto fitting " << timer.Stop() << " s" << endl;
     timer.Start();
     ans = validateFitting(opType);
-    if ( ans ) return 15;
+    if (ans) return 15;
     cout << "Emulator::_preconditionEmulator(): ";
     cout << "validate fitting " << timer.Stop() << " s" << endl;
     timer.Start();
   case EMU_STATE_FITOK:
     ans = encodePowersystem(opType);
-    if ( ans ) return 16; // would change _state to EMU_STATE_PWSENCODED
+    if (ans) return 16; // would change _state to EMU_STATE_PWSENCODED
     cout << "Emulator::_preconditionEmulator(): ";
     cout << "encode powersystem " << timer.Stop() << " s" << endl;
     timer.Start();
@@ -258,11 +258,11 @@ int Emulator::setSliceCount(size_t val, EmulatorOpType opType){
 
   // Update emulator
   ans = _emuhw->init(val);
-  if ( ans ) return 1;
+  if (ans) return 1;
 
   // Initialize mmd
   ans = _mmd->init();
-  if ( ans ) return 3;
+  if (ans) return 3;
 
   // Update _sliceDeviceMap
   _sliceDeviceMap.clear();
@@ -367,18 +367,34 @@ int Emulator::nodeSetDCPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus){
   if (ans) return 21;
   slc->ana.nodeDisconnect(id_ver,id_hor);
 
-  double Vmaxreal = slc->ana.real_voltage_ref_val_max()- slc->ana.real_voltage_ref_val();
   // Normal (non-slack) bus
   if (!slack){
-    double seriesR = Vmaxreal/(_maxIpu*_ratioI);
-    slc->dig.IInjections[id_ver][id_hor] = bus.P*_ratioI;
+    /*      ____    I
+     *  V -|____|--->--o NODE
+     *       R
+     *
+     * V: Vdac-Vref (Vdac - 2.5)
+     * R: series resistor; converting V to I
+     * I: current into the node
+     *
+     * For max I we need max V:
+     *  Vdac_max - Vref = I_max * R
+     * Max I in pu is 16. So max physical I is 16*ratioI.
+     *  Vdac_max - Vref = Ipu_max*ratioI * R
+     *  R = (Vdac_max-Vref)/(Ipu_max*ratioI)
+     * The latter value for R, respect limits for Vdac_max and Ipu_max */
+    double realVmax = NODEDAC_MAXOUT-slc->ana.real_voltage_ref_val();
+    double seriesR = realVmax /(_maxIpu*_ratioI);
+    slc->dig.injectionTypes[id_ver][id_hor] = NODE_IINJECTION;
+    slc->dig.IInjections[id_ver][id_hor] = bus.P; // Ideally i would like to have bus.P*_ratioI here
+                                                  // but Guillaume is expecting value in [pu]
     ans = slc->ana.nodeCurrentSource(id_ver,id_hor, seriesR, -1);
 //    if (ans) return 23;
   }
 
   // Slack bus
   else {
-    // TODO
+    slc->dig.injectionTypes[id_ver][id_hor] = NODE_VINJECTION;
     slc->dig.VInjections[id_ver][id_hor] = bus.theta*_ratioV;
     ans = slc->ana.nodeVoltageSource(id_ver, id_hor, -1);
     if (ans) return 32;
@@ -521,7 +537,7 @@ int Emulator::initializeUSB(){
   _state_calibration = EMU_CALSTATE_YES;
 
   int ans = _usb->init();
-  if ( ans ) return ans;
+  if (ans) return ans;
 
   // If the function executed properly, the state of Emulator changes
   // implementing the EMU_STATE_START -> EMU_STATE_USBINIT transition
@@ -682,7 +698,7 @@ int Emulator::autoAssignSlicesToDevices(){
 
   // Validate assignemnt
   ans = validateSliceDeviceAssignement();
-  if ( ans ) return 5;
+  if (ans) return 5;
 
   return 0;
 }
@@ -875,7 +891,7 @@ int Emulator::validateMapping(){
     return -1;
 
   int ans = _mmd->validate();
-  if ( ans ) return ans;
+  if (ans) return ans;
 
   // If the function executed properly, the state of Emulator changes
   // implementing the EMU_STATE_SLCDEVASSIGNED -> EMU_STATE_MAPOK transition
@@ -1001,7 +1017,7 @@ int Emulator::writeEncoding(bool verify, bool force){
 
     // Write bitstream to board
     ans = _usb->write(devId, 1, encoding[k]);
-    if ( ans ) return 2;
+    if (ans) return 2;
     cout << "Emulator::_writeEncoding(): ";
     cout << "write dev" << devId << " " << timer.Stop() << " s" << endl;
     timer.Start();
@@ -1010,7 +1026,7 @@ int Emulator::writeEncoding(bool verify, bool force){
   // Verify encoding after writing was requested
   if ( verify ){
     ans = _verifyEncoding();
-    if ( ans ) return 3;
+    if (ans) return 3;
     cout << "Emulator::_writeEncoding(): ";
     cout << "verify " << timer.Stop() << " s" << endl;
   }
@@ -1077,7 +1093,7 @@ int Emulator::_precalibrateSlice( size_t sliceId, bool toDefaultVoltage ){
       * ( (static_cast<double>(sl->ana.real_voltage_ref_tap_max()) + 1)
            / tapRealMeaserement );
   int ans = sl->ana.set_real_voltage_ref_out_max( newOutMax, true );
-  if ( ans ) return 4;
+  if (ans) return 4;
 
   // Imag voltage reference precalibration
   newOutMax = sl->ana.imag_voltage_ref_val_min()
@@ -1085,14 +1101,14 @@ int Emulator::_precalibrateSlice( size_t sliceId, bool toDefaultVoltage ){
       * ( (static_cast<double>(sl->ana.imag_voltage_ref_tap_max()) + 1)
            / tapImagMeasurement );
   ans = sl->ana.set_imag_voltage_ref_out_max( newOutMax, true );
-  if ( ans ) return 5;
+  if (ans) return 5;
 
   // Set voltage to default value if asked so
   if ( toDefaultVoltage ){
     ans = sl->ana.set_real_voltage_ref_val( REAL_VOLTAGE_REF_MEASURED_VAL );
-    if ( ans ) return 6;
+    if (ans) return 6;
     ans = sl->ana.set_imag_voltage_ref_val( REAL_VOLTAGE_REF_MEASURED_VAL );
-    if ( ans ) return 7;
+    if (ans) return 7;
   }
 
   return 0;
@@ -1305,7 +1321,7 @@ int Emulator::_fitBusesDCPF(vector<string>* outputMsg){
   for (size_t k(0); k!=N; ++k){
     tempBus[k] = *_pws->getBus(k);  // instantiate local copy by
     // Reset voltage magnitudes to 1
-    tempBus[k].V = 1;
+    tempBus[k].V = 1.;
     // Active power injected to bus by gens and loads
     Pset(k) = tempBus[k].P;
     // Active power lost to shunt conductance
@@ -1314,7 +1330,7 @@ int Emulator::_fitBusesDCPF(vector<string>* outputMsg){
     P(k) = Pset(k) - Pshift(k) - Pshunt(k);
     // Update bus power injection
     tempBus[k].P = P(k);
-    tempBus[k].Q = 0;              // we are interested only in active power injection
+    tempBus[k].Q = 0.;              // we are interested only in active power injection
   }
 
   for (size_t k=0; k!=_mmd->busElements_size(); ++k){
@@ -1389,7 +1405,7 @@ int Emulator::_fitLoadsTD(vector<string>* outputMsg){
 
     // Fit
     ans = nodeSetTD(fit_tab,fit_row,fit_col, *pLoad);
-    if ( ans ){
+    if (ans){
       string msg( "Fitting load with ext id "
                   + auxiliary::to_string(cdLoad->extId)
                   + " failed with code " + auxiliary::to_string(ans) );
@@ -1412,7 +1428,7 @@ int Emulator::_verifyEncoding(){
 
     // Verify data written
     int ans = _usb->read( devId,  1 , encoding[k].size(), temp );
-    if ( ans )
+    if (ans)
       return k;
     if ( temp.size() != encoding[k].size() )
       return (k+10);
