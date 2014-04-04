@@ -26,9 +26,9 @@ void ssutils::buildY(Powersystem const& pws, matrix<complex,column_major>& Y){
 
     double tap = branch->Xratio;              // Xformer tap ratio magnitude
     double th = branch->Xshift;               // Xformer phase shift angle
-    if(tap==0.){
-      tap=1.;                      // assuming that (tap==0) => denotes line
-      th=0.;
+    if (tap==0.){
+      tap = 1.;                      // assuming that (tap==0) => denotes line
+      th  = 0.;
     }
 
     // Determine y-parameters

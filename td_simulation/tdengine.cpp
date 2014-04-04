@@ -19,6 +19,8 @@ using std::vector;
 #include <limits>
 using std::numeric_limits;
 
+#include <boost/timer/timer.hpp>
+
 TDEngine::TDEngine( Powersystem const* pws,
                     std::string const& description,
                     double timeStep, Logger* log ) :
@@ -39,6 +41,7 @@ int TDEngine::setTimeStep( double seconds, double* pMismatch){
 double TDEngine::getTimeStep() const{ return _timeStep; }
 
 int TDEngine::simulate( Scenario const& sce, TDResults& res ){
+  boost::timer::auto_cpu_timer t; // when t goes out of scope it prints timing info
   int ans = do_simulate(sce, res);
   return ans;
 }
