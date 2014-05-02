@@ -1481,7 +1481,13 @@ int CalibrationEditor::_convertersCalibration(int devId){
   //Nios code
   _confVector.append(static_cast<uint32_t>(3221225472u));
   _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(10487040));
-  _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(8390656));
+  //_confVector.insert(_confVector.size(),24,static_cast<uint32_t>(8390656));
+  //I am using ADC test's offsets
+  QVector<uint32_t> encodedinput;
+  _offsetGainHandling(&encodedinput,3);//insert ADC offset, 3 for ADC offset from store
+  for(int i=0;i<24;++i){
+    _confVector.append(encodedinput[i]);
+  }
   _confVector.append(static_cast<uint32_t>(15));
   _confVector.append(static_cast<uint32_t>(170));
   _confVector.append(static_cast<uint32_t>(858));
@@ -1675,11 +1681,11 @@ int CalibrationEditor::_conversionResistorCalibrationNew(int devId){
   _confVector.append(static_cast<uint32_t>(3221225472u));
   //Corrected Gain-offset
   QVector<uint32_t> encodedinput;
-  _offsetGainHandling(&encodedinput,0);//0 test for adc/dac gain/offset, 0 for gain
+  _offsetGainHandling(&encodedinput,0);//insert adc/dac gain/offset, 0 for gain
   for(int i=0;i<24;++i){
     _confVector.append(encodedinput[i]);
   }
-  _offsetGainHandling(&encodedinput,1);//0 test for adc/dac gain/offset, 1 for offset
+  _offsetGainHandling(&encodedinput,1);//insert adc/dac gain/offset, 1 for offset
   for(int i=0;i<24;++i){
     _confVector.append(encodedinput[i]);
   }
@@ -3409,7 +3415,8 @@ void CalibrationEditor::_resultsHandling(QVector<uint32_t> const& nodedata,
 void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
                                              int gainoroffset ){
 
-
+  //Caution manually overriding option 4, to avoid taking double offset
+  _options[4]='0';
   //typeoftest is an offset(multiple of 24) in the vector of
   //data results that point to the correct test,DAC,Internalresistor etc
   encodedinput->clear();
@@ -3452,6 +3459,19 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
         tempimag=_calibrationOffsetDataNew.at(1).at(i+24);//1 for imag and +24 because the first 24 is the adc offset not the DAC/ADC test
       else
         tempimag=_calibrationOffsetDataNew.at(1).at(i+24)+_calibrationOffsetDataNew.at(1).at(i);
+      tempimag=2.5+tempimag;
+      tempimag=tempimag/5.0*4096;//convert the double to the 12bit value of the ramp
+      uintimag=static_cast<uint32_t>(tempimag);
+      uintimag=uintimag<<12;
+      combined=uintimag | uintreal;
+      encodedinput->push_back(combined);
+    }
+    else if (gainoroffset==3){//3 for acquiring ADC offsets, the offset accepts the exact 12bit value of the Vramp
+      tempreal=_calibrationOffsetDataNew.at(0).at(i);
+      tempreal=2.5+tempreal;
+      tempreal=(tempreal*4096)/5;//convert the double to the 12bit value of the ramp
+      uintreal=static_cast<uint32_t>(tempreal);
+      tempimag=_calibrationOffsetDataNew.at(1).at(i);
       tempimag=2.5+tempimag;
       tempimag=tempimag/5.0*4096;//convert the double to the 12bit value of the ramp
       uintimag=static_cast<uint32_t>(tempimag);
