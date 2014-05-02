@@ -102,7 +102,7 @@ int encode_TDzloads( Slice const& sl, std::vector<uint32_t>& zgot_conf, std::vec
 int encode_TDiloads( Slice const& sl, std::vector<uint32_t>& igot_conf, std::vector<uint32_t>& iloads_conf );
 int encode_TDploads( Slice const& sl, std::vector<uint32_t>& ploads_conf );
 int encode_TDpositions( Slice const& sl, std::vector<uint32_t>& pos_conf );
-int encode_TDauxiliary( Slice const& sl, std::vector<uint32_t>& pert_conf );
+int encode_TDauxiliary(std::vector<uint32_t>& pert_conf);
 
 /*! Creates a 32 bit fixed point arithmetic word
   The result is written at the position pointed to by the pointer argument

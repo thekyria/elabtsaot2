@@ -232,45 +232,63 @@ void FitterEditor::fittingPositionClickedSlot(int emulator_tab,
 
   switch (embrElm){
   case 0: // near pot sw
-    valBool = atom->embr_pot_near_sw(embrPos, real);
-    atom->set_embr_pot_near_sw(embrPos, !valBool, real);
+    valBool = atom->embr(embrPos,real).pot_near_sw();
+    if (real)
+      atom->embr_real[embrPos].set_pot_near_sw(!valBool);
+    else
+      atom->embr_imag[embrPos].set_pot_near_sw(!valBool);
     break;
 
   case 1: // near pot res
     text = QString("Near pot res of embr %0 of atom [tab,row,col]: [%1,%2,%3]")
             .arg(embrPos).arg(emulator_tab).arg(emulator_row).arg(emulator_col);
-    valDouble = atom->embr_pot_near_r(embrPos, real);
+    valDouble = atom->embr(embrPos,real).pot_near_r();
     ans = guiauxiliary::askDouble(text, valDouble);
     if (!ans){
-      ans = atom->set_embr_pot_near_r( embrPos, valDouble, real );
+      if (real)
+        ans = atom->embr_real[embrPos].set_pot_near_r(valDouble, NULL);
+      else
+        ans = atom->embr_imag[embrPos].set_pot_near_r(valDouble, NULL);
       if (ans) cout << "Failed to set: " << text.toStdString() << endl;
     }
     break;
 
   case 2: // far pot sw
-    valBool = atom->embr_pot_far_sw( embrPos, real );
-    atom->set_embr_pot_far_sw(embrPos, !valBool, real);
+    valBool = atom->embr(embrPos,real).pot_far_sw();
+    if (real)
+      atom->embr_real[embrPos].set_pot_far_sw(!valBool);
+    else
+      atom->embr_imag[embrPos].set_pot_far_sw(!valBool);
     break;
 
   case 3: // far pot res
     text = QString("Far pot res of embr %0 of atom [tab,row,col]: [%1,%2,%3]")
             .arg(embrPos).arg(emulator_tab).arg(emulator_row).arg(emulator_col);
-    valDouble=atom->embr_pot_far_r( embrPos, real );
+    valDouble=atom->embr(embrPos,real).pot_far_r();
     ans = guiauxiliary::askDouble( text, valDouble );
     if (!ans){
-      ans = atom->set_embr_pot_far_r( embrPos, valDouble, real );
+      if (real)
+        ans = atom->embr_real[embrPos].set_pot_far_r(valDouble, NULL);
+      else
+        ans = atom->embr_imag[embrPos].set_pot_far_r(valDouble, NULL);
       if (ans) cout << "Failed to set: " << text.toStdString() << endl;
     }
     break;
 
   case 4: // short circt sw
-    valBool = atom->embr_sw_sc( embrPos, real );
-    atom->set_embr_sw_sc( embrPos, !valBool, real);
+    valBool = atom->embr(embrPos,real).sw_sc();
+    if (real)
+      atom->embr_real[embrPos].set_sw_sc(!valBool);
+    else
+      atom->embr_imag[embrPos].set_sw_sc(!valBool);
     break;
 
   case 5: // mid gnd sw
-    valBool = atom->embr_sw_mid( embrPos, real );
-    atom->set_embr_sw_mid( embrPos, !valBool, real);
+    valBool = atom->embr(embrPos,real).sw_mid();
+    if (real)
+      atom->embr_real[embrPos].set_sw_mid(!valBool);
+    else
+      atom->embr_imag[embrPos].set_sw_mid(!valBool);
     break;
   }
 

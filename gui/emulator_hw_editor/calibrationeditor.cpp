@@ -3076,7 +3076,7 @@ int CalibrationEditor::_parseRawResults( size_t sliceindex ){
   int devId = _emu->sliceDeviceMap(sliceindex);
   if (devId<0) return 2;
 
-  //Reinitialize with the correct for the selected device corresponding to the selected slice
+  // Reinitialize with the correct for the selected device corresponding to the selected slice
   QVector <QVector<QString> > calibrationnamedatanew = _master_store.at(devId)->nameDataNew;
   QVector <QVector<double> > calibrationoffsetdatanew = _master_store.at(devId)->offsetDataNew;
   QVector <QVector<double> > calibrationgaindatanew = _master_store.at(devId)->gainDataNew;
@@ -3088,7 +3088,7 @@ int CalibrationEditor::_parseRawResults( size_t sliceindex ){
   }
   if (calibrationnamedatanew[0].size()!=254)
     return 1;
-  //We have one slice for now
+  // We have one slice for now
   Slice *sl = &_cal_emuhw->sliceSet[sliceindex];
   int i=0;
   Atom *at;
@@ -3097,100 +3097,100 @@ int CalibrationEditor::_parseRawResults( size_t sliceindex ){
   bool updateTap(false);
   for (size_t v = 0 ; v != ver ; ++v){
     for (size_t h = 0 ; h != hor ; ++h){
-      at=&sl->ana._atomSet[v][h];
-      //ADC
-      at->node.set_adc_offset_corr(calibrationoffsetdatanew[0][i+24],true);// +24 because the first 24 is the adc offset not the DAC/ADC test
-      at->node.set_adc_offset_corr(calibrationoffsetdatanew[1][i+24],false);// +24 because the first 24 is the adc offset not the DAC/ADC test
-      at->node.set_adc_gain_corr(calibrationgaindatanew[0][i+24],true);// +24 because the first 24 is the adc offset not the DAC/ADC test
-      at->node.set_adc_gain_corr(calibrationgaindatanew[1][i+24],false);// +24 because the first 24 is the adc offset not the DAC/ADC test
-      //Convertion Resistor
+      at = &sl->ana._atomSet[v][h];
+      // ADC
+      at->node.set_adc_offset_corr(calibrationoffsetdatanew[0][i+24],true);  // +24 because the first 24 is the adc offset not the DAC/ADC test
+      at->node.set_adc_offset_corr(calibrationoffsetdatanew[1][i+24],false); // +24 because the first 24 is the adc offset not the DAC/ADC test
+      at->node.set_adc_gain_corr(calibrationgaindatanew[0][i+24],true);      // +24 because the first 24 is the adc offset not the DAC/ADC test
+      at->node.set_adc_gain_corr(calibrationgaindatanew[1][i+24],false);     // +24 because the first 24 is the adc offset not the DAC/ADC test
+      // Convertion Resistor
       at->node.set_real_pot_current_rab(calibrationrabnew[0][i],updateTap);
       at->node.set_imag_pot_current_rab(calibrationrabnew[1][i],updateTap);
       at->node.set_real_pot_current_rw(calibrationrwnew[0][i],updateTap);
       at->node.set_imag_pot_current_rw(calibrationrwnew[1][i],updateTap);
-      //Internal resistor
+      // Internal resistor
       at->node.set_real_pot_resistance_rab(calibrationrabnew[0][i+24],updateTap);
       at->node.set_imag_pot_resistance_rab(calibrationrabnew[1][i+24],updateTap);
       at->node.set_real_pot_resistance_rw(calibrationrwnew[0][i+24],updateTap);
       at->node.set_imag_pot_resistance_rw(calibrationrwnew[1][i+24],updateTap);
 
-      //P0Chip1-2 and P1Chip1-2
-      at->set_embr_real_pot_far_rab(EMBRPOS_R,calibrationrabnew[0][i+48],updateTap);
-      at->set_embr_imag_pot_far_rab(EMBRPOS_R,calibrationrabnew[1][i+48],updateTap);
-      at->set_embr_real_pot_near_rab(EMBRPOS_R,calibrationrabnew[0][i+72],updateTap);
-      at->set_embr_imag_pot_near_rab(EMBRPOS_R,calibrationrabnew[1][i+72],updateTap);
+      // P0Chip1-2 and P1Chip1-2
+      at->embr_real[EMBRPOS_R].set_pot_far_rab(calibrationrabnew[0][i+48],updateTap);
+      at->embr_imag[EMBRPOS_R].set_pot_far_rab(calibrationrabnew[1][i+48],updateTap);
+      at->embr_real[EMBRPOS_R].set_pot_near_rab(calibrationrabnew[0][i+72],updateTap);
+      at->embr_imag[EMBRPOS_R].set_pot_near_rab(calibrationrabnew[1][i+72],updateTap);
 
-      at->set_embr_real_pot_far_rw(EMBRPOS_R,calibrationrwnew[0][i+48],updateTap);
-      at->set_embr_imag_pot_far_rw(EMBRPOS_R,calibrationrwnew[1][i+48],updateTap);
-      at->set_embr_real_pot_near_rw(EMBRPOS_R,calibrationrwnew[0][i+72],updateTap);
-      at->set_embr_imag_pot_near_rw(EMBRPOS_R,calibrationrwnew[1][i+72],updateTap);
+      at->embr_real[EMBRPOS_R].set_pot_far_rw(calibrationrwnew[0][i+48],updateTap);
+      at->embr_imag[EMBRPOS_R].set_pot_far_rw(calibrationrwnew[1][i+48],updateTap);
+      at->embr_real[EMBRPOS_R].set_pot_near_rw(calibrationrwnew[0][i+72],updateTap);
+      at->embr_imag[EMBRPOS_R].set_pot_near_rw(calibrationrwnew[1][i+72],updateTap);
 
-      //P2Chip1-2 and P3Chip1-2
-      at->set_embr_real_pot_near_rab(EMBRPOS_U,calibrationrabnew[0][i+96],updateTap);
-      at->set_embr_imag_pot_near_rab(EMBRPOS_U,calibrationrabnew[1][i+96],updateTap);
-      at->set_embr_real_pot_far_rab(EMBRPOS_U,calibrationrabnew[0][i+120],updateTap);
-      at->set_embr_imag_pot_far_rab(EMBRPOS_U,calibrationrabnew[1][i+120],updateTap);
+      // P2Chip1-2 and P3Chip1-2
+      at->embr_real[EMBRPOS_U].set_pot_near_rab(calibrationrabnew[0][i+96],updateTap);
+      at->embr_imag[EMBRPOS_U].set_pot_near_rab(calibrationrabnew[1][i+96],updateTap);
+      at->embr_real[EMBRPOS_U].set_pot_far_rab(calibrationrabnew[0][i+120],updateTap);
+      at->embr_imag[EMBRPOS_U].set_pot_far_rab(calibrationrabnew[1][i+120],updateTap);
 
-      at->set_embr_real_pot_near_rw(EMBRPOS_U,calibrationrwnew[0][i+96],updateTap);
-      at->set_embr_imag_pot_near_rw(EMBRPOS_U,calibrationrwnew[1][i+96],updateTap);
-      at->set_embr_real_pot_far_rw(EMBRPOS_U,calibrationrwnew[0][i+120],updateTap);
-      at->set_embr_imag_pot_far_rw(EMBRPOS_U,calibrationrwnew[1][i+120],updateTap);
+      at->embr_real[EMBRPOS_U].set_pot_near_rw(calibrationrwnew[0][i+96],updateTap);
+      at->embr_imag[EMBRPOS_U].set_pot_near_rw(calibrationrwnew[1][i+96],updateTap);
+      at->embr_real[EMBRPOS_U].set_pot_far_rw(calibrationrwnew[0][i+120],updateTap);
+      at->embr_imag[EMBRPOS_U].set_pot_far_rw(calibrationrwnew[1][i+120],updateTap);
 
-      //P0P2Chip3 and P1P3Chip3
-      at->set_embr_real_pot_near_rab(EMBRPOS_UR,calibrationrabnew[0][i+144],updateTap);
-      at->set_embr_imag_pot_near_rab(EMBRPOS_UR,calibrationrabnew[1][i+144],updateTap);
-      at->set_embr_real_pot_far_rab(EMBRPOS_UR,calibrationrabnew[0][i+168],updateTap);
-      at->set_embr_imag_pot_far_rab(EMBRPOS_UR,calibrationrabnew[1][i+168],updateTap);
+      // P0P2Chip3 and P1P3Chip3
+      at->embr_real[EMBRPOS_UR].set_pot_near_rab(calibrationrabnew[0][i+144],updateTap);
+      at->embr_imag[EMBRPOS_UR].set_pot_near_rab(calibrationrabnew[1][i+144],updateTap);
+      at->embr_real[EMBRPOS_UR].set_pot_far_rab(calibrationrabnew[0][i+168],updateTap);
+      at->embr_imag[EMBRPOS_UR].set_pot_far_rab(calibrationrabnew[1][i+168],updateTap);
 
-      at->set_embr_real_pot_near_rw(EMBRPOS_UR,calibrationrwnew[0][i+144],updateTap);
-      at->set_embr_imag_pot_near_rw(EMBRPOS_UR,calibrationrwnew[1][i+144],updateTap);
-      at->set_embr_real_pot_far_rw(EMBRPOS_UR,calibrationrwnew[0][i+168],updateTap);
-      at->set_embr_imag_pot_far_rw(EMBRPOS_UR,calibrationrwnew[1][i+168],updateTap);
+      at->embr_real[EMBRPOS_UR].set_pot_near_rw(calibrationrwnew[0][i+144],updateTap);
+      at->embr_imag[EMBRPOS_UR].set_pot_near_rw(calibrationrwnew[1][i+144],updateTap);
+      at->embr_real[EMBRPOS_UR].set_pot_far_rw(calibrationrwnew[0][i+168],updateTap);
+      at->embr_imag[EMBRPOS_UR].set_pot_far_rw(calibrationrwnew[1][i+168],updateTap);
 
-      //P0P2EXT and P1P3EXT
+      // P0P2EXT and P1P3EXT
       if (i==1||i==2||i==3||i==4){
-        at->set_embr_real_pot_near_rab(EMBRPOS_D,calibrationrabnew[0][i+192],updateTap);
-        at->set_embr_imag_pot_near_rab(EMBRPOS_D,calibrationrabnew[1][i+192],updateTap);
-        at->set_embr_real_pot_far_rab(EMBRPOS_D,calibrationrabnew[0][i+199],updateTap);
-        at->set_embr_imag_pot_far_rab(EMBRPOS_D,calibrationrabnew[1][i+199],updateTap);
+        at->embr_real[EMBRPOS_D].set_pot_near_rab(calibrationrabnew[0][i+192],updateTap);
+        at->embr_imag[EMBRPOS_D].set_pot_near_rab(calibrationrabnew[1][i+192],updateTap);
+        at->embr_real[EMBRPOS_D].set_pot_far_rab(calibrationrabnew[0][i+199],updateTap);
+        at->embr_imag[EMBRPOS_D].set_pot_far_rab(calibrationrabnew[1][i+199],updateTap);
 
-        at->set_embr_real_pot_near_rw(EMBRPOS_D,calibrationrwnew[0][i+192],updateTap);
-        at->set_embr_imag_pot_near_rw(EMBRPOS_D,calibrationrwnew[1][i+192],updateTap);
-        at->set_embr_real_pot_far_rw(EMBRPOS_D,calibrationrwnew[0][i+199],updateTap);
-        at->set_embr_imag_pot_far_rw(EMBRPOS_D,calibrationrwnew[1][i+199],updateTap);
+        at->embr_real[EMBRPOS_D].set_pot_near_rw(calibrationrwnew[0][i+192],updateTap);
+        at->embr_imag[EMBRPOS_D].set_pot_near_rw(calibrationrwnew[1][i+192],updateTap);
+        at->embr_real[EMBRPOS_D].set_pot_far_rw(calibrationrwnew[0][i+199],updateTap);
+        at->embr_imag[EMBRPOS_D].set_pot_far_rw(calibrationrwnew[1][i+199],updateTap);
       }
       if (i==0){
-        at->set_embr_real_pot_near_rab(EMBRPOS_L,calibrationrabnew[0][i+192],updateTap);
-        at->set_embr_imag_pot_near_rab(EMBRPOS_L,calibrationrabnew[1][i+192],updateTap);
-        at->set_embr_real_pot_far_rab(EMBRPOS_L,calibrationrabnew[0][i+199],updateTap);
-        at->set_embr_imag_pot_far_rab(EMBRPOS_L,calibrationrabnew[1][i+199],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_near_rab(calibrationrabnew[0][i+192],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_near_rab(calibrationrabnew[1][i+192],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_far_rab(calibrationrabnew[0][i+199],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_far_rab(calibrationrabnew[1][i+199],updateTap);
 
-        at->set_embr_real_pot_near_rw(EMBRPOS_L,calibrationrwnew[0][i+192],updateTap);
-        at->set_embr_imag_pot_near_rw(EMBRPOS_L,calibrationrwnew[1][i+192],updateTap);
-        at->set_embr_real_pot_far_rw(EMBRPOS_L,calibrationrwnew[0][i+199],updateTap);
-        at->set_embr_imag_pot_far_rw(EMBRPOS_L,calibrationrwnew[1][i+199],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_near_rw(calibrationrwnew[0][i+192],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_near_rw(calibrationrwnew[1][i+192],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_far_rw(calibrationrwnew[0][i+199],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_far_rw(calibrationrwnew[1][i+199],updateTap);
       }
-      if (i==6){//Have to take right position because EXT doesnt have 24 nodes
-        at->set_embr_real_pot_near_rab(EMBRPOS_L,calibrationrabnew[0][5+192],updateTap);
-        at->set_embr_imag_pot_near_rab(EMBRPOS_L,calibrationrabnew[1][5+192],updateTap);
-        at->set_embr_real_pot_far_rab(EMBRPOS_L,calibrationrabnew[0][5+199],updateTap);
-        at->set_embr_imag_pot_far_rab(EMBRPOS_L,calibrationrabnew[1][5+199],updateTap);
+      if (i==6){ // Have to take right position because EXT doesnt have 24 nodes
+        at->embr_real[EMBRPOS_L].set_pot_near_rab(calibrationrabnew[0][5+192],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_near_rab(calibrationrabnew[1][5+192],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_far_rab(calibrationrabnew[0][5+199],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_far_rab(calibrationrabnew[1][5+199],updateTap);
 
-        at->set_embr_real_pot_near_rw(EMBRPOS_L,calibrationrwnew[0][5+192],updateTap);
-        at->set_embr_imag_pot_near_rw(EMBRPOS_L,calibrationrwnew[1][5+192],updateTap);
-        at->set_embr_real_pot_far_rw(EMBRPOS_L,calibrationrwnew[0][5+199],updateTap);
-        at->set_embr_imag_pot_far_rw(EMBRPOS_L,calibrationrwnew[1][5+199],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_near_rw(calibrationrwnew[0][5+192],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_near_rw(calibrationrwnew[1][5+192],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_far_rw(calibrationrwnew[0][5+199],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_far_rw(calibrationrwnew[1][5+199],updateTap);
       }
-      if (i==12){//Have to take right position because EXT doesnt have 24 nodes
-        at->set_embr_real_pot_near_rab(EMBRPOS_L,calibrationrabnew[0][6+192],updateTap);
-        at->set_embr_imag_pot_near_rab(EMBRPOS_L,calibrationrabnew[1][6+192],updateTap);
-        at->set_embr_real_pot_far_rab(EMBRPOS_L,calibrationrabnew[0][6+199],updateTap);
-        at->set_embr_imag_pot_far_rab(EMBRPOS_L,calibrationrabnew[1][6+199],updateTap);
+      if (i==12){ // Have to take right position because EXT doesnt have 24 nodes
+        at->embr_real[EMBRPOS_L].set_pot_near_rab(calibrationrabnew[0][6+192],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_near_rab(calibrationrabnew[1][6+192],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_far_rab(calibrationrabnew[0][6+199],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_far_rab(calibrationrabnew[1][6+199],updateTap);
 
-        at->set_embr_real_pot_near_rw(EMBRPOS_L,calibrationrwnew[0][6+192],updateTap);
-        at->set_embr_imag_pot_near_rw(EMBRPOS_L,calibrationrwnew[1][6+192],updateTap);
-        at->set_embr_real_pot_far_rw(EMBRPOS_L,calibrationrwnew[0][6+199],updateTap);
-        at->set_embr_imag_pot_far_rw(EMBRPOS_L,calibrationrwnew[1][6+199],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_near_rw(calibrationrwnew[0][6+192],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_near_rw(calibrationrwnew[1][6+192],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_far_rw(calibrationrwnew[0][6+199],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_far_rw(calibrationrwnew[1][6+199],updateTap);
       }
       ++i;
     }

@@ -223,7 +223,7 @@ int encoder::encodeSliceTD(Slice const& sl , vector<uint32_t>& sliceConf ){
   ans |= detail::encode_TDploads( sl, ploads_conf );
   ans |= detail::encode_TDpositions( sl, pos_conf );
   ans |= detail::encode_vref( sl, vref_conf );
-  ans |= detail::encode_TDauxiliary( sl, pert_conf );
+  ans |= detail::encode_TDauxiliary( pert_conf );
   ans |= detail::encode_resistors( sl, res_conf, res_tcon_conf );
   ans |= detail::encode_switches( sl, switches_conf );
   if (ans)
@@ -345,22 +345,22 @@ int encoder::detail::encode_resistors( Slice const& sl,
       ///////////////////////////////////
       // Fill in resistor values (8-bit)
 
-      atom_res_values[atom_count][0]  = (uint8_t) am->embr_real_pot_far_tap(EMBRPOS_R);
-      atom_res_values[atom_count][1]  = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_R);
+      atom_res_values[atom_count][0]  = (uint8_t) am->embr_real[EMBRPOS_R].pot_far_tap();
+      atom_res_values[atom_count][1]  = (uint8_t) am->embr_real[EMBRPOS_R].pot_near_tap();
 
-      atom_res_values[atom_count][2]  = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_U);
-      atom_res_values[atom_count][3]  = (uint8_t) am->embr_real_pot_far_tap(EMBRPOS_U);
+      atom_res_values[atom_count][2]  = (uint8_t) am->embr_real[EMBRPOS_U].pot_near_tap();
+      atom_res_values[atom_count][3]  = (uint8_t) am->embr_real[EMBRPOS_U].pot_far_tap();
 
-      atom_res_values[atom_count][4]  = (uint8_t) am->embr_imag_pot_far_tap(EMBRPOS_R);
-      atom_res_values[atom_count][5]  = (uint8_t) am->embr_imag_pot_near_tap(EMBRPOS_R);
+      atom_res_values[atom_count][4]  = (uint8_t) am->embr_imag[EMBRPOS_R].pot_far_tap();
+      atom_res_values[atom_count][5]  = (uint8_t) am->embr_imag[EMBRPOS_R].pot_near_tap();
 
-      atom_res_values[atom_count][6]  = (uint8_t) am->embr_imag_pot_near_tap(EMBRPOS_U);
-      atom_res_values[atom_count][7]  = (uint8_t) am->embr_imag_pot_far_tap(EMBRPOS_U);
+      atom_res_values[atom_count][6]  = (uint8_t) am->embr_imag[EMBRPOS_U].pot_near_tap();
+      atom_res_values[atom_count][7]  = (uint8_t) am->embr_imag[EMBRPOS_U].pot_far_tap();
 
-      atom_res_values[atom_count][8]  = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_UR);
-      atom_res_values[atom_count][9]  = (uint8_t) am->embr_real_pot_far_tap(EMBRPOS_UR);
-      atom_res_values[atom_count][10] = (uint8_t) am->embr_imag_pot_near_tap(EMBRPOS_UR);
-      atom_res_values[atom_count][11] = (uint8_t) am->embr_imag_pot_far_tap(EMBRPOS_UR);
+      atom_res_values[atom_count][8]  = (uint8_t) am->embr_real[EMBRPOS_UR].pot_near_tap();
+      atom_res_values[atom_count][9]  = (uint8_t) am->embr_real[EMBRPOS_UR].pot_far_tap();
+      atom_res_values[atom_count][10] = (uint8_t) am->embr_imag[EMBRPOS_UR].pot_near_tap();
+      atom_res_values[atom_count][11] = (uint8_t) am->embr_imag[EMBRPOS_UR].pot_far_tap();
 
       atom_res_values[atom_count][12] = (uint8_t) am->node.imag_pot_resistance_tap();
       atom_res_values[atom_count][13] = (uint8_t) am->node.imag_pot_current_tap();
@@ -374,68 +374,68 @@ int encoder::detail::encode_resistors( Slice const& sl,
 
       // TCON1&2: TCON0 for IC controlling res1 (R0) & res2 (R1)
       // Modify R0B (pos 0) according to res1 status
-      if( am->embr_real_pot_far_sw(EMBRPOS_R) ){
+      if( am->embr_real[EMBRPOS_R].pot_far_sw() ){
         atom_tcon_values[atom_count][0][0] = 1; // R0B
         atom_tcon_values[atom_count][0][1] = 1; // R0W
         // R0A according to res1 swA
-        atom_tcon_values[atom_count][0][2] = am->embr_real_pot_far_swA(EMBRPOS_R);
+        atom_tcon_values[atom_count][0][2] = am->embr_real[EMBRPOS_R].pot_far_swA();
       }
       // Modify R1B (pos 4) according to res2 status
-      if( am->embr_real_pot_near_sw(EMBRPOS_R) ){
+      if( am->embr_real[EMBRPOS_R].pot_near_sw() ){
         atom_tcon_values[atom_count][0][4] = 1; // R1B
         atom_tcon_values[atom_count][0][5] = 1; // R1W
         // R1A according to res2 swA
-        atom_tcon_values[atom_count][0][6] = am->embr_real_pot_near_swA(EMBRPOS_R);
+        atom_tcon_values[atom_count][0][6] = am->embr_real[EMBRPOS_R].pot_near_swA();
       }
 
       // TCON3&4: TCON1 for IC controlling res3 (R2) & res4 (R3)
       // Modify R2B (pos 0) according to res3 status
-      if( am->embr_real_pot_near_sw(EMBRPOS_U) ){
+      if( am->embr_real[EMBRPOS_U].pot_near_sw() ){
         atom_tcon_values[atom_count][1][0] = 1; // R2B
         atom_tcon_values[atom_count][1][1] = 1; // R2W
         // R2A according to res3 swA
-        atom_tcon_values[atom_count][1][2] = am->embr_real_pot_near_swA(EMBRPOS_U);
+        atom_tcon_values[atom_count][1][2] = am->embr_real[EMBRPOS_U].pot_near_swA();
       }
       // Modify R3B (pos 4) according to res4 status
-      if( am->embr_real_pot_far_sw(EMBRPOS_U) ){
+      if( am->embr_real[EMBRPOS_U].pot_far_sw() ){
         atom_tcon_values[atom_count][1][4] = 1; // R3B
         atom_tcon_values[atom_count][1][5] = 1; // R3W
         // R3A according to res4 swA
-        atom_tcon_values[atom_count][1][6] = am->embr_real_pot_far_swA(EMBRPOS_U);
+        atom_tcon_values[atom_count][1][6] = am->embr_real[EMBRPOS_U].pot_far_swA();
       }
 
       // --- IC controlling res5 & res6 & res7 & res8 ---
 
       // TCON5&6: TCON0 for IC controlling res5 (R0) & res6 (R1)
       // Modify R0B (pos 0) according to res5 status
-      if( am->embr_imag_pot_far_sw(EMBRPOS_R) ){
+      if( am->embr_imag[EMBRPOS_R].pot_far_sw() ){
         atom_tcon_values[atom_count][2][0] = 1; // R0B
         atom_tcon_values[atom_count][2][1] = 1; // R0W
         // R0A according to res5 swA
-        atom_tcon_values[atom_count][2][2] = am->embr_imag_pot_far_swA(EMBRPOS_R);
+        atom_tcon_values[atom_count][2][2] = am->embr_imag[EMBRPOS_R].pot_far_swA();
       }
       // Modify R1B (pos 4) according to res6 status
-      if( am->embr_imag_pot_near_sw(EMBRPOS_R) ){
+      if( am->embr_imag[EMBRPOS_R].pot_near_sw() ){
         atom_tcon_values[atom_count][2][4] = 1; // R1B
         atom_tcon_values[atom_count][2][5] = 1; // R1W
         // R1A according to res6 swA
-        atom_tcon_values[atom_count][2][6] = am->embr_imag_pot_near_swA(EMBRPOS_R);
+        atom_tcon_values[atom_count][2][6] = am->embr_imag[EMBRPOS_R].pot_near_swA();
       }
 
       // TCON7&8: TCON1 for IC controlling res7 (R2) & res8 (R3)
       // Modify R2B (pos 0) according to res7 status
-      if( am->embr_imag_pot_near_sw(EMBRPOS_U) ){
+      if( am->embr_imag[EMBRPOS_U].pot_near_sw() ){
         atom_tcon_values[atom_count][3][0] = 1; // R2B
         atom_tcon_values[atom_count][3][1] = 1; // R2W
         // R2A according to res7 swA
-        atom_tcon_values[atom_count][3][2] = am->embr_imag_pot_near_swA(EMBRPOS_U);
+        atom_tcon_values[atom_count][3][2] = am->embr_imag[EMBRPOS_U].pot_near_swA();
       }
       // Modify R3B (pos 4) according to res8 status
-      if ( am->embr_imag_pot_far_sw(EMBRPOS_U) ){
+      if ( am->embr_imag[EMBRPOS_U].pot_far_sw() ){
         atom_tcon_values[atom_count][3][4] = 1; // R3B
         atom_tcon_values[atom_count][3][5] = 1; // R3W
         // R3A according to res8 swA
-        atom_tcon_values[atom_count][3][6] = am->embr_imag_pot_far_swA(EMBRPOS_U);
+        atom_tcon_values[atom_count][3][6] = am->embr_imag[EMBRPOS_U].pot_far_swA();
       }
 
       // --- IC controlling res9 & res10 & res11 & res12 ---
@@ -446,33 +446,33 @@ int encoder::detail::encode_resistors( Slice const& sl,
       // retain the default value 10001000 (= 136ul)
 
       // Modify R0B (pos 0) according to res9 status
-      if( am->embr_real_pot_near_sw(EMBRPOS_UR) ){
+      if( am->embr_real[EMBRPOS_UR].pot_near_sw() ){
         atom_tcon_values[atom_count][4][0] = 1; // R0B
         atom_tcon_values[atom_count][4][1] = 1; // R0W
         // R0A according to res9 swA
-        atom_tcon_values[atom_count][4][2] = am->embr_real_pot_near_swA(EMBRPOS_UR);
+        atom_tcon_values[atom_count][4][2] = am->embr_real[EMBRPOS_UR].pot_near_swA();
       }
       // Modify R1B (pos 4) according to res10 status
-      if( am->embr_real_pot_far_sw(EMBRPOS_UR) ){
+      if( am->embr_real[EMBRPOS_UR].pot_far_sw() ){
         atom_tcon_values[atom_count][4][4] = 1; // R1B
         atom_tcon_values[atom_count][4][5] = 1; // R1W
         // R1A according to res10 swA
-        atom_tcon_values[atom_count][4][6] = am->embr_real_pot_far_swA(EMBRPOS_UR);
+        atom_tcon_values[atom_count][4][6] = am->embr_real[EMBRPOS_UR].pot_far_swA();
       }
 
       // Modify R2B (pos 0) according to res11 status
-      if( am->embr_imag_pot_near_sw(EMBRPOS_UR) ){
+      if( am->embr_imag[EMBRPOS_UR].pot_near_sw() ){
         atom_tcon_values[atom_count][5][0] = 1; // R2B
         atom_tcon_values[atom_count][5][1] = 1; // R2W
         // R2A according to res11 swA
-        atom_tcon_values[atom_count][5][2] = am->embr_imag_pot_near_swA(EMBRPOS_UR);
+        atom_tcon_values[atom_count][5][2] = am->embr_imag[EMBRPOS_UR].pot_near_swA();
       }
       // Modify R3B (pos 4) according to res12 status
-      if( am->embr_imag_pot_far_sw(EMBRPOS_UR) ){
+      if( am->embr_imag[EMBRPOS_UR].pot_far_sw() ){
         atom_tcon_values[atom_count][5][4] = 1; // R3B
         atom_tcon_values[atom_count][5][5] = 1; // R3W
         // R3A according to res12 swA
-        atom_tcon_values[atom_count][5][6] = am->embr_imag_pot_far_swA(EMBRPOS_UR);
+        atom_tcon_values[atom_count][5][6] = am->embr_imag[EMBRPOS_UR].pot_far_swA();
       }
 
       // --- IC controlling res13 & res14 & res15 & res16 ---
@@ -531,22 +531,22 @@ int encoder::detail::encode_resistors( Slice const& sl,
   ///////////////////////////////////
   // Fill in resistor values (8-bit)
   am = sl.ana.getAtom(0,0);
-  atom_res_values[atom_count][0]  = (uint8_t) am->embr_real_pot_far_tap(EMBRPOS_L);
-  atom_res_values[atom_count][1]  = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_L);
-  atom_res_values[atom_count][2]  = (uint8_t) am->embr_imag_pot_far_tap(EMBRPOS_L);
-  atom_res_values[atom_count][3]  = (uint8_t) am->embr_imag_pot_near_tap(EMBRPOS_L);
+  atom_res_values[atom_count][0]  = (uint8_t) am->embr_real[EMBRPOS_L].pot_far_tap();
+  atom_res_values[atom_count][1]  = (uint8_t) am->embr_real[EMBRPOS_L].pot_near_tap();
+  atom_res_values[atom_count][2]  = (uint8_t) am->embr_imag[EMBRPOS_L].pot_far_tap();
+  atom_res_values[atom_count][3]  = (uint8_t) am->embr_imag[EMBRPOS_L].pot_near_tap();
 
   am = sl.ana.getAtom(1,0);
-  atom_res_values[atom_count][4]  = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_L);
-  atom_res_values[atom_count][5]  = (uint8_t) am->embr_real_pot_far_tap(EMBRPOS_L);
-  atom_res_values[atom_count][6]  = (uint8_t) am->embr_imag_pot_near_tap(EMBRPOS_L);
-  atom_res_values[atom_count][7]  = (uint8_t) am->embr_imag_pot_far_tap(EMBRPOS_L);
+  atom_res_values[atom_count][4]  = (uint8_t) am->embr_real[EMBRPOS_L].pot_near_tap();
+  atom_res_values[atom_count][5]  = (uint8_t) am->embr_real[EMBRPOS_L].pot_far_tap();
+  atom_res_values[atom_count][6]  = (uint8_t) am->embr_imag[EMBRPOS_L].pot_near_tap();
+  atom_res_values[atom_count][7]  = (uint8_t) am->embr_imag[EMBRPOS_L].pot_far_tap();
 
   am = sl.ana.getAtom(2,0);
-  atom_res_values[atom_count][8]  = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_L);
-  atom_res_values[atom_count][9]  = (uint8_t) am->embr_real_pot_far_tap(EMBRPOS_L);
-  atom_res_values[atom_count][10] = (uint8_t) am->embr_imag_pot_near_tap(EMBRPOS_L);
-  atom_res_values[atom_count][11] = (uint8_t) am->embr_imag_pot_far_tap(EMBRPOS_L);
+  atom_res_values[atom_count][8]  = (uint8_t) am->embr_real[EMBRPOS_L].pot_near_tap();
+  atom_res_values[atom_count][9]  = (uint8_t) am->embr_real[EMBRPOS_L].pot_far_tap();
+  atom_res_values[atom_count][10] = (uint8_t) am->embr_imag[EMBRPOS_L].pot_near_tap();
+  atom_res_values[atom_count][11] = (uint8_t) am->embr_imag[EMBRPOS_L].pot_far_tap();
 
   atom_res_values[atom_count][12] = (uint8_t) 0;
   atom_res_values[atom_count][13] = (uint8_t) 0;
@@ -566,34 +566,34 @@ int encoder::detail::encode_resistors( Slice const& sl,
   am = sl.ana.getAtom(0,0);
   // TCON1&2: TCON0 for IC controlling res1 (R0) & res2 (R1)
   // Modify R0B (pos 0) according to res1 status
-  if ( am->embr_real_pot_far_sw(EMBRPOS_L) ){
+  if ( am->embr_real[EMBRPOS_L].pot_far_sw() ){
     atom_tcon_values[atom_count][0][0] = 1; // R0B
     atom_tcon_values[atom_count][0][1] = 1; // R0W
     // R0A according to res1 swA
-    atom_tcon_values[atom_count][0][2] = am->embr_real_pot_far_swA(EMBRPOS_L);
+    atom_tcon_values[atom_count][0][2] = am->embr_real[EMBRPOS_L].pot_far_swA();
   }
   // Modify R1B (pos 4) according to res2 status
-  if ( am->embr_real_pot_near_sw(EMBRPOS_L) ){
+  if ( am->embr_real[EMBRPOS_L].pot_near_sw() ){
     atom_tcon_values[atom_count][0][4] = 1; // R1B
     atom_tcon_values[atom_count][0][5] = 1; // R1W
     // R1A according to res2 swA
-    atom_tcon_values[atom_count][0][6] = am->embr_real_pot_near_swA(EMBRPOS_L);
+    atom_tcon_values[atom_count][0][6] = am->embr_real[EMBRPOS_L].pot_near_swA();
   }
 
   // TCON3&4: TCON1 for IC controlling res3 (R2) & res4 (R3)
   // Modify R2B (pos 0) according to res3 status
-  if ( am->embr_imag_pot_far_sw(EMBRPOS_L) ){
+  if ( am->embr_imag[EMBRPOS_L].pot_far_sw() ){
     atom_tcon_values[atom_count][1][0] = 1; // R2B
     atom_tcon_values[atom_count][1][1] = 1; // R2W
     // R2A according to res3 swA
-    atom_tcon_values[atom_count][1][2] = am->embr_imag_pot_far_swA(EMBRPOS_L);
+    atom_tcon_values[atom_count][1][2] = am->embr_imag[EMBRPOS_L].pot_far_swA();
   }
   // Modify R3B (pos 4) according to res4 status
-  if ( am->embr_imag_pot_near_sw(EMBRPOS_L) ){
+  if ( am->embr_imag[EMBRPOS_L].pot_near_sw() ){
     atom_tcon_values[atom_count][1][4] = 1; // R3B
     atom_tcon_values[atom_count][1][5] = 1; // R3W
     // R3A according to res4 swA
-    atom_tcon_values[atom_count][1][6] = am->embr_imag_pot_near_swA(EMBRPOS_L);
+    atom_tcon_values[atom_count][1][6] = am->embr_imag[EMBRPOS_L].pot_near_swA();
   }
 
   // --- IC controlling res5 & res6 & res7 & res8 ---
@@ -606,34 +606,34 @@ int encoder::detail::encode_resistors( Slice const& sl,
   am = sl.ana.getAtom(1,0);
   // TCON5&6: TCON0 for IC controlling res5 (R0) & res6 (R1)
   // Modify R0B (pos 0) according to res5 status
-  if ( am->embr_real_pot_near_sw(EMBRPOS_L) ){
+  if ( am->embr_real[EMBRPOS_L].pot_near_sw() ){
     atom_tcon_values[atom_count][2][0] = 1; // R0B
     atom_tcon_values[atom_count][2][1] = 1; // R0W
     // R0A according to res5 swA
-    atom_tcon_values[atom_count][2][2] = am->embr_real_pot_near_swA(EMBRPOS_L);
+    atom_tcon_values[atom_count][2][2] = am->embr_real[EMBRPOS_L].pot_near_swA();
   }
   // Modify R1B (pos 4) according to res6 status
-  if ( am->embr_real_pot_far_sw(EMBRPOS_L) ){
+  if ( am->embr_real[EMBRPOS_L].pot_far_sw() ){
     atom_tcon_values[atom_count][2][4] = 1; // R1B
     atom_tcon_values[atom_count][2][5] = 1; // R1W
     // R1A according to res6 swA
-    atom_tcon_values[atom_count][2][6] = am->embr_real_pot_far_swA(EMBRPOS_L);
+    atom_tcon_values[atom_count][2][6] = am->embr_real[EMBRPOS_L].pot_far_swA();
   }
 
   // TCON7&8: TCON1 for IC controlling res7 (R2) & res8 (R3)
   // Modify R2B (pos 0) according to res7 status
-  if ( am->embr_imag_pot_near_sw(EMBRPOS_L) ){
+  if ( am->embr_imag[EMBRPOS_L].pot_near_sw() ){
     atom_tcon_values[atom_count][3][0] = 1; // R2B
     atom_tcon_values[atom_count][3][1] = 1; // R2W
     // R2A according to res7 swA
-    atom_tcon_values[atom_count][3][2] = am->embr_imag_pot_near_swA(EMBRPOS_L);
+    atom_tcon_values[atom_count][3][2] = am->embr_imag[EMBRPOS_L].pot_near_swA();
   }
   // Modify R3B (pos 4) according to res8 status
-  if ( am->embr_imag_pot_far_sw(EMBRPOS_L) ){
+  if ( am->embr_imag[EMBRPOS_L].pot_far_sw() ){
     atom_tcon_values[atom_count][3][4] = 1; // R3B
     atom_tcon_values[atom_count][3][5] = 1; // R3W
     // R3A according to res8 swA
-    atom_tcon_values[atom_count][3][6] = am->embr_imag_pot_far_swA(EMBRPOS_L);
+    atom_tcon_values[atom_count][3][6] = am->embr_imag[EMBRPOS_L].pot_far_swA();
   }
 
   // --- IC controlling res9 & res10 & res11 & res12 ---
@@ -646,34 +646,34 @@ int encoder::detail::encode_resistors( Slice const& sl,
   am = sl.ana.getAtom(2,0);
   // TCON9&10: TCON0 for IC controlling res9 (R0) & res10 (R1)
   // Modify R0B (pos 0) according to res9 status
-  if ( am->embr_real_pot_near_sw(EMBRPOS_L) ){
+  if ( am->embr_real[EMBRPOS_L].pot_near_sw() ){
     atom_tcon_values[atom_count][4][0] = 1; // R0B
     atom_tcon_values[atom_count][4][1] = 1; // R0W
     // R0A according to res9 swA
-    atom_tcon_values[atom_count][4][2] = am->embr_real_pot_near_swA(EMBRPOS_L);
+    atom_tcon_values[atom_count][4][2] = am->embr_real[EMBRPOS_L].pot_near_swA();
   }
   // Modify R1B (pos 4) according to res10 status
-  if ( am->embr_real_pot_far_sw(EMBRPOS_L) ){
+  if ( am->embr_real[EMBRPOS_L].pot_far_sw() ){
     atom_tcon_values[atom_count][4][4] = 1; // R1B
     atom_tcon_values[atom_count][4][5] = 1; // R1W
     // R1A according to res10 swA
-    atom_tcon_values[atom_count][4][6] = am->embr_real_pot_far_swA(EMBRPOS_L);
+    atom_tcon_values[atom_count][4][6] = am->embr_real[EMBRPOS_L].pot_far_swA();
   }
 
   // TCON11&12: TCON1 for IC controlling res11 (R2) & res12 (R3)
   // Modify R2B (pos 0) according to res11 status
-  if ( am->embr_imag_pot_near_sw(EMBRPOS_L) ){
+  if ( am->embr_imag[EMBRPOS_L].pot_near_sw() ){
     atom_tcon_values[atom_count][5][0] = 1; // R2B
     atom_tcon_values[atom_count][5][1] = 1; // R2W
     // R2A according to res11 swA
-    atom_tcon_values[atom_count][5][2] = am->embr_imag_pot_near_swA(EMBRPOS_L);
+    atom_tcon_values[atom_count][5][2] = am->embr_imag[EMBRPOS_L].pot_near_swA();
   }
   // Modify R3B (pos 4) according to res12 status
-  if ( am->embr_imag_pot_far_sw(EMBRPOS_L) ){
+  if ( am->embr_imag[EMBRPOS_L].pot_far_sw() ){
     atom_tcon_values[atom_count][5][4] = 1; // R3B
     atom_tcon_values[atom_count][5][5] = 1; // R3W
     // R3A according to res12 swA
-    atom_tcon_values[atom_count][5][6] = am->embr_imag_pot_far_swA(EMBRPOS_L);
+    atom_tcon_values[atom_count][5][6] = am->embr_imag[EMBRPOS_L].pot_far_swA();
   }
 
   // -- Unused -- retain the default value 10001000 (= 136ul)
@@ -696,28 +696,28 @@ int encoder::detail::encode_resistors( Slice const& sl,
   // Fill in resistor values (8-bit)
 
   am = sl.ana.getAtom(0,1);
-  atom_res_values[atom_count][0]  = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_D);
-  atom_res_values[atom_count][1]  = (uint8_t) am->embr_real_pot_far_tap(EMBRPOS_D);
-  atom_res_values[atom_count][2]  = (uint8_t) am->embr_imag_pot_near_tap(EMBRPOS_D);
-  atom_res_values[atom_count][3]  = (uint8_t) am->embr_imag_pot_far_tap(EMBRPOS_D);
+  atom_res_values[atom_count][0]  = (uint8_t) am->embr_real[EMBRPOS_D].pot_near_tap();
+  atom_res_values[atom_count][1]  = (uint8_t) am->embr_real[EMBRPOS_D].pot_far_tap();
+  atom_res_values[atom_count][2]  = (uint8_t) am->embr_imag[EMBRPOS_D].pot_near_tap();
+  atom_res_values[atom_count][3]  = (uint8_t) am->embr_imag[EMBRPOS_D].pot_far_tap();
 
   am = sl.ana.getAtom(0,2);
-  atom_res_values[atom_count][4]  = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_D);
-  atom_res_values[atom_count][5]  = (uint8_t) am->embr_real_pot_far_tap(EMBRPOS_D);
-  atom_res_values[atom_count][6]  = (uint8_t) am->embr_imag_pot_near_tap(EMBRPOS_D);
-  atom_res_values[atom_count][7]  = (uint8_t) am->embr_imag_pot_far_tap(EMBRPOS_D);
+  atom_res_values[atom_count][4]  = (uint8_t) am->embr_real[EMBRPOS_D].pot_near_tap();
+  atom_res_values[atom_count][5]  = (uint8_t) am->embr_real[EMBRPOS_D].pot_far_tap();
+  atom_res_values[atom_count][6]  = (uint8_t) am->embr_imag[EMBRPOS_D].pot_near_tap();
+  atom_res_values[atom_count][7]  = (uint8_t) am->embr_imag[EMBRPOS_D].pot_far_tap();
 
   am = sl.ana.getAtom(0,3);
-  atom_res_values[atom_count][8]  = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_D);
-  atom_res_values[atom_count][9]  = (uint8_t) am->embr_real_pot_far_tap(EMBRPOS_D);
-  atom_res_values[atom_count][10] = (uint8_t) am->embr_imag_pot_near_tap(EMBRPOS_D);
-  atom_res_values[atom_count][11] = (uint8_t) am->embr_imag_pot_far_tap(EMBRPOS_D);
+  atom_res_values[atom_count][8]  = (uint8_t) am->embr_real[EMBRPOS_D].pot_near_tap();
+  atom_res_values[atom_count][9]  = (uint8_t) am->embr_real[EMBRPOS_D].pot_far_tap();
+  atom_res_values[atom_count][10] = (uint8_t) am->embr_imag[EMBRPOS_D].pot_near_tap();
+  atom_res_values[atom_count][11] = (uint8_t) am->embr_imag[EMBRPOS_D].pot_far_tap();
 
   am = sl.ana.getAtom(0,4);
-  atom_res_values[atom_count][12] = (uint8_t) am->embr_real_pot_near_tap(EMBRPOS_D);
-  atom_res_values[atom_count][13] = (uint8_t) am->embr_real_pot_far_tap(EMBRPOS_D);
-  atom_res_values[atom_count][14] = (uint8_t) am->embr_imag_pot_near_tap(EMBRPOS_D);
-  atom_res_values[atom_count][15] = (uint8_t) am->embr_imag_pot_far_tap(EMBRPOS_D);
+  atom_res_values[atom_count][12] = (uint8_t) am->embr_real[EMBRPOS_D].pot_near_tap();
+  atom_res_values[atom_count][13] = (uint8_t) am->embr_real[EMBRPOS_D].pot_far_tap();
+  atom_res_values[atom_count][14] = (uint8_t) am->embr_imag[EMBRPOS_D].pot_near_tap();
+  atom_res_values[atom_count][15] = (uint8_t) am->embr_imag[EMBRPOS_D].pot_far_tap();
 
   ////////////////////////////////////////
   // Fill in TCON register values (8-bit)
@@ -732,34 +732,34 @@ int encoder::detail::encode_resistors( Slice const& sl,
   am = sl.ana.getAtom(0,1);
   // TCON1&2: TCON0 for IC controlling res1 (R0) & res2 (R1)
   // Modify R0B (pos 0) according to res1 status
-  if ( am->embr_real_pot_near_sw(EMBRPOS_D) ){
+  if ( am->embr_real[EMBRPOS_D].pot_near_sw() ){
     atom_tcon_values[atom_count][0][0] = 1; // R0B
     atom_tcon_values[atom_count][0][1] = 1; // R0W
     // R0A according to res1 swA
-    atom_tcon_values[atom_count][0][2] = am->embr_real_pot_near_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][0][2] = am->embr_real[EMBRPOS_D].pot_near_swA();
   }
   // Modify R1B (pos 4) according to res2 status
-  if ( am->embr_real_pot_far_sw(EMBRPOS_D) ){
+  if ( am->embr_real[EMBRPOS_D].pot_far_sw() ){
     atom_tcon_values[atom_count][0][4] = 1; // R1B
     atom_tcon_values[atom_count][0][5] = 1; // R1W
     // R1A according to res2 swA
-    atom_tcon_values[atom_count][0][6] = am->embr_real_pot_far_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][0][6] = am->embr_real[EMBRPOS_D].pot_far_swA();
   }
 
   // TCON3&4: TCON1 for IC controlling res3 (R2) & res4 (R3)
   // Modify R2B (pos 0) according to res3 status
-  if ( am->embr_imag_pot_near_sw(EMBRPOS_D) ){
+  if ( am->embr_imag[EMBRPOS_D].pot_near_sw() ){
     atom_tcon_values[atom_count][1][0] = 1; // R2B
     atom_tcon_values[atom_count][1][1] = 1; // R2W
     // R2A according to res3 swA
-    atom_tcon_values[atom_count][1][2] = am->embr_imag_pot_near_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][1][2] = am->embr_imag[EMBRPOS_D].pot_near_swA();
   }
   // Modify R3B (pos 4) according to res4 status
-  if ( am->embr_imag_pot_far_sw(EMBRPOS_D) ){
+  if ( am->embr_imag[EMBRPOS_D].pot_far_sw() ){
     atom_tcon_values[atom_count][1][4] = 1; // R3B
     atom_tcon_values[atom_count][1][5] = 1; // R3W
     // R3A according to res4 swA
-    atom_tcon_values[atom_count][1][6] = am->embr_imag_pot_far_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][1][6] = am->embr_imag[EMBRPOS_D].pot_far_swA();
   }
 
   // --- IC controlling res5 & res6 & res7 & res8 ---
@@ -772,34 +772,34 @@ int encoder::detail::encode_resistors( Slice const& sl,
   am = sl.ana.getAtom(0,2);
   // TCON5&6: TCON0 for IC controlling res5 (R0) & res6 (R1)
   // Modify R0B (pos 0) according to res5 status
-  if ( am->embr_real_pot_near_sw(EMBRPOS_D) ){
+  if ( am->embr_real[EMBRPOS_D].pot_near_sw() ){
     atom_tcon_values[atom_count][2][0] = 1; // R0B
     atom_tcon_values[atom_count][2][1] = 1; // R0W
     // R0A according to res5 swA
-    atom_tcon_values[atom_count][2][2] = am->embr_real_pot_near_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][2][2] = am->embr_real[EMBRPOS_D].pot_near_swA();
   }
   // Modify R1B (pos 4) according to res6 status
-  if ( am->embr_real_pot_far_sw(EMBRPOS_D) ){
+  if ( am->embr_real[EMBRPOS_D].pot_far_sw() ){
     atom_tcon_values[atom_count][2][4] = 1; // R1B
     atom_tcon_values[atom_count][2][5] = 1; // R1W
     // R1A according to res6 swA
-    atom_tcon_values[atom_count][2][6] = am->embr_real_pot_far_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][2][6] = am->embr_real[EMBRPOS_D].pot_far_swA();
   }
 
   // TCON7&8: TCON1 for IC controlling res7 (R2) & res8 (R3)
   // Modify R2B (pos 0) according to res7 status
-  if ( am->embr_imag_pot_near_sw(EMBRPOS_D) ){
+  if ( am->embr_imag[EMBRPOS_D].pot_near_sw() ){
     atom_tcon_values[atom_count][3][0] = 1; // R2B
     atom_tcon_values[atom_count][3][1] = 1; // R2W
     // R2A according to res7 swA
-    atom_tcon_values[atom_count][3][2] = am->embr_imag_pot_near_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][3][2] = am->embr_imag[EMBRPOS_D].pot_near_swA();
   }
   // Modify R3B (pos 4) according to res8 status
-  if ( am->embr_imag_pot_far_sw(EMBRPOS_D) ){
+  if ( am->embr_imag[EMBRPOS_D].pot_far_sw() ){
     atom_tcon_values[atom_count][3][4] = 1; // R3B
     atom_tcon_values[atom_count][3][5] = 1; // R3W
     // R3A according to res8 swA
-    atom_tcon_values[atom_count][3][6] = am->embr_imag_pot_far_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][3][6] = am->embr_imag[EMBRPOS_D].pot_far_swA();
   }
 
   // --- IC controlling res9 & res10 & res11 & res12 ---
@@ -812,34 +812,34 @@ int encoder::detail::encode_resistors( Slice const& sl,
   am = sl.ana.getAtom(0,3);
   // TCON9&10: TCON0 for IC controlling res9 (R0) & res10 (R1)
   // Modify R0B (pos 0) according to res9 status
-  if ( am->embr_real_pot_near_sw(EMBRPOS_D) ){
+  if ( am->embr_real[EMBRPOS_D].pot_near_sw() ){
     atom_tcon_values[atom_count][4][0] = 1; // R0B
     atom_tcon_values[atom_count][4][1] = 1; // R0W
     // R0A according to res9 swA
-    atom_tcon_values[atom_count][4][2] = am->embr_real_pot_near_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][4][2] = am->embr_real[EMBRPOS_D].pot_near_swA();
   }
   // Modify R1B (pos 4) according to res10 status
-  if ( am->embr_real_pot_far_sw(EMBRPOS_D) ){
+  if ( am->embr_real[EMBRPOS_D].pot_far_sw() ){
     atom_tcon_values[atom_count][4][4] = 1; // R1B
     atom_tcon_values[atom_count][4][5] = 1; // R1W
     // R1A according to res10 swA
-    atom_tcon_values[atom_count][4][6] = am->embr_real_pot_far_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][4][6] = am->embr_real[EMBRPOS_D].pot_far_swA();
   }
 
   // TCON11&12: TCON1 for IC controlling res11 (R2) & res12 (R3)
   // Modify R2B (pos 0) according to res11 status
-  if ( am->embr_imag_pot_near_sw(EMBRPOS_D) ){
+  if ( am->embr_imag[EMBRPOS_D].pot_near_sw() ){
     atom_tcon_values[atom_count][5][0] = 1; // R2B
     atom_tcon_values[atom_count][5][1] = 1; // R2W
     // R2A according to res11 swA
-    atom_tcon_values[atom_count][5][2] = am->embr_imag_pot_near_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][5][2] = am->embr_imag[EMBRPOS_D].pot_near_swA();
   }
   // Modify R3B (pos 4) according to res12 status
-  if ( am->embr_imag_pot_far_sw(EMBRPOS_D) ){
+  if ( am->embr_imag[EMBRPOS_D].pot_far_sw() ){
     atom_tcon_values[atom_count][5][4] = 1; // R3B
     atom_tcon_values[atom_count][5][5] = 1; // R3W
     // R3A according to res12 swA
-    atom_tcon_values[atom_count][5][6] = am->embr_imag_pot_far_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][5][6] = am->embr_imag[EMBRPOS_D].pot_far_swA();
   }
 
   // --- IC controlling res13 & res14 & res15 & res16 ---
@@ -852,34 +852,34 @@ int encoder::detail::encode_resistors( Slice const& sl,
   am = sl.ana.getAtom(0,4);
   // TCON13&14: TCON0 for IC controlling res13 (R0) & res14 (R1)
   // Modify R0B (pos 0) according to res13 status
-  if ( am->embr_real_pot_near_sw(EMBRPOS_D) ){
+  if ( am->embr_real[EMBRPOS_D].pot_near_sw() ){
     atom_tcon_values[atom_count][6][0] = 1; // R0B
     atom_tcon_values[atom_count][6][1] = 1; // R0W
     // R0A according to res13 swA
-    atom_tcon_values[atom_count][6][2] = am->embr_real_pot_near_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][6][2] = am->embr_real[EMBRPOS_D].pot_near_swA();
   }
   // Modify R1B (pos 4) according to res14 status
-  if ( am->embr_real_pot_far_sw(EMBRPOS_D) ){
+  if ( am->embr_real[EMBRPOS_D].pot_far_sw() ){
     atom_tcon_values[atom_count][6][4] = 1; // R1B
     atom_tcon_values[atom_count][6][5] = 1; // R1W
     // R1A according to res14 swA
-    atom_tcon_values[atom_count][6][6] = am->embr_real_pot_far_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][6][6] = am->embr_real[EMBRPOS_D].pot_far_swA();
   }
 
   // TCON11&12: TCON1 for IC controlling res15 (R2) & res16 (R3)
   // Modify R2B (pos 0) according to res15 status
-  if ( am->embr_imag_pot_near_sw(EMBRPOS_D) ){
+  if ( am->embr_imag[EMBRPOS_D].pot_near_sw() ){
     atom_tcon_values[atom_count][7][0] = 1; // R2B
     atom_tcon_values[atom_count][7][1] = 1; // R2W
     // R2A according to res15 swA
-    atom_tcon_values[atom_count][7][2] = am->embr_imag_pot_near_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][7][2] = am->embr_imag[EMBRPOS_D].pot_near_swA();
   }
   // Modify R3B (pos 4) according to res16 status
-  if ( am->embr_imag_pot_far_sw(EMBRPOS_D) ){
+  if ( am->embr_imag[EMBRPOS_D].pot_far_sw() ){
     atom_tcon_values[atom_count][7][4] = 1; // R3B
     atom_tcon_values[atom_count][7][5] = 1; // R3W
     // R3A according to res16 swA
-    atom_tcon_values[atom_count][7][6] = am->embr_imag_pot_far_swA(EMBRPOS_D);
+    atom_tcon_values[atom_count][7][6] = am->embr_imag[EMBRPOS_D].pot_far_swA();
   }
 
 #ifdef VERBOSE_ENC
@@ -957,24 +957,24 @@ int encoder::detail::encode_switches( Slice const& sl, vector<uint32_t>& switche
       // always be true in current design)
       // THEN
       // modify atom_sw_status according to current PCB implementation
-      atom_sw_status[atom_count][0] = !am->embr_real_sw_mid(EMBRPOS_R);
-      atom_sw_status[atom_count][1] = !am->embr_real_sw_sc(EMBRPOS_R);
+      atom_sw_status[atom_count][0] = !am->embr_real[EMBRPOS_R].sw_mid();
+      atom_sw_status[atom_count][1] = !am->embr_real[EMBRPOS_R].sw_sc();
 
       // IF
       // branch at position EMBRPOS_U (up) physically exist at the atom (should
       // always be true in current design)
       // THEN
       // modify atom_sw_status according to current PCB implementation
-      atom_sw_status[atom_count][2] = !am->embr_real_sw_sc(EMBRPOS_U);
-      atom_sw_status[atom_count][3] = !am->embr_real_sw_mid(EMBRPOS_U);
+      atom_sw_status[atom_count][2] = !am->embr_real[EMBRPOS_U].sw_sc();
+      atom_sw_status[atom_count][3] = !am->embr_real[EMBRPOS_U].sw_mid();
 
       // IF
       // branch at position EMBRPOS_UR (up-right) physically exist at the atom (should
       // always be true in current design)
       // THEN
       // modify atom_sw_status according to current PCB implementation
-      atom_sw_status[atom_count][4] = !am->embr_real_sw_sc(EMBRPOS_UR);
-      atom_sw_status[atom_count][5] = !am->embr_real_sw_mid(EMBRPOS_UR);
+      atom_sw_status[atom_count][4] = !am->embr_real[EMBRPOS_UR].sw_sc();
+      atom_sw_status[atom_count][5] = !am->embr_real[EMBRPOS_UR].sw_mid();
 
       // Two last bits of first byte are unused - set to 1. ( actually redundant
       // as atom_sw_status[atom_count] has been .set() )
@@ -1006,26 +1006,26 @@ int encoder::detail::encode_switches( Slice const& sl, vector<uint32_t>& switche
   am = sl.ana.getAtom(0,0);
   // Check physical (should always be ok) existance of EMBRPOS_L branch of
   // atom[0][0]. If so modify atom_sw_status according to current PCB implem.
-  atom_sw_status[atom_count][0] = !am->embr_real_sw_sc(EMBRPOS_L);
-  atom_sw_status[atom_count][1] = !am->embr_real_sw_mid(EMBRPOS_L);
-  atom_sw_status[atom_count][2] = !am->embr_imag_sw_sc(EMBRPOS_L);
-  atom_sw_status[atom_count][3] = !am->embr_imag_sw_mid(EMBRPOS_L);
+  atom_sw_status[atom_count][0] = !am->embr_real[EMBRPOS_L].sw_sc();
+  atom_sw_status[atom_count][1] = !am->embr_real[EMBRPOS_L].sw_mid();
+  atom_sw_status[atom_count][2] = !am->embr_imag[EMBRPOS_L].sw_sc();
+  atom_sw_status[atom_count][3] = !am->embr_imag[EMBRPOS_L].sw_mid();
 
   am = sl.ana.getAtom(1,0);
   // Check physical (should always be ok) existance of EMBRPOS_L branch of
   // atom[1][0]. If so modify atom_sw_status according to current PCB implem.
-  atom_sw_status[atom_count][4] = !am->embr_real_sw_sc(EMBRPOS_L);
-  atom_sw_status[atom_count][5] = !am->embr_real_sw_mid(EMBRPOS_L);
-  atom_sw_status[atom_count][6] = !am->embr_imag_sw_sc(EMBRPOS_L);
-  atom_sw_status[atom_count][7] = !am->embr_imag_sw_mid(EMBRPOS_L);
+  atom_sw_status[atom_count][4] = !am->embr_real[EMBRPOS_L].sw_sc();
+  atom_sw_status[atom_count][5] = !am->embr_real[EMBRPOS_L].sw_mid();
+  atom_sw_status[atom_count][6] = !am->embr_imag[EMBRPOS_L].sw_sc();
+  atom_sw_status[atom_count][7] = !am->embr_imag[EMBRPOS_L].sw_mid();
 
   am = sl.ana.getAtom(2,0);
   // Check physical (should always be ok) existance of EMBRPOS_L branch of
   // atom[2][0]. If so modify atom_sw_status according to current PCB implem.
-  atom_sw_status[atom_count][8] = !am->embr_real_sw_sc(EMBRPOS_L);
-  atom_sw_status[atom_count][9] = !am->embr_real_sw_mid(EMBRPOS_L);
-  atom_sw_status[atom_count][10] = !am->embr_imag_sw_sc(EMBRPOS_L);
-  atom_sw_status[atom_count][11] = !am->embr_imag_sw_mid(EMBRPOS_L);
+  atom_sw_status[atom_count][8] = !am->embr_real[EMBRPOS_L].sw_sc();
+  atom_sw_status[atom_count][9] = !am->embr_real[EMBRPOS_L].sw_mid();
+  atom_sw_status[atom_count][10] = !am->embr_imag[EMBRPOS_L].sw_sc();
+  atom_sw_status[atom_count][11] = !am->embr_imag[EMBRPOS_L].sw_mid();
 
   ++atom_count;
 
@@ -1041,34 +1041,34 @@ int encoder::detail::encode_switches( Slice const& sl, vector<uint32_t>& switche
   am = sl.ana.getAtom(0,4);
   // Check physical (should always be ok) existance of EMBRPOS_D branch of
   // atom[0][4]. If so modify atom_sw_status according to current PCB implem.
-  atom_sw_status[atom_count][0] = !am->embr_real_sw_sc(EMBRPOS_D);
-  atom_sw_status[atom_count][1] = !am->embr_real_sw_mid(EMBRPOS_D);
-  atom_sw_status[atom_count][2] = !am->embr_imag_sw_sc(EMBRPOS_D);
-  atom_sw_status[atom_count][3] = !am->embr_imag_sw_mid(EMBRPOS_D);
+  atom_sw_status[atom_count][0] = !am->embr_real[EMBRPOS_D].sw_sc();
+  atom_sw_status[atom_count][1] = !am->embr_real[EMBRPOS_D].sw_mid();
+  atom_sw_status[atom_count][2] = !am->embr_imag[EMBRPOS_D].sw_sc();
+  atom_sw_status[atom_count][3] = !am->embr_imag[EMBRPOS_D].sw_mid();
 
   am = sl.ana.getAtom(0,1);
   // Check physical (should always be ok) existance of EMBRPOS_D branch of
   // atom[0][1]. If so modify atom_sw_status according to current PCB implem.
-  atom_sw_status[atom_count][4] = !am->embr_real_sw_sc(EMBRPOS_D);
-  atom_sw_status[atom_count][5] = !am->embr_real_sw_mid(EMBRPOS_D);
-  atom_sw_status[atom_count][6] = !am->embr_imag_sw_sc(EMBRPOS_D);
-  atom_sw_status[atom_count][7] = !am->embr_imag_sw_mid(EMBRPOS_D);
+  atom_sw_status[atom_count][4] = !am->embr_real[EMBRPOS_D].sw_sc();
+  atom_sw_status[atom_count][5] = !am->embr_real[EMBRPOS_D].sw_mid();
+  atom_sw_status[atom_count][6] = !am->embr_imag[EMBRPOS_D].sw_sc();
+  atom_sw_status[atom_count][7] = !am->embr_imag[EMBRPOS_D].sw_mid();
 
   am = sl.ana.getAtom(0,2);
   // Check physical (should always be ok) existance of EMBRPOS_D branch of
   // atom[0][2]. If so modify atom_sw_status according to current PCB implem.
-  atom_sw_status[atom_count][ 8] = !am->embr_real_sw_sc(EMBRPOS_D);
-  atom_sw_status[atom_count][ 9] = !am->embr_real_sw_mid(EMBRPOS_D);
-  atom_sw_status[atom_count][10] = !am->embr_imag_sw_sc(EMBRPOS_D);
-  atom_sw_status[atom_count][11] = !am->embr_imag_sw_mid(EMBRPOS_D);
+  atom_sw_status[atom_count][ 8] = !am->embr_real[EMBRPOS_D].sw_sc();
+  atom_sw_status[atom_count][ 9] = !am->embr_real[EMBRPOS_D].sw_mid();
+  atom_sw_status[atom_count][10] = !am->embr_imag[EMBRPOS_D].sw_sc();
+  atom_sw_status[atom_count][11] = !am->embr_imag[EMBRPOS_D].sw_mid();
 
   am = sl.ana.getAtom(0,3);
   // Check physical (should always be ok) existance of EMBRPOS_D branch of
   // atom[0][3]. If so modify atom_sw_status according to current PCB implem.
-  atom_sw_status[atom_count][12] = !am->embr_real_sw_sc(EMBRPOS_D);
-  atom_sw_status[atom_count][13] = !am->embr_real_sw_mid(EMBRPOS_D);
-  atom_sw_status[atom_count][14] = !am->embr_imag_sw_sc(EMBRPOS_D);
-  atom_sw_status[atom_count][15] = !am->embr_imag_sw_mid(EMBRPOS_D);
+  atom_sw_status[atom_count][12] = !am->embr_real[EMBRPOS_D].sw_sc();
+  atom_sw_status[atom_count][13] = !am->embr_real[EMBRPOS_D].sw_mid();
+  atom_sw_status[atom_count][14] = !am->embr_imag[EMBRPOS_D].sw_sc();
+  atom_sw_status[atom_count][15] = !am->embr_imag[EMBRPOS_D].sw_mid();
 
 #ifdef VERBOSE_ENC
   for ( k = 0 ; k != atom_sw_status.size() ; ++k )
@@ -2173,8 +2173,7 @@ int encoder::detail::encode_TDpositions( Slice const& sl, vector<uint32_t>& pos_
   return 0;
 }
 
-int encoder::detail::encode_TDauxiliary( Slice const& sl,
-                                       vector<uint32_t>& pert_conf ){
+int encoder::detail::encode_TDauxiliary(vector<uint32_t>& pert_conf){
 
   pert_conf.clear();
   int32_t temp;
