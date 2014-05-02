@@ -30,7 +30,7 @@ int Atom::reset( bool complete ){
   // Just reseting virtual existance to false and reinitilizing data structures
 
   // Reset node
-  _node.reset( complete );
+  node.reset( complete );
 
   // Reset branches
   int ans = 0;
@@ -51,19 +51,19 @@ size_t Atom::getEmbrCount() const{
 }
 
 void Atom::calibrate(Atom const& cal_am){
-  _node.set_real_adc_offset_corr( cal_am.node_real_adc_offset_corr() );
-  _node.set_imag_adc_offset_corr( cal_am.node_imag_adc_offset_corr() );
-  _node.set_real_adc_gain_corr( cal_am.node_real_adc_gain_corr() );
-  _node.set_imag_adc_gain_corr( cal_am.node_real_adc_gain_corr() );
+  node.set_real_adc_offset_corr( cal_am.node.real_adc_offset_corr() );
+  node.set_imag_adc_offset_corr( cal_am.node.imag_adc_offset_corr() );
+  node.set_real_adc_gain_corr( cal_am.node.real_adc_gain_corr() );
+  node.set_imag_adc_gain_corr( cal_am.node.real_adc_gain_corr() );
 
-  _node.set_real_pot_current_rab( cal_am.node_real_pot_current_rab(), true);
-  _node.set_imag_pot_current_rab( cal_am.node_imag_pot_current_rab(), true);
-  _node.set_real_pot_current_rw( cal_am.node_real_pot_current_rw(), true);
-  _node.set_imag_pot_current_rw( cal_am.node_imag_pot_current_rw(), true);
-  _node.set_real_pot_resistance_rab( cal_am.node_real_pot_resistance_rab(), true);
-  _node.set_imag_pot_resistance_rab( cal_am.node_imag_pot_resistance_rab(), true);
-  _node.set_real_pot_resistance_rw( cal_am.node_real_pot_resistance_rw(), true);
-  _node.set_imag_pot_resistance_rw( cal_am.node_imag_pot_resistance_rw(), true);
+  node.set_real_pot_current_rab( cal_am.node.real_pot_current_rab(), true);
+  node.set_imag_pot_current_rab( cal_am.node.imag_pot_current_rab(), true);
+  node.set_real_pot_current_rw( cal_am.node.real_pot_current_rw(), true);
+  node.set_imag_pot_current_rw( cal_am.node.imag_pot_current_rw(), true);
+  node.set_real_pot_resistance_rab( cal_am.node.real_pot_resistance_rab(), true);
+  node.set_imag_pot_resistance_rab( cal_am.node.imag_pot_resistance_rab(), true);
+  node.set_real_pot_resistance_rw( cal_am.node.real_pot_resistance_rw(), true);
+  node.set_imag_pot_resistance_rw( cal_am.node.imag_pot_resistance_rw(), true);
 
   if ( _embr_exist[EMBRPOS_U] ){
     set_embr_real_pot_near_rab( EMBRPOS_U, cal_am.embr_real_pot_near_rab(EMBRPOS_U), true);
@@ -187,66 +187,23 @@ double Atom::getMinMaxAchievableR() const{
 
   // --- Take into account node ---
   // real part for the node
-  if ( _node.real_pot_current_getRMax() < minMaxR )
-    minMaxR = _node.real_pot_current_getRMax();
-  if ( _node.real_pot_resistance_getRMax() < minMaxR )
-    minMaxR = _node.real_pot_resistance_getRMax();
+  if ( node.real_pot_current_getRMax() < minMaxR )
+    minMaxR = node.real_pot_current_getRMax();
+  if ( node.real_pot_resistance_getRMax() < minMaxR )
+    minMaxR = node.real_pot_resistance_getRMax();
   // imag part for the node
-  if ( _node.imag_pot_current_getRMax() < minMaxR )
-    minMaxR = _node.imag_pot_current_getRMax();
-  if ( _node.imag_pot_resistance_getRMax() < minMaxR )
-    minMaxR = _node.imag_pot_resistance_getRMax();
+  if ( node.imag_pot_current_getRMax() < minMaxR )
+    minMaxR = node.imag_pot_current_getRMax();
+  if ( node.imag_pot_resistance_getRMax() < minMaxR )
+    minMaxR = node.imag_pot_resistance_getRMax();
 
   return minMaxR;
 }
 
 
-
 /*****************************************************************************
 ****** GETTERS ***************************************************************
 *****************************************************************************/
-
-//////////////////////////////////////////////////////////////////////////////
-///// NODE RELATED ///////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-
-void Atom::set_node_real_adc_offset_corr( double val ){ _node.set_real_adc_offset_corr( val ); }
-void Atom::set_node_real_adc_gain_corr( double val ){ _node.set_real_adc_gain_corr( val ); }
-void Atom::set_node_real_sw_voltage(bool val){ _node.set_real_sw_voltage(val); }
-void Atom::set_node_real_sw_current(bool val){ _node.set_real_sw_current(val); }
-void Atom::set_node_real_sw_current_shunt(bool val){ _node.set_real_sw_current_shunt(val); }
-void Atom::set_node_real_sw_resistance(bool val){ _node.set_real_sw_resistance(val); }
-int Atom::set_node_real_pot_current_rab(double val, bool updateTap){ return _node.set_real_pot_current_rab( val, updateTap ); }
-int Atom::set_node_real_pot_current_rw(double val, bool updateTap){ return _node.set_real_pot_current_rw( val, updateTap ); }
-int Atom::set_node_real_pot_current_r(double val){ return _node.set_real_pot_current_r(val); }
-int Atom::set_node_real_pot_current_tap( unsigned int val){ return _node.set_real_pot_current_tap(val); }
-void Atom::set_node_real_pot_current_sw(bool val){ return _node.set_real_pot_current_sw(val); }
-int Atom::set_node_real_pot_current_swA( bool val, bool updateTap){ return _node.set_real_pot_current_swA(val,updateTap); }
-int Atom::set_node_real_pot_resistance_rab(double val, bool updateTap){ return _node.set_real_pot_resistance_rab( val, updateTap ); }
-int Atom::set_node_real_pot_resistance_rw(double val, bool updateTap){ return _node.set_real_pot_resistance_rw( val, updateTap ); }
-int Atom::set_node_real_pot_resistance_r(double val){ return _node.set_real_pot_resistance_r(val); }
-int Atom::set_node_real_pot_resistance_tap(unsigned int val){ return _node.set_real_pot_resistance_tap(val); }
-void Atom::set_node_real_pot_resistance_sw(bool val){ return _node.set_real_pot_resistance_sw(val); }
-int Atom::set_node_real_pot_resistance_swA( bool val, bool updateTap){ return _node.set_real_pot_resistance_swA(val,updateTap); }
-
-void Atom::set_node_imag_adc_offset_corr( double val ){ _node.set_imag_adc_offset_corr( val ); }
-void Atom::set_node_imag_adc_gain_corr( double val ){ _node.set_imag_adc_gain_corr( val ); }
-void Atom::set_node_imag_sw_voltage(bool val){ _node.set_imag_sw_voltage(val); }
-void Atom::set_node_imag_sw_current(bool val){ _node.set_imag_sw_current(val); }
-void Atom::set_node_imag_sw_current_shunt(bool val){ _node.set_imag_sw_current_shunt(val); }
-void Atom::set_node_imag_sw_resistance(bool val){ _node.set_imag_sw_resistance(val); }
-int Atom::set_node_imag_pot_current_rab(double val, bool updateTap){ return _node.set_imag_pot_current_rab( val, updateTap ); }
-int Atom::set_node_imag_pot_current_rw(double val, bool updateTap){ return _node.set_imag_pot_current_rw( val, updateTap ); }
-int Atom::set_node_imag_pot_current_r(double val){ return _node.set_imag_pot_current_r(val); }
-int Atom::set_node_imag_pot_current_tap( unsigned int val){ return _node.set_imag_pot_current_tap(val); }
-void Atom::set_node_imag_pot_current_sw(bool val){ return _node.set_imag_pot_current_sw(val); }
-int Atom::set_node_imag_pot_current_swA( bool val, bool updateTap){ return _node.set_imag_pot_current_swA(val,updateTap); }
-int Atom::set_node_imag_pot_resistance_rab(double val, bool updateTap){ return _node.set_imag_pot_resistance_rab( val, updateTap ); }
-int Atom::set_node_imag_pot_resistance_rw(double val, bool updateTap){ return _node.set_imag_pot_resistance_rw( val, updateTap ); }
-int Atom::set_node_imag_pot_resistance_r(double val){ return _node.set_imag_pot_resistance_r(val); }
-int Atom::set_node_imag_pot_resistance_tap(unsigned int val){ return _node.set_imag_pot_resistance_tap(val); }
-void Atom::set_node_imag_pot_resistance_sw(bool val){ return _node.set_imag_pot_resistance_sw(val); }
-int Atom::set_node_imag_pot_resistance_swA( bool val, bool updateTap){ return _node.set_imag_pot_resistance_swA(val,updateTap); }
 
 //////////////////////////////////////////////////////////////////////////////
 ////BRANCH RELATED ///////////////////////////////////////////////////////////
@@ -287,48 +244,6 @@ int Atom::set_embr_imag_pot_far_swA(size_t pos, bool val, bool updateTap){ retur
 /*******************************************************************************
 ******** GETTERS ***************************************************************
 *******************************************************************************/
-
-////////////////////////////////////////////////////////////////////////////////
-/////// NODE RELATED ///////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-double Atom::node_real_adc_offset_corr() const{ return _node.real_adc_offset_corr(); }
-double Atom::node_real_adc_gain_corr() const{ return _node.real_adc_gain_corr(); }
-bool Atom::node_real_sw_voltage() const{ return _node.real_sw_voltage(); }
-bool Atom::node_real_sw_current() const{ return _node.real_sw_current(); }
-bool Atom::node_real_sw_current_shunt() const{ return _node.real_sw_current_shunt(); }
-bool Atom::node_real_sw_resistance() const{ return _node.real_sw_resistance(); }
-double Atom::node_real_pot_current_rab() const{ return _node.real_pot_current_rab(); }
-double Atom::node_real_pot_current_rw() const{ return _node.real_pot_current_rw(); }
-double Atom::node_real_pot_current_r() const{ return _node.real_pot_current_r(); }
-unsigned int Atom::node_real_pot_current_tap() const{ return _node.real_pot_current_tap(); }
-bool Atom::node_real_pot_current_sw() const{ return _node.real_pot_current_sw(); }
-bool Atom::node_real_pot_current_swA() const{ return _node.real_pot_current_swA(); }
-double Atom::node_real_pot_resistance_rab() const{ return _node.real_pot_resistance_rab(); }
-double Atom::node_real_pot_resistance_rw() const{ return _node.real_pot_resistance_rw(); }
-double Atom::node_real_pot_resistance_r() const{ return _node.real_pot_resistance_r(); }
-unsigned int Atom::node_real_pot_resistance_tap() const{ return _node.real_pot_resistance_tap(); }
-bool Atom::node_real_pot_resistance_sw() const{ return _node.real_pot_resistance_sw(); }
-bool Atom::node_real_pot_resistance_swA() const{ return _node.real_pot_resistance_swA(); }
-
-double Atom::node_imag_adc_offset_corr() const{ return _node.imag_adc_offset_corr(); }
-double Atom::node_imag_adc_gain_corr() const{ return _node.imag_adc_gain_corr(); }
-bool Atom::node_imag_sw_voltage() const{ return _node.imag_sw_voltage(); }
-bool Atom::node_imag_sw_current() const{ return _node.imag_sw_current(); }
-bool Atom::node_imag_sw_current_shunt() const{ return _node.imag_sw_current_shunt(); }
-bool Atom::node_imag_sw_resistance() const{ return _node.imag_sw_resistance(); }
-double Atom::node_imag_pot_current_rab() const{ return _node.imag_pot_current_rab(); }
-double Atom::node_imag_pot_current_rw() const{ return _node.imag_pot_current_rw(); }
-double Atom::node_imag_pot_current_r() const{ return _node.imag_pot_current_r(); }
-unsigned int Atom::node_imag_pot_current_tap() const{ return _node.imag_pot_current_tap(); }
-bool Atom::node_imag_pot_current_sw() const{ return _node.imag_pot_current_sw(); }
-bool Atom::node_imag_pot_current_swA() const{ return _node.imag_pot_current_swA(); }
-double Atom::node_imag_pot_resistance_rab() const{ return _node.imag_pot_resistance_rab(); }
-double Atom::node_imag_pot_resistance_rw() const{ return _node.imag_pot_resistance_rw(); }
-double Atom::node_imag_pot_resistance_r() const{ return _node.imag_pot_resistance_r(); }
-unsigned int Atom::node_imag_pot_resistance_tap() const{ return _node.imag_pot_resistance_tap(); }
-bool Atom::node_imag_pot_resistance_sw() const{ return _node.imag_pot_resistance_sw(); }
-bool Atom::node_imag_pot_resistance_swA() const{ return _node.imag_pot_resistance_swA(); }
 
 //////////////////////////////////////////////////////////////////////////////
 ////BRANCH RELATED ///////////////////////////////////////////////////////////

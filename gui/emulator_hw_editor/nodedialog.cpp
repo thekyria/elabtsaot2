@@ -39,19 +39,19 @@ int NodeDialog::exec(){
   bottomLay->addLayout( switchesLay );
 
   sw_voltage = new QCheckBox("Voltage switch");
-  sw_voltage->setChecked( _a->node_sw_voltage(_real) );
+  sw_voltage->setChecked( _a->node.sw_voltage(_real) );
   switchesLay->addWidget( sw_voltage );
 
   sw_current = new QCheckBox("Current switch");
-  sw_current->setChecked( _a->node_sw_current(_real) );
+  sw_current->setChecked( _a->node.sw_current(_real) );
   switchesLay->addWidget( sw_current );
 
   sw_current_shunt = new QCheckBox("Current shunt switch");
-  sw_current_shunt->setChecked( _a->node_sw_current_shunt(_real) );
+  sw_current_shunt->setChecked( _a->node.sw_current_shunt(_real) );
   switchesLay->addWidget( sw_current_shunt );
 
   sw_resistance = new QCheckBox("Resistance switch");
-  sw_resistance->setChecked( _a->node_sw_resistance(_real) );
+  sw_resistance->setChecked( _a->node.sw_resistance(_real) );
   switchesLay->addWidget( sw_resistance );
 
   // ----- Current source -----
@@ -64,7 +64,7 @@ int NodeDialog::exec(){
   currentTapLay->addWidget( currentTapLabel );
   pot_current_tap = new QSpinBox();
   pot_current_tap->setRange( 0, 256 );
-  pot_current_tap->setValue( _a->node_pot_current_tap(_real) );
+  pot_current_tap->setValue( _a->node.pot_current_tap(_real) );
   currentTapLay->addWidget( pot_current_tap );
   connect( pot_current_tap, SIGNAL(valueChanged(int)),
            this, SLOT(currentPotSlot(int)) );
@@ -77,7 +77,7 @@ int NodeDialog::exec(){
   pot_current_r->setMaximum(1000000.);
   pot_current_r->setEnabled(false);
   pot_current_r->setUpdatesEnabled(true);
-  pot_current_r->setValue( _a->node_pot_current_r(_real) );
+  pot_current_r->setValue( _a->node.pot_current_r(_real) );
   currentResLay->addWidget( pot_current_r );
 
   QHBoxLayout* currentRabLay = new QHBoxLayout();
@@ -88,11 +88,11 @@ int NodeDialog::exec(){
   pot_current_rab->setRange( 0.0, 1000000.0 );
   pot_current_rab->setEnabled(false);
   pot_current_rab->setUpdatesEnabled(true);
-  pot_current_rab->setValue( _a->node_pot_current_rab(_real) );
+  pot_current_rab->setValue( _a->node.pot_current_rab(_real) );
   currentRabLay->addWidget( pot_current_rab );
 
   pot_current_sw = new QCheckBox("Current source pot switch");
-  pot_current_sw->setChecked( _a->node_pot_current_sw(_real) );
+  pot_current_sw->setChecked( _a->node.pot_current_sw(_real) );
   currentLay->addWidget( pot_current_sw );
 
   // ----- Resistance to ground -----
@@ -105,7 +105,7 @@ int NodeDialog::exec(){
   groundTapLay->addWidget( groundTapLabel );
   pot_resistance_tap = new QSpinBox();
   pot_resistance_tap->setRange( 0, 256 );
-  pot_resistance_tap->setValue( _a->node_pot_resistance_tap(_real) );
+  pot_resistance_tap->setValue( _a->node.pot_resistance_tap(_real) );
   groundTapLay->addWidget( pot_resistance_tap );
   connect( pot_resistance_tap, SIGNAL(valueChanged(int)),
            this, SLOT(groundPotSlot(int)) );
@@ -118,7 +118,7 @@ int NodeDialog::exec(){
   pot_resistance_r->setMaximum(1000000.0);
   pot_resistance_r->setEnabled(false);
   pot_resistance_r->setUpdatesEnabled(true);
-  pot_resistance_r->setValue( _a->node_pot_resistance_r(_real) );
+  pot_resistance_r->setValue( _a->node.pot_resistance_r(_real) );
   groundResLay->addWidget( pot_resistance_r );
 
   QHBoxLayout* groundRabLay = new QHBoxLayout();
@@ -129,11 +129,11 @@ int NodeDialog::exec(){
   pot_resistance_rab->setRange( 0.0 , 1000000.0 );
   pot_resistance_rab->setEnabled( false );
   pot_resistance_rab->setUpdatesEnabled( true );
-  pot_resistance_rab->setValue( _a->node_pot_resistance_rab(_real) );
+  pot_resistance_rab->setValue( _a->node.pot_resistance_rab(_real) );
   groundRabLay->addWidget( pot_resistance_rab );
 
   pot_resistance_sw = new QCheckBox("Ground pot switch");
-  pot_resistance_sw->setChecked( _a->node_pot_resistance_sw(_real) );
+  pot_resistance_sw->setChecked( _a->node.pot_resistance_sw(_real) );
   groundLay->addWidget( pot_resistance_sw );
 
   // ----- Buttons -----
@@ -150,16 +150,16 @@ int NodeDialog::exec(){
 
   if ( dialog->exec() ){
     // Dialog executed properly
-    _a->set_node_sw_voltage( sw_voltage->isChecked(), _real );
-    _a->set_node_sw_current( sw_current->isChecked(), _real );
-    _a->set_node_sw_current_shunt( sw_current_shunt->isChecked(), _real );
-    _a->set_node_sw_resistance( sw_resistance->isChecked(), _real );
+    _a->node.set_sw_voltage( sw_voltage->isChecked(), _real );
+    _a->node.set_sw_current( sw_current->isChecked(), _real );
+    _a->node.set_sw_current_shunt( sw_current_shunt->isChecked(), _real );
+    _a->node.set_sw_resistance( sw_resistance->isChecked(), _real );
 
-    _a->set_node_pot_current_tap( pot_current_tap->value(), _real );
-    _a->set_node_pot_current_sw( pot_current_sw->isChecked(), _real );
+    _a->node.set_pot_current_tap( pot_current_tap->value(), _real );
+    _a->node.set_pot_current_sw( pot_current_sw->isChecked(), _real );
 
-    _a->set_node_pot_resistance_tap( pot_resistance_tap->value(), _real );
-    _a->set_node_pot_resistance_sw( pot_resistance_sw->isChecked(), _real );
+    _a->node.set_pot_resistance_tap( pot_resistance_tap->value(), _real );
+    _a->node.set_pot_resistance_sw( pot_resistance_sw->isChecked(), _real );
     return 0;
   } else {
     // Dialog not executed properly
@@ -171,18 +171,18 @@ int NodeDialog::exec(){
 void NodeDialog::currentPotSlot( int val ){
 
   // save old tap val for restoring later
-  int oldTap = _a->node_pot_current_tap(_real);
+  int oldTap = _a->node.pot_current_tap(_real);
 
   // change tap val in order to get resistor val of the pot
-  if ( _a->set_node_pot_current_tap(val,_real) )
+  if ( _a->node.set_pot_current_tap(val,_real) )
     // problem changing tap val!
     return;
-  double resVal = _a->node_pot_current_r(_real);
+  double resVal = _a->node.pot_current_r(_real);
   pot_current_r->setValue( resVal );
 
   // restore old tap val - actual tap val will be updated only if the dialog is
   // properly excecuted
-  _a->set_node_pot_current_tap(oldTap,_real);
+  _a->node.set_pot_current_tap(oldTap,_real);
 
   return;
 }
@@ -190,18 +190,18 @@ void NodeDialog::currentPotSlot( int val ){
 void NodeDialog::groundPotSlot( int val ){
 
   // save old tap val for restoring later
-  int oldTap = _a->node_pot_resistance_tap(_real);
+  int oldTap = _a->node.pot_resistance_tap(_real);
 
   // change tap val in order to get resistor val of the pot
-  if ( _a->set_node_pot_resistance_tap(val,_real) )
+  if ( _a->node.set_pot_resistance_tap(val,_real) )
     // problem changing tap val!
     return;
-  double resVal = _a->node_pot_resistance_r(_real);
+  double resVal = _a->node.pot_resistance_r(_real);
   pot_resistance_r->setValue( resVal );
 
   // restore old tap val - actual tap val will be updated only if the dialog is
   // properly excecuted
-  _a->set_node_pot_resistance_tap(oldTap,_real);
+  _a->node.set_pot_resistance_tap(oldTap,_real);
 
   return;
 }

@@ -215,83 +215,62 @@ void FitterEditor::fittingPositionClickedSlot(int emulator_tab,
     xxx - embr pos according to EmbrPosition 0: EMBRPOS_ U; 1: UR ...; 7: UL
   */
   int ans;
+  bool valBool;
+  double valDouble;
+  QString text;
   int isNode = (1<<6) & emulator_elm;           // extracting z
   int embrPos = 7 & emulator_elm;               // extracting xxx
   int embrElm = ((7<<3) & emulator_elm) >> 3;   // extracting yyy
-  bool valBool;
-  double valDouble;
   bool real = fee->isShowingReal();
-  if ( isNode ){
-    Atom* p_atom = &_emuhw->sliceSet[emulator_tab]
-                            .ana._atomSet[emulator_row][emulator_col];
-    NodeDialog dialog( p_atom, real );
+  Atom* atom = &_emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col];
+
+  if (isNode){
+    NodeDialog dialog(atom, real);
     dialog.exec();
     return;
   }
 
-  QString text;
-  switch ( embrElm ){
-  case 0:
-    valBool = _emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col].
-              embr_pot_near_sw( embrPos, real );
-    _emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col].
-        set_embr_pot_near_sw( embrPos, !valBool, real);
+  switch (embrElm){
+  case 0: // near pot sw
+    valBool = atom->embr_pot_near_sw(embrPos, real);
+    atom->set_embr_pot_near_sw(embrPos, !valBool, real);
     break;
 
-  case 1:
+  case 1: // near pot res
     text = QString("Near pot res of embr %0 of atom [tab,row,col]: [%1,%2,%3]")
             .arg(embrPos).arg(emulator_tab).arg(emulator_row).arg(emulator_col);
-    valDouble = _emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col].
-                embr_pot_near_r( embrPos, real );
-    ans = guiauxiliary::askDouble( text, valDouble );
-    if ( !ans ){
-      ans = _emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col].
-            set_embr_pot_near_r( embrPos, valDouble, real );
-      if ( ans ){
-        cout << "Failed to set: ";
-        cout << text.toStdString() << endl;
-      }
+    valDouble = atom->embr_pot_near_r(embrPos, real);
+    ans = guiauxiliary::askDouble(text, valDouble);
+    if (!ans){
+      ans = atom->set_embr_pot_near_r( embrPos, valDouble, real );
+      if (ans) cout << "Failed to set: " << text.toStdString() << endl;
     }
     break;
 
-  case 2:
-    valBool = _emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col].
-              embr_pot_far_sw( embrPos, real );
-    _emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col].
-        set_embr_pot_far_sw( embrPos, !valBool, real);
+  case 2: // far pot sw
+    valBool = atom->embr_pot_far_sw( embrPos, real );
+    atom->set_embr_pot_far_sw(embrPos, !valBool, real);
     break;
 
-  case 3:
+  case 3: // far pot res
     text = QString("Far pot res of embr %0 of atom [tab,row,col]: [%1,%2,%3]")
             .arg(embrPos).arg(emulator_tab).arg(emulator_row).arg(emulator_col);
-    valDouble=_emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col].
-                embr_pot_far_r( embrPos, real );
+    valDouble=atom->embr_pot_far_r( embrPos, real );
     ans = guiauxiliary::askDouble( text, valDouble );
-    if ( !ans ){
-      ans = _emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col].
-            set_embr_pot_far_r( embrPos, valDouble, real );
-      if ( ans ){
-        cout << "Failed to set: ";
-        cout << text.toStdString() << endl;
-      }
+    if (!ans){
+      ans = atom->set_embr_pot_far_r( embrPos, valDouble, real );
+      if (ans) cout << "Failed to set: " << text.toStdString() << endl;
     }
     break;
 
-  case 4:
-    valBool = _emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col].
-              embr_sw_sc( embrPos, real );
-    _emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col].
-        set_embr_sw_sc( embrPos, !valBool, real);
+  case 4: // short circt sw
+    valBool = atom->embr_sw_sc( embrPos, real );
+    atom->set_embr_sw_sc( embrPos, !valBool, real);
     break;
 
-  case 5:
-    valBool = _emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col].
-              embr_sw_mid( embrPos, real );
-    _emuhw->sliceSet[emulator_tab].ana._atomSet[emulator_row][emulator_col].
-        set_embr_sw_mid( embrPos, !valBool, real);
-    break;
-
-  default:
+  case 5: // mid gnd sw
+    valBool = atom->embr_sw_mid( embrPos, real );
+    atom->set_embr_sw_mid( embrPos, !valBool, real);
     break;
   }
 

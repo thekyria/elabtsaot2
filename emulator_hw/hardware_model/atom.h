@@ -74,8 +74,8 @@ class Atom{
 
  public:
 
-  Atom( DAC const* real_voltage_ref,
-        DAC const* imag_voltage_ref );
+  Atom(DAC const* real_voltage_ref,
+       DAC const* imag_voltage_ref);
   int reset( bool complete );
 
   size_t getEmbrCount() const; //!< number of emulator branches physically present on the Atom
@@ -88,122 +88,6 @@ class Atom{
   /*****************************************************************************
   ****** SETTERS ***************************************************************
   *****************************************************************************/
-
-  //////////////////////////////////////////////////////////////////////////////
-  ///// NODE RELATED ///////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////
-
-  void set_node_real_adc_offset_corr( double val ); //!< wrapper for Node::set_real_adc_offset_corr
-  void set_node_real_adc_gain_corr( double val ); //!< wrapper for Node::set_real_adc_gain_corr
-  void set_node_real_sw_voltage(bool val); //!< wrapper for Node::set_real_sw_voltage
-  void set_node_real_sw_current(bool val); //!< wrapper for Node::set_real_sw_current
-  void set_node_real_sw_current_shunt(bool val); //!< wrapper for Node::set_real_sw_current_shunt
-  void set_node_real_sw_resistance(bool val); //!< wrapper for Node::set_real_sw_resistance
-  int set_node_real_pot_current_rab(double val, bool updateTap ); //!< wrapper for Node::set_real_pot_current_rab
-  int set_node_real_pot_current_rw(double val, bool updateTap ); //!< wrapper for Node::set_real_pot_current_rw
-  int set_node_real_pot_current_r(double val); //!< wrapper for Node::set_real_pot_current_r
-  int set_node_real_pot_current_tap(unsigned int val); //!< wrapper for Node::set_real_pot_current_tap
-  void set_node_real_pot_current_sw(bool val); //!< wrapper for Node::set_real_pot_current_sw
-  int set_node_real_pot_current_swA( bool val, bool updateTap ); //!< wrapper for Node::set_real_pot_current_swA
-  int set_node_real_pot_resistance_rab(double val, bool updateTap ); //!< wrapper for Node::set_real_pot_resistance_rab
-  int set_node_real_pot_resistance_rw(double val, bool updateTap ); //!< wrapper for Node::set_real_pot_resistance_rw
-  int set_node_real_pot_resistance_r(double val); //!< wrapper for Node::set_real_pot_resistance_r
-  int set_node_real_pot_resistance_tap(unsigned int val); //!< wrapper for Node::set_real_pot_resistance_tap
-  void set_node_real_pot_resistance_sw(bool val); //!< wrapper for Node::set_real_pot_resistance_sw
-  int set_node_real_pot_resistance_swA( bool val, bool updateTap ); //!< wrapper for Node::set_real_pot_resistance_swA
-
-  void set_node_imag_adc_offset_corr( double val ); //!< wrapper for Node::set_imag_adc_offset_corr
-  void set_node_imag_adc_gain_corr( double val ); //!< wrapper for Node::set_imag_adc_gain_corr
-  void set_node_imag_sw_voltage(bool val); //!< wrapper for Node::set_imag_sw_voltage
-  void set_node_imag_sw_current(bool val); //!< wrapper for Node::set_imag_sw_current
-  void set_node_imag_sw_current_shunt(bool val); //!< wrapper for Node::set_imag_sw_current_shunt
-  void set_node_imag_sw_resistance(bool val); //!< wrapper for Node::set_imag_sw_resistance
-  int set_node_imag_pot_current_rab(double val, bool updateTap ); //!< wrapper for Node::set_imag_pot_current_rab
-  int set_node_imag_pot_current_rw(double val, bool updateTap ); //!< wrapper for Node::set_imag_pot_current_rw
-  int set_node_imag_pot_current_r(double val); //!< wrapper for Node::set_imag_pot_current_r
-  int set_node_imag_pot_current_tap(unsigned int val); //!< wrapper for Node::set_imag_pot_current_tap
-  void set_node_imag_pot_current_sw(bool val); //!< wrapper for Node::set_imag_pot_current_sw
-  int set_node_imag_pot_current_swA( bool val, bool updateTap ); //!< wrapper for Node::set_imag_pot_current_swA
-  int set_node_imag_pot_resistance_rab(double val, bool updateTap ); //!< wrapper for Node::set_imag_pot_resistance_rab
-  int set_node_imag_pot_resistance_rw(double val, bool updateTap ); //!< wrapper for Node::set_imag_pot_resistance_rw
-  int set_node_imag_pot_resistance_r(double val); //!< wrapper for Node::set_imag_pot_resistance_r
-  int set_node_imag_pot_resistance_tap(unsigned int val); //!< wrapper for Node::set_imag_pot_resistance_tap
-  void set_node_imag_pot_resistance_sw(bool val); //!< wrapper for Node::set_imag_pot_resistance_sw
-  int set_node_imag_pot_resistance_swA(bool val, bool updateTap); //!< wrapper for Node::set_imag_pot_resistance_sw
-
-  // Inline node setters with bool real selector for the above
-  inline void set_node_adc_offset_corr( double val, bool real ){
-    return real ? set_node_real_adc_offset_corr(val) :
-                  set_node_imag_adc_offset_corr(val);
-  }
-  inline void set_node_adc_gain_corr( double val, bool real ){
-    return real ? set_node_real_adc_gain_corr(val) :
-                  set_node_imag_adc_gain_corr(val);
-  }
-  inline void set_node_sw_voltage(bool val, bool real ){
-      return real ? set_node_real_sw_voltage(val) :
-                    set_node_imag_sw_voltage(val);
-  }
-  inline void set_node_sw_current(bool val, bool real ){
-      return real ? set_node_real_sw_current(val) :
-                    set_node_imag_sw_current(val);
-  }
-  inline void set_node_sw_current_shunt(bool val, bool real ){
-      return real ? set_node_real_sw_current_shunt(val) :
-                    set_node_imag_sw_current_shunt(val);
-  }
-  inline void set_node_sw_resistance(bool val, bool real ){
-      return real ? set_node_real_sw_resistance(val) :
-                    set_node_imag_sw_resistance(val);
-  }
-  inline int set_node_pot_current_rab( double val, bool updateTap, bool real ){
-    return real ? set_node_real_pot_current_rab( val, updateTap) :
-                  set_node_imag_pot_current_rab( val, updateTap );
-  }
-  inline int set_node_pot_current_rw( double val, bool updateTap, bool real ){
-    return real ? set_node_real_pot_current_rw( val, updateTap) :
-                  set_node_imag_pot_current_rw( val, updateTap );
-  }
-  inline int set_node_pot_current_r(double val, bool real ){
-      return real ? set_node_real_pot_current_r(val) :
-                    set_node_imag_pot_current_r(val);
-  }
-  inline int set_node_pot_current_tap( unsigned int val, bool real ){
-      return real ? set_node_real_pot_current_tap(val) :
-                    set_node_imag_pot_current_tap(val);
-  }
-  inline void set_node_pot_current_sw(bool val, bool real ){
-      return real ? set_node_real_pot_current_sw(val) :
-                    set_node_imag_pot_current_sw(val);
-  }
-  inline int set_node_pot_current_swA( bool val, bool updateTap, bool real ){
-      return real ? set_node_real_pot_current_swA(val,updateTap) :
-                    set_node_imag_pot_current_swA(val,updateTap);
-  }
-  inline int set_node_pot_resistance_rab( double val, bool updateTap, bool real ){
-    return real ? set_node_real_pot_resistance_rab( val, updateTap) :
-                  set_node_imag_pot_resistance_rab( val, updateTap );
-  }
-  inline int set_node_pot_resistance_rw( double val, bool updateTap, bool real ){
-    return real ? set_node_real_pot_resistance_rw( val, updateTap) :
-                  set_node_imag_pot_resistance_rw( val, updateTap );
-  }
-  inline int set_node_pot_resistance_r(double val, bool real){
-      return real ? set_node_real_pot_resistance_r(val) :
-                    set_node_imag_pot_resistance_r(val);
-  }
-  inline int set_node_pot_resistance_tap(unsigned int val, bool real){
-      return real ? set_node_real_pot_resistance_tap(val) :
-                    set_node_imag_pot_resistance_tap(val);
-  }
-  inline void set_node_pot_resistance_sw(bool val, bool real){
-      return real ? set_node_real_pot_resistance_sw(val) :
-                    set_node_imag_pot_resistance_sw(val);
-  }
-  inline int set_node_pot_resistance_swA( bool val, bool updateTap, bool real ){
-      return real ? set_node_real_pot_resistance_swA(val,updateTap) :
-                    set_node_imag_pot_resistance_swA(val,updateTap);
-  }
 
   //////////////////////////////////////////////////////////////////////////////
   ////BRANCH RELATED ///////////////////////////////////////////////////////////
@@ -305,99 +189,6 @@ class Atom{
   *****************************************************************************/
 
   //////////////////////////////////////////////////////////////////////////////
-  ///// NODE RELATED ///////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////
-
-  double node_real_adc_offset_corr() const; //!< wrapper for Node::real_adc_offset_corr
-  double node_real_adc_gain_corr() const; //!< wrapper for Node::real_adc_gain_corr
-  bool node_real_sw_voltage() const; //!< wrapper for Node::real_sw_voltage
-  bool node_real_sw_current() const; //!< wrapper for Node::real_sw_current
-  bool node_real_sw_current_shunt() const; //!< wrapper for Node::real_sw_current_shunt
-  bool node_real_sw_resistance() const; //!< wrapper for Node::real_sw_resistance
-  double node_real_pot_current_rab() const; //!< wrapper for Node::real_pot_current_rab
-  double node_real_pot_current_rw() const; //!< wrapper for Node::real_pot_current_rw
-  double node_real_pot_current_r() const; //!< wrapper for Node::real_pot_current_r
-  unsigned int node_real_pot_current_tap() const; //!< wrapper for Node::real_pot_current_tap
-  bool node_real_pot_current_sw() const; //!< wrapper for Node::real_pot_current_sw
-  bool node_real_pot_current_swA() const; //!< wrapper for Node::real_pot_current_swA
-  double node_real_pot_resistance_rab() const; //!< wrapper for Node::real_pot_resistance_rab
-  double node_real_pot_resistance_rw() const; //!< wrapper for Node::real_pot_resistance_rw
-  double node_real_pot_resistance_r() const; //!< wrapper for Node::real_pot_resistance_r
-  unsigned int node_real_pot_resistance_tap() const; //!< wrapper for Node::real_pot_resistance_tap
-  bool node_real_pot_resistance_sw() const; //!< wrapper for Node::real_pot_resistance_sw
-  bool node_real_pot_resistance_swA() const; //!< wrapper for Node::real_pot_resistance_swA
-
-  double node_imag_adc_offset_corr() const; //!< wrapper for Node::imag_adc_offset_corr
-  double node_imag_adc_gain_corr() const; //!< wrapper for Node::imag_adc_gain_corr
-  bool node_imag_sw_voltage() const; //!< wrapper for Node::imag_sw_voltage
-  bool node_imag_sw_current() const; //!< wrapper for Node::imag_sw_current
-  bool node_imag_sw_current_shunt() const; //!< wrapper for Node::imag_sw_current_shunt
-  bool node_imag_sw_resistance() const; //!< wrapper for Node::imag_sw_resistance
-  double node_imag_pot_current_rab() const; //!< wrapper for Node::imag_pot_current_rab
-  double node_imag_pot_current_rw() const; //!< wrapper for Node::imag_pot_current_rw
-  double node_imag_pot_current_r() const; //!< wrapper for Node::imag_pot_current_r
-  unsigned int node_imag_pot_current_tap() const; //!< wrapper for Node::imag_pot_current_tap
-  bool node_imag_pot_current_sw() const; //!< wrapper for Node::imag_pot_current_sw
-  bool node_imag_pot_current_swA() const; //!< wrapper for Node::imag_pot_current_swA
-  double node_imag_pot_resistance_rab() const; //!< wrapper for Node::imag_pot_resistance_rab
-  double node_imag_pot_resistance_rw() const; //!< wrapper for Node::imag_pot_resistance_rw
-  double node_imag_pot_resistance_r() const; //!< wrapper for Node::imag_pot_resistance_r
-  unsigned int node_imag_pot_resistance_tap() const; //!< wrapper for Node::imag_pot_resistance_tap
-  bool node_imag_pot_resistance_sw() const; //!< wrapper for Node::imag_pot_resistance_sw
-  bool node_imag_pot_resistance_swA() const; //!< wrapper for Node::imag_pot_resistance_swA
-
-  // Inline node setters with bool real selector
-  inline bool node_sw_voltage(bool real ) const{
-    return real ? node_real_sw_voltage() : node_imag_sw_voltage();
-  }
-  inline bool node_sw_current(bool real ) const{
-    return real ? node_real_sw_current() : node_imag_sw_current();
-  }
-  inline bool node_sw_current_shunt(bool real ) const{
-    return real ? node_real_sw_current_shunt() : node_imag_sw_current_shunt();
-  }
-  inline bool node_sw_resistance(bool real ) const{
-    return real ? node_real_sw_resistance() : node_imag_sw_resistance();
-  }
-  inline double node_pot_current_rab(bool real ) const{
-    return real? node_real_pot_current_rab() : node_real_pot_current_rab();
-  }
-  inline double node_pot_current_rw(bool real ) const{
-    return real? node_real_pot_current_rw() : node_real_pot_current_rw();
-  }
-  inline double node_pot_current_r(bool real ) const{
-    return real ? node_real_pot_current_r() : node_imag_pot_current_r();
-  }
-  inline unsigned int node_pot_current_tap(bool real ) const{
-    return real ? node_real_pot_current_tap() : node_imag_pot_current_tap();
-  }
-  inline bool node_pot_current_sw(bool real ) const{
-    return real ? node_real_pot_current_sw() : node_imag_pot_current_sw();
-  }
-  inline bool node_pot_current_swA(bool real ) const{
-    return real ? node_real_pot_current_swA() : node_imag_pot_current_swA();
-  }
-  inline double node_pot_resistance_rab(bool real ) const{
-    return real? node_real_pot_resistance_rab() :node_real_pot_resistance_rw();
-  }
-  inline double node_pot_resistance_rw(bool real ) const{
-    return real? node_real_pot_resistance_rw() :node_real_pot_resistance_rw();
-  }
-  inline double node_pot_resistance_r(bool real ) const{
-    return real ? node_real_pot_resistance_r() : node_imag_pot_resistance_r();
-  }
-  inline unsigned int node_pot_resistance_tap(bool real ) const{
-    return real?node_real_pot_resistance_tap():node_imag_pot_resistance_tap();
-  }
-  inline bool node_pot_resistance_sw(bool real ) const{
-    return real ? node_real_pot_resistance_sw():node_real_pot_resistance_sw();
-  }
-  inline bool node_pot_resistance_swA(bool real ) const{
-    return real ? node_real_pot_resistance_swA():node_real_pot_resistance_swA();
-  }
-
-
-  //////////////////////////////////////////////////////////////////////////////
   ////BRANCH RELATED ///////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
   EmulatorBranch const& embr_real(size_t pos) const; //!< Getter for embr_real[pos]
@@ -447,13 +238,13 @@ class Atom{
   inline bool embr_sw_mid(size_t pos, bool real) const{
       return real ? embr_real_sw_mid(pos) : embr_imag_sw_mid(pos);
   }
-  inline double embr_pot_near_rab( size_t pos, bool real ) const{
+  inline double embr_pot_near_rab(size_t pos, bool real) const{
       return real ? embr_real_pot_near_rab(pos) : embr_imag_pot_near_rab(pos);
   }
-  inline double embr_pot_near_rw( size_t pos, bool real ) const{
+  inline double embr_pot_near_rw(size_t pos, bool real) const{
       return real ? embr_real_pot_near_rw(pos) : embr_imag_pot_near_rw(pos);
   }
-  inline double embr_pot_near_r(size_t pos, bool real ) const{
+  inline double embr_pot_near_r(size_t pos, bool real) const{
       return real ? embr_real_pot_near_r(pos) : embr_imag_pot_near_r(pos);
   }
   inline unsigned int embr_pot_near_tap(size_t pos, bool real ) const{
@@ -484,13 +275,9 @@ class Atom{
       return real ? embr_real_pot_far_swA(pos) : embr_imag_pot_far_swA(pos);
   }
 
-  /*****************************************************************************
-  ******************************************************************************
-  *****************************************************************************/
+  Node node;       //!< node of the atom
 
  private:
-
-  Node _node;       //!< node of the atom
 
   std::vector<bool> _embr_exist; //!< whether branches (real and im) physically exist
   std::vector<EmulatorBranch> _embr_real; //!< Branches of real part of the grid

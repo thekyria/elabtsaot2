@@ -115,8 +115,8 @@ bool Node::imag_pot_resistance_swA() const{ return _imag_pot_resistance.swA(); }
 double Node::imag_pot_resistance_getRMax() const{ return _imag_pot_resistance.getRMax(); }
 
 // --- "setters" ---
-void Node::set_real_adc_offset_corr( double val ){ _real_adc_offset_corr = val; }
-void Node::set_real_adc_gain_corr( double val ){ _real_adc_gain_corr = val; }
+void Node::set_real_adc_offset_corr(double val){ _real_adc_offset_corr = val; }
+void Node::set_real_adc_gain_corr(double val){ _real_adc_gain_corr = val; }
 void Node::set_real_sw_voltage(bool val){ _real_sw_voltage = val; }
 void Node::set_real_sw_current(bool val){ _real_sw_current = val; }
 void Node::set_real_sw_current_shunt(bool val){ _real_sw_current_shunt = val; }
@@ -134,8 +134,8 @@ int Node::set_real_pot_resistance_tap(unsigned int val){ return _real_pot_resist
 void Node::set_real_pot_resistance_sw(bool val){ _real_pot_resistance.set_sw(val); }
 int Node::set_real_pot_resistance_swA(bool val, bool updateTap){ return _real_pot_resistance.set_swA(val, updateTap); }
 
-void Node::set_imag_adc_offset_corr( double val ){ _imag_adc_offset_corr = val; }
-void Node::set_imag_adc_gain_corr( double val ){ _imag_adc_gain_corr = val; }
+void Node::set_imag_adc_offset_corr(double val){ _imag_adc_offset_corr = val; }
+void Node::set_imag_adc_gain_corr(double val){ _imag_adc_gain_corr = val; }
 void Node::set_imag_sw_voltage(bool val){ _imag_sw_voltage = val; }
 void Node::set_imag_sw_current(bool val){ _imag_sw_current = val; }
 void Node::set_imag_sw_current_shunt(bool val){ _imag_sw_current_shunt = val; }

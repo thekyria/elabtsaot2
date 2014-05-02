@@ -3099,20 +3099,20 @@ int CalibrationEditor::_parseRawResults( size_t sliceindex ){
     for (size_t h = 0 ; h != hor ; ++h){
       at=&sl->ana._atomSet[v][h];
       //ADC
-      at->set_node_adc_offset_corr(calibrationoffsetdatanew[0][i+24],true);// +24 because the first 24 is the adc offset not the DAC/ADC test
-      at->set_node_adc_offset_corr(calibrationoffsetdatanew[1][i+24],false);// +24 because the first 24 is the adc offset not the DAC/ADC test
-      at->set_node_adc_gain_corr(calibrationgaindatanew[0][i+24],true);// +24 because the first 24 is the adc offset not the DAC/ADC test
-      at->set_node_adc_gain_corr(calibrationgaindatanew[1][i+24],false);// +24 because the first 24 is the adc offset not the DAC/ADC test
+      at->node.set_adc_offset_corr(calibrationoffsetdatanew[0][i+24],true);// +24 because the first 24 is the adc offset not the DAC/ADC test
+      at->node.set_adc_offset_corr(calibrationoffsetdatanew[1][i+24],false);// +24 because the first 24 is the adc offset not the DAC/ADC test
+      at->node.set_adc_gain_corr(calibrationgaindatanew[0][i+24],true);// +24 because the first 24 is the adc offset not the DAC/ADC test
+      at->node.set_adc_gain_corr(calibrationgaindatanew[1][i+24],false);// +24 because the first 24 is the adc offset not the DAC/ADC test
       //Convertion Resistor
-      at->set_node_real_pot_current_rab(calibrationrabnew[0][i],updateTap);
-      at->set_node_imag_pot_current_rab(calibrationrabnew[1][i],updateTap);
-      at->set_node_real_pot_current_rw(calibrationrwnew[0][i],updateTap);
-      at->set_node_imag_pot_current_rw(calibrationrwnew[1][i],updateTap);
+      at->node.set_real_pot_current_rab(calibrationrabnew[0][i],updateTap);
+      at->node.set_imag_pot_current_rab(calibrationrabnew[1][i],updateTap);
+      at->node.set_real_pot_current_rw(calibrationrwnew[0][i],updateTap);
+      at->node.set_imag_pot_current_rw(calibrationrwnew[1][i],updateTap);
       //Internal resistor
-      at->set_node_real_pot_resistance_rab(calibrationrabnew[0][i+24],updateTap);
-      at->set_node_imag_pot_resistance_rab(calibrationrabnew[1][i+24],updateTap);
-      at->set_node_real_pot_resistance_rw(calibrationrwnew[0][i+24],updateTap);
-      at->set_node_imag_pot_resistance_rw(calibrationrwnew[1][i+24],updateTap);
+      at->node.set_real_pot_resistance_rab(calibrationrabnew[0][i+24],updateTap);
+      at->node.set_imag_pot_resistance_rab(calibrationrabnew[1][i+24],updateTap);
+      at->node.set_real_pot_resistance_rw(calibrationrwnew[0][i+24],updateTap);
+      at->node.set_imag_pot_resistance_rw(calibrationrwnew[1][i+24],updateTap);
 
       //P0Chip1-2 and P1Chip1-2
       at->set_embr_real_pot_far_rab(EMBRPOS_R,calibrationrabnew[0][i+48],updateTap);
