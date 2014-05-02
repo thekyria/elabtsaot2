@@ -6,6 +6,7 @@ using namespace elabtsaot;
 #include "encoder.h"
 #include "emulator.h"
 #include "tdemulator.h"
+#include "moteurfengtian.h"
 #include "importerexporter.h"
 
 #include "logencodingdialog.h"
@@ -35,8 +36,8 @@ using std::vector;
 //#include <string>
 using std::string;
 
-AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* parent) :
-  QSplitter(Qt::Vertical, parent), _emu(emu), _tde_hwe(tde_hwe) {
+AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, MoteurFengtian* sse_fen, QWidget* parent) :
+  QSplitter(Qt::Vertical, parent), _emu(emu), _tde_hwe(tde_hwe), _sse_fen(sse_fen) {
 
   // ---------------------------------------------------------------------------
   // ----- Global parameters group box -----
@@ -186,6 +187,19 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* pa
   connect(logGotEncodingBut, SIGNAL(clicked()), this, SLOT(logGotEncodingSlot()));
   connect(importEncodingBut, SIGNAL(clicked()), this, SLOT(importEncodingSlot()));
 
+  // ---------------------------------------------------------------------------
+  // ----- GPF group box -----
+  QGroupBox* gpfBox = new QGroupBox("MoteurFengtian operations", this);
+  QFormLayout* gpfLay = new QFormLayout(gpfBox);
+  gpfBox->setLayout(gpfLay);
+
+  // Reset GPF
+  QLabel* resetGPFLabel = new QLabel("Reset GPF");
+  QPushButton* resetGPFBut = new QPushButton("Reset GPF");
+  gpfLay->addRow(resetGPFLabel,resetGPFBut);
+
+  // ----------------- Connect signals -----------------
+  connect(resetGPFBut, SIGNAL(clicked()), this, SLOT(resetGPFSlot()));
 
   // ---------------------------------------------------------------------------
   // ----- Toolbar -----
@@ -508,6 +522,13 @@ void AuxiliaryEditor::getEmulatorHwStateSlot(){
 
 void AuxiliaryEditor::getEmulatorHwCalStateSlot(){
   cout << "Emulator calibration state: " << _emu->state_calibration()<<endl;
+}
+
+
+void AuxiliaryEditor::resetGPFSlot(){
+  int ans = _sse_fen->resetGPF();
+  if (ans) cout << "Reset GPF failed with code " << ans << endl;
+  else cout << "Successfully reset GPF!" << endl;
 }
 
 void AuxiliaryEditor::_updtGlobals(){

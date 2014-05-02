@@ -112,7 +112,7 @@ MainWindow::MainWindow( Powersystem*& pws,
   _cal = new CalibrationEditor( _emu, _con );
   _map = new MapperEditor( _emu, this );
   _fit = new FitterEditor( _emu, this );
-  _aux = new AuxiliaryEditor( _emu, tde_hwe, this );
+  _aux = new AuxiliaryEditor( _emu, tde_hwe, sse_fen, this );
   _com->autoAssignSlicesToDevicesSlot();
 
   // ----- Initialize the menus  -----

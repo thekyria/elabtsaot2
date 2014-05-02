@@ -21,6 +21,7 @@ namespace elabtsaot{
 
 class Emulator;
 class TDEmulator;
+class MoteurFengtian;
 
 class AuxiliaryEditor : public QSplitter{
 
@@ -28,7 +29,7 @@ class AuxiliaryEditor : public QSplitter{
 
  public:
 
-  AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, QWidget* parent);
+  AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, MoteurFengtian* sse_fen, QWidget* parent);
 
  private slots:
 
@@ -62,6 +63,9 @@ class AuxiliaryEditor : public QSplitter{
   void getEmulatorHwStateSlot();
   void getEmulatorHwCalStateSlot();
 
+  // MoteurFengtian operations
+  void resetGPFSlot();
+
 // signals:
 //  void mmdChanged();
 //  void emuChanged(bool);
@@ -72,6 +76,7 @@ class AuxiliaryEditor : public QSplitter{
 
   Emulator* _emu;
   TDEmulator* _tde_hwe; // used for _tde_hwe->resetEmulation() in resetEmulationSlot()
+  MoteurFengtian* _sse_fen; // used for _sse_fen->resetGPF() in resetGPFSlot()
 
   QDoubleSpinBox* ratioZForm;
   QDoubleSpinBox* ratioVForm;

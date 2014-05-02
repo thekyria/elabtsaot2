@@ -15,6 +15,8 @@ class MoteurFengtian : public SSEngine {
   MoteurFengtian(Emulator* emu, Logger* log = NULL);
   virtual ~MoteurFengtian(){}
 
+  int resetGPF() const;
+
 private:
 
   int do_solvePowerFlow(Powersystem const& pws, ublas::vector<complex>& V) const;

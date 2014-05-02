@@ -127,6 +127,18 @@ MoteurFengtian::MoteurFengtian(Emulator* emu, Logger* log) :
   _properties[tempPt] = tempPt.defaultValue;
 }
 
+int MoteurFengtian::resetGPF() const{
+  int ans(0);
+  size_t address(GPF_ADDR_START);
+  vector<uint32_t> encoding605(1, GPF_WRCODE_RESET);
+  size_t sliceCount = _emu->getHwSliceCount();
+  for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+    ans |= _emu->usbWrite(sliceId_, address, encoding605);
+  }
+  if (ans) return 1;
+  else return 0;
+}
+
 int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<complex>& V) const{
 
   boost::timer::auto_cpu_timer t; // when t goes out of scope it prints timing info
@@ -289,16 +301,10 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
       }
     }
 
-    // Reset the board after power flow is complete
-    cout << "Reseting slices ... ";
-    address = GPF_ADDR_START;
-    encoding605[0] = GPF_WRCODE_RESET;
-    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
-      cout << " " << sliceId_;
-      ans = _emu->usbWrite(sliceId_, address, encoding605);
-    }
-    if (ans) return 46;
-    cout << " done!" << endl;
+    // TEMPORARILY COMMENTED; GPF CAN/SHOULD BE RESET FROM THE AUXILIARY TAB
+//    ans = resetGPF();
+//    if (ans) return 46;
+    cout << "WARNING: GPF reset skipped! Please manually reset using the auxiliary tab!" << endl;
     break;
   }
 
