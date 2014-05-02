@@ -2,8 +2,8 @@
 #include "slicedigital.h"
 using namespace elabtsaot;
 
-#define MAXPQNODES 18
-#define MAXSLACKNODES 1
+#define MAXPQNODES 24
+#define MAXSLACKNODES 24
 #define MAXGENERATORS 8           //!< Default max number of gens in pipeline
 #define MAXZLOADS 24              //!< Default max number of zloads in pipeline
 #define MAXILOADS 24              //!< Default max number of iloads in pipeline

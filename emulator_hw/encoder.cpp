@@ -33,17 +33,16 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
 
   sliceConf.clear();
 
-  int ans = 0;
+  int ans(0);
 
   // Vector        | vec.add | cyp.add [num.of.words] corresponing func.
   //---------------|---------|-------------------------------------------------
   // got_conf      |   0: 47 |   1: 48 [ 48] detail::encode_GPFgot
-  //  none         |  48:338 |  49:339 [291]  none
-  // pos_conf      | 339:342 | 340:343 [  4] detail::encode_GPFpositions
-  //  none         | 343:350 | 344:351 [  8]  none
-  // slpos_conf    |     351 |     352 [  1] detail::encode_GPFpositions
-  //  none         | 352:353 | 353:354 [  2]  none
-  // conf_conf     |     354 |     355 [  1] detail::encode_GPFauxiliary
+  //  none         |  48:341 |  49:342 [294]  none
+  // nodeCount_conf|     342 |     343 [  1] detail::encode_GPFpositions
+  // PQpos_conf    | 343:346 | 344:347 [  4] detail::encode_GPFpositions
+  //  none         | 347:350 | 348:351 [  4]  none
+  // slpos_conf    | 351:354 | 352:355 [  4] detail::encode_GPFpositions
   // vref_conf     | 355:356 | 356:357 [  2] detail::encode_vref
   // icar_conf     | 357:380 | 358:381 [ 24] detail::encode_GPFIinit
   // starter_conf  |     381 |     382 [  1] detail::encode_GPFauxiliary
@@ -60,7 +59,8 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
 
   vector<uint32_t> got_conf;
   vector<uint32_t> none;
-  vector<uint32_t> pos_conf;
+  vector<uint32_t> nodeCount_conf;
+  vector<uint32_t> PQpos_conf;
   vector<uint32_t> slpos_conf;
   vector<uint32_t> conf_conf;
   vector<uint32_t> vref_conf;
@@ -74,7 +74,7 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
   vector<uint32_t> nios_conf;
 
   ans |= detail::encode_GPFgot(sl, got_conf);
-  ans |= detail::encode_GPFpositions(sl, pos_conf, slpos_conf);
+  ans |= detail::encode_GPFpositions(sl, nodeCount_conf, PQpos_conf, slpos_conf);
   detail::encode_GPFauxiliary(sl, conf_conf, starter_conf, nios_conf);
   ans |= detail::encode_vref(sl, vref_conf);
   detail::encode_GPFIinit(sl, icar_conf, ipol_conf);
@@ -84,12 +84,11 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
   if (ans) return ans;
 
   sliceConf.insert(sliceConf.end(), got_conf.begin(), got_conf.end() );
-  none.resize(291,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
-  sliceConf.insert(sliceConf.end(), pos_conf.begin(), pos_conf.end() );
-  none.resize(8,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  none.resize(294,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  sliceConf.insert(sliceConf.end(), nodeCount_conf.begin(), nodeCount_conf.end() );
+  sliceConf.insert(sliceConf.end(), PQpos_conf.begin(), PQpos_conf.end() );
+  none.resize(4,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
   sliceConf.insert(sliceConf.end(), slpos_conf.begin(), slpos_conf.end() );
-  none.resize(2,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
-  sliceConf.insert(sliceConf.end(), conf_conf.begin(), conf_conf.end() );
   sliceConf.insert(sliceConf.end(), vref_conf.begin(), vref_conf.end() );
   sliceConf.insert(sliceConf.end(), icar_conf.begin(), icar_conf.end() );
   sliceConf.insert(sliceConf.end(), starter_conf.begin(), starter_conf.end() );
@@ -1108,12 +1107,12 @@ int encoder::detail::encode_GPFgot( Slice const& sl, vector<uint32_t>& got_conf 
   vector<pair<int,int> > pos = sl.dig.pipe_GPFPQ.position();
   double real_gain, imag_gain;
   for (k=0 ; k!=atomCount; ++k){
-    Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
 
-    if (k < sl.dig.pipe_TDgen.element_count()){
+    if (k < sl.dig.pipe_GPFPQ.element_count()){
+      Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_gain = sl.ana.got_gain() * am->node_imag_adc_gain_corr();
       real_gain = sl.ana.got_gain() * am->node_real_adc_gain_corr();
-    } else { // k >= sl.dig.pipe_gen.element_count()
+    } else { // k >= sl.dig.pipe_GPFPQ.element_count()
       imag_gain = sl.ana.got_gain();
       real_gain = sl.ana.got_gain();
     }
@@ -1134,12 +1133,11 @@ int encoder::detail::encode_GPFgot( Slice const& sl, vector<uint32_t>& got_conf 
   double real_offset, imag_offset;
   int32_t mask12 = (1 << 12) - 1;
   for ( k = 0 ; k != atomCount ; ++k ){
-    Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-
-    if ( k < sl.dig.pipe_TDgen.element_count() ){
+    if ( k < sl.dig.pipe_GPFPQ.element_count() ){
+      Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_offset = sl.ana.got_offset() + am->node_imag_adc_offset_corr();
       real_offset = sl.ana.got_offset() + am->node_real_adc_offset_corr();
-    } else { // k >= sl.dig.pipe_gen.element_count()
+    } else { // k >= sl.dig.pipe_GPFPQ.element_count()
       imag_offset = sl.ana.got_offset();
       real_offset = sl.ana.got_offset();
     }
@@ -1157,17 +1155,42 @@ int encoder::detail::encode_GPFgot( Slice const& sl, vector<uint32_t>& got_conf 
 }
 
 int encoder::detail::encode_GPFpositions( Slice const& sl,
-                                         vector<uint32_t>& pos_conf,
-                                         vector<uint32_t>& slpos_conf ){
-  pos_conf.clear();
+                                          vector<uint32_t>& nodeCount_conf,
+                                          vector<uint32_t>& PQpos_conf,
+                                          vector<uint32_t>& slpos_conf ){
+  nodeCount_conf.clear();
+  PQpos_conf.clear();
   slpos_conf.clear();
 
-  int32_t temp = 0;
-  int32_t temp5bit = 0;
+  int32_t temp(0);
+  int32_t temp5bit(0);
   int32_t mask5bit = (1<<5)-1;  // 0b00000000000000000000000000011111
 
-  // ***** PQ nodes positions *****
-  for (size_t k=0; k!=18; ++k){ // for some weird reason 18 positions are needed
+  // ***** node count (nodeCount_conf) *****
+  temp = 0;
+  // number of PQ nodes
+  temp5bit = 0;
+  temp5bit &= mask5bit;
+  temp |= ( temp5bit << 0*5 );
+  // zero
+  temp5bit = static_cast<int32_t>( sl.dig.pipe_GPFPQ.element_count() );
+  temp5bit &= mask5bit;
+  temp |= ( temp5bit << 1*5 );
+  // zero
+  temp5bit = 0;
+  temp5bit &= mask5bit;
+  temp |= ( temp5bit << 2*5 );
+  // slack node
+  temp5bit = static_cast<int32_t>( sl.dig.pipe_GPFslack.element_count() ); // should be == 1
+  temp5bit &= mask5bit;
+  temp |= ( temp5bit << 3*5 );
+
+  nodeCount_conf.push_back( static_cast<uint32_t> (temp) );
+
+  // ***** PQ nodes positions (PQpos_conf) *****
+  temp = 0;
+//  for (size_t k=0; k!=MAXPQNODES; ++k){ // for some weird reason 18 positions are needed
+  for (size_t k=0; k!=sl.dig.pipe_GPFPQ.element_count_max(); ++k){
     // update position for k'th gen (5 bits: [0 unused] 1 - 24 [-31 unused])
     temp5bit = 0;
     if ( k < sl.dig.pipe_GPFPQ.element_count() )
@@ -1180,38 +1203,31 @@ int encoder::detail::encode_GPFpositions( Slice const& sl,
     temp |= ( temp5bit << (5 *(k%6)) );
     // push position word back into conf and reset temp
     if ((k+1)%6==0){
-      pos_conf.push_back(static_cast<uint32_t>(temp));
+      PQpos_conf.push_back(static_cast<uint32_t>(temp));
       temp = 0;
     }
   }
 
-  // ***** nodes number *****
+  // ***** Slack (represented as const I load) position(s) (slpos_conf) *****
   temp = 0;
-  // number of PQ nodes
-  temp5bit = static_cast<int32_t>( sl.dig.pipe_GPFPQ.element_count() );
-  temp5bit &= mask5bit;
-  temp |= ( temp5bit << 0*5 );
-  // zero
-  temp5bit = 0;
-  temp5bit &= mask5bit;
-  temp |= ( temp5bit << 1*5 );
-  // zero
-  temp5bit = 0;
-  temp5bit &= mask5bit;
-  temp |= ( temp5bit << 2*5 );
-  // slack node
-  temp5bit = 1;
-  temp5bit &= mask5bit;
-  temp |= ( temp5bit << 3*5 );
+  for (size_t k=0; k!=sl.dig.pipe_GPFslack.element_count_max(); ++k){
+    // update position for k'th gen (5 bits: [0 unused] 1 - 24 [-31 unused])
+    temp5bit = 0;
+    if ( k < sl.dig.pipe_GPFslack.element_count() )
+      temp5bit = static_cast<int32_t>(
+                   sl.dig.pipe_GPFslack.position()[k].first * sl.dig.pipe_GPFslack.hor_id_max() +
+                   sl.dig.pipe_GPFslack.position()[k].second + 1 );
+    temp5bit &= mask5bit;
 
-  pos_conf.push_back( static_cast<uint32_t> (temp) );
-
-
-  // ***** slack (represented as const I load) positions *****
-  temp =  sl.dig.pipe_GPFslack.position()[0].first * sl.dig.pipe_GPFslack.hor_id_max()
-          + sl.dig.pipe_GPFslack.position()[0].second + 1;
-  temp &= mask5bit;
-  slpos_conf.push_back(static_cast<uint32_t>(temp));
+    // update position word with the position of the k'th gen (if any) - else 0
+    temp |= ( temp5bit << (5 *(k%6)) );
+    // push position word back into conf and reset temp
+    if ((k+1)%6==0){
+      slpos_conf.push_back(static_cast<uint32_t>(temp));
+      temp = 0;
+    }
+  }
+  stamp_NIOS_confirm(slpos_conf.back());
 
   return 0;
 }
@@ -1588,7 +1604,7 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_gain = sl.ana.got_gain() * am->node_imag_adc_gain_corr();
       real_gain = sl.ana.got_gain() * am->node_real_adc_gain_corr();
-    } else { // k >= sl.dig.pipe_gen.element_count()
+    } else { // k >= sl.dig.pipe_TDgen.element_count()
       imag_gain = sl.ana.got_gain();
       real_gain = sl.ana.got_gain();
     }
@@ -1614,7 +1630,7 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
       imag_offset = sl.ana.got_offset() + am->node_imag_adc_offset_corr();
       real_offset = sl.ana.got_offset() + am->node_real_adc_offset_corr();
-    } else { // k >= sl.dig.pipe_gen.element_count()
+    } else { // k >= sl.dig.pipe_TDgen.element_count()
       imag_offset = sl.ana.got_offset();
       real_offset = sl.ana.got_offset();
     }
@@ -2025,6 +2041,7 @@ int encoder::detail::encode_TDpositions( Slice const& sl, vector<uint32_t>& pos_
   int32_t mask5bit = (1<<5)-1;  // 0b00000000000000000000000000011111
 
   // ***** generator positions *****
+//  for (k=0; k!=sl.dig.pipe_TDgen.element_count_max(); ++k){
   for (k=0; k!=18; ++k){ // for some weird reason 18 positions are needed
 
     // update position for k'th gen (5 bits: [0 unused] 1 - 24 [-31 unused])

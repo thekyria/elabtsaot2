@@ -73,7 +73,9 @@ int encode_switches( Slice const& sl, std::vector<uint32_t>& switches_conf );
 
 // GPF specific encoding functions
 int encode_GPFgot( Slice const& sl, std::vector<uint32_t>& got_conf );
-int encode_GPFpositions( Slice const& sl, std::vector<uint32_t>& pos_conf, std::vector<uint32_t>& slpos_conf );
+int encode_GPFpositions( Slice const& sl, std::vector<uint32_t>& nodeCount_conf,
+                         std::vector<uint32_t>& PQpos_conf,
+                         std::vector<uint32_t>& slpos_conf );
 void encode_GPFauxiliary(Slice const& sl,
                          std::vector<uint32_t>& conf_conf,
                          std::vector<uint32_t>& starter_conf,

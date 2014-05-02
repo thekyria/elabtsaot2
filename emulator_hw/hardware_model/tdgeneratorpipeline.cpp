@@ -15,7 +15,7 @@ using std::vector;
 #define SSFREQUENCY 50. //!< steady state frequency = 50 Hz
 
 TDGeneratorPipeline::TDGeneratorPipeline(size_t element_capacity,
-                                     size_t ver_dim, size_t hor_dim) :
+                                         size_t ver_dim, size_t hor_dim) :
     Pipeline(element_capacity, ver_dim, hor_dim),
     xd1inverse(_elementCountMax, 0),
     I0(_elementCountMax, 0),

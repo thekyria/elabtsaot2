@@ -269,14 +269,14 @@ void MainWindow::loadSlot(){
                                schfilename,
                                mapfilename,
                                scsfilename );
-  if ( ans ){
+  if (!ans){
     cout << "Project files determined:" << endl;
     cout << " .. pws = " << pwsfilename << endl;
     cout << " .. sch = " << schfilename << endl;
     cout << " .. map = " << mapfilename << endl;
     cout << " .. scs = " << scsfilename << endl;
   } else {
-    cout << "Invalid project file!" << endl;
+    cout << "Invalid project file! error code:" << ans << endl;
     return;
   }
 

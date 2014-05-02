@@ -1287,8 +1287,10 @@ void CalibrationEditor::calibrationExportSlot(){
   currentdir.cdUp();
   QString filename = QDir::toNativeSeparators(currentdir.path()).append("\\calibrationfile.xml");
   int ans = exportFile(filename);
-  if (ans)
+  if (!ans)
     cout << "Exported successfully" << endl;
+  else
+    cout << "Export failed with code " << ans << endl;
 }
 
 void CalibrationEditor::calibrationImportSlot(){
@@ -1298,14 +1300,13 @@ void CalibrationEditor::calibrationImportSlot(){
   QString filename = QDir::toNativeSeparators(currentdir.path()).append("\\calibrationfile.xml");
   int ans = importFile(filename);
 
-  if (ans){
+  if (!ans){
     cout << endl;
     cout << "Import finished for the corresponding devices" <<endl;
     cout << "Press the set calibration button to set the values in emulator" << endl;
-  }else{
-    cout << "Import failed with error: " << ans << endl;
+  } else {
+    cout << "Import failed with code " << ans << endl;
   }
-
 }
 
 

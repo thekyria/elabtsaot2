@@ -52,7 +52,7 @@ int main(int argc, char *argv[]){
   TDEmulator* tde_hwe( new TDEmulator(pws, emu, NULL) );
 
   qDebug() << "Creating TDEngine 'Simulator_hw' ... ";
-  Simulator_sw* tde_swe( new Simulator_sw(pws, sse, NULL) );
+  Simulator_sw* tde_swe( new Simulator_sw(pws, NULL) );
 
   qDebug() << "Setting TDEngine ptr ... ";
   TDEngine* tde( tde_hwe );

@@ -52,8 +52,8 @@ class Load {
   /*! Enhanced static load model
     voltage dependency according to the exponential model and frequency
     dependency:
-      pdemand_dyn= Pdemand * (Vcurrent/real(Vss))^Vexpa * (1 + kpf*Df)
-      qdemand_dyn= Qdemand * (Vcurrent/real(Vss))^Vexpb * (1 + kqf*Df)
+      pdemand_dyn = Pdemand * (abs(Vcurrent)/abs(Vss))^Vexpa * (1 + kpf*Df)
+      qdemand_dyn = Qdemand * (abs(Vcurrent)/abs(Vss))^Vexpb * (1 + kqf*Df)
 
     for the exponents of voltage dependency it holds:
       Vexpa, Vexpb = 0  => constant power load

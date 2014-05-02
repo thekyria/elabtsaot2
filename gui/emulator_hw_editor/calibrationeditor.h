@@ -36,7 +36,7 @@ class CalibrationEditor : public QSplitter{
  public:
 
   // ------------------------- Functions -------------------------
-  CalibrationEditor( Emulator* emu, Logger* log, QWidget* parent = 0);
+  CalibrationEditor(Emulator* emu, Logger* log, QWidget* parent=0);
   ~CalibrationEditor();
 
   int init();

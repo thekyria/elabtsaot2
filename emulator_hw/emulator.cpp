@@ -1288,7 +1288,7 @@ int Emulator::_fitBusesGPF(vector<string>* outputMsg){
     // Fit
     ans = nodeSetGPF(fit_tab,fit_row,fit_col, *pBus);
     if (ans){
-      string msg( "Fitting but with ext id " + auxiliary::to_string(cdBus->extId)
+      string msg( "Fitting bus with ext id " + auxiliary::to_string(cdBus->extId)
                   + " failed with code " + auxiliary::to_string(ans) );
       if (outputMsg) outputMsg->push_back(msg);
     }

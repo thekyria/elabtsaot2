@@ -2,10 +2,11 @@
 #include "simulator_sw.h"
 using namespace elabtsaot;
 
+#include "auxiliary.h"
+using auxiliary::operator <<;
 #include "logger.h"
 #include "powersystem.h"
 #include "auxiliary.h"
-#include "precisiontimer.h"
 #include "scenario.h"
 #include "tdresults.h"
 #include "tdresultsidentifier.h"
@@ -13,14 +14,8 @@ using namespace elabtsaot;
 
 #include <QProgressBar>
 
-#include <list>
-using std::list;
-//#include <string>
-using std::string;
 //#include <vector>
 using std::vector;
-//#include <map>
-using std::map;
 #include <iomanip>
 #include <iostream>
 using std::cout;
@@ -43,26 +38,27 @@ namespace ublas = boost::numeric::ublas;
 #define DBL_E 0.0000000001
 #define DOUBLE_EQ(x,v) (((v - DBL_E) < x) && (x <( v + DBL_E)))
 
-Simulator_sw::Simulator_sw( Powersystem const* pws,
-                            SSEngine const* const& sse,
-                            Logger* log ) :
-    TDEngine(pws, "Software simulator", 0.01, log),
-    _sse(sse), _pwsLocal(*pws) {}
+Simulator_sw::Simulator_sw( Powersystem const* pws, Logger* log ) :
+    TDEngine(pws, "Software simulator", 0.01, log), _pwsLocal(*pws) {}
 
 int Simulator_sw::init(Powersystem const *pws){
 
-  if ( pws != NULL && pws != _pws ){
+  if (pws != NULL && pws != _pws){
     // A new powersystem has been supplied as argument to the Simulator_hw
     _pws = pws;
   } else {
     // The powersystem pointer remains the same (or no arg has been provided)
   }
-
   // Anyway update the internal copy of the powersystem, in order to account for
-  // any changes in the pointed to Powersystem
+  // any changes in the pointed-to Powersystem
   _pwsLocal = *_pws;
-  if ( _TDlog != NULL )
-    _TDlog->notifyProgress(0);
+
+  // Transient saliency is not supported! => xq_t = xd_t
+  size_t genCount = _pwsLocal.getGenCount();
+  for (size_t i=0; i!=genCount; ++i){
+    Generator* gen = _pwsLocal.getGenerator(i);
+    gen->xq_1 = gen->xd_1;
+  }
 
   // Reset internal state of the simulator
   _busintid.clear();
@@ -77,188 +73,110 @@ int Simulator_sw::init(Powersystem const *pws){
   _br_branchoffault_extid.clear();
   _br_faultbus_extid.clear();
 
-  _genBusIntId.clear();
-  _loadBusIntId.clear();
-  _genModel.clear();
-
-  // Reset results
-  _time.clear();
-  _angles.clear();
-  _speeds.clear();
-  _eq_tr.clear();
-  _ed_tr.clear();
-  _powers.clear();
-  _voltages.clear();
-  _currents.clear();
-
   return 0;
 }
 
 bool Simulator_sw::do_isEngineCompatible(Scenario const& sce) const{
 
-  bool compatibility=true;
-  for ( size_t i = 0 ; i != sce.getEventSetSize() ; ++i){
-    if (sce.getEvent(i).element_type()==EVENT_ELEMENT_TYPE_BUS)
-      if (!sce.getEvent(i).event_type()==EVENT_EVENTTYPE_BUSFAULT)
-        compatibility=false;
-    if (sce.getEvent(i).element_type()==EVENT_ELEMENT_TYPE_BRANCH)
-      if (!(sce.getEvent(i).event_type()==EVENT_EVENTTYPE_BRFAULT||
-            sce.getEvent(i).event_type()==EVENT_EVENTTYPE_BRTRIP||
-            sce.getEvent(i).event_type()==EVENT_EVENTTYPE_BRSHORT))
-        compatibility=false;
-    if (sce.getEvent(i).element_type()==EVENT_ELEMENT_TYPE_GEN)
-      if (!(sce.getEvent(i).event_type()==EVENT_EVENTTYPE_GENTRIP||
-            sce.getEvent(i).event_type()==EVENT_EVENTTYPE_GENPCHANGE||
-            sce.getEvent(i).event_type()==EVENT_EVENTTYPE_GENQCHANGE))
-        compatibility=false;
-    if (sce.getEvent(i).element_type()==EVENT_ELEMENT_TYPE_LOAD)
-      if (!( sce.getEvent(i).event_type()==EVENT_EVENTTYPE_LOADPCHANGE||
-             sce.getEvent(i).event_type()==EVENT_EVENTTYPE_LOADQCHANGE))
-        compatibility=false;
+  bool sceCompatible(true);
+  size_t eventSetSize = sce.getEventSetSize();
+  for (size_t i=0; i!=eventSetSize; ++i){
+    // Update event compatibility flag
+    Event ev = sce.getEvent(i);
+    bool evCompatible = false;
+    switch (ev.element_type()){
+    case EVENT_ELEMENT_TYPE_BUS:
+      switch (ev.event_type()){
+      case EVENT_EVENTTYPE_BUSFAULT:
+        evCompatible = true;
+        break;
+      }
+      break;
+
+    case EVENT_ELEMENT_TYPE_BRANCH:
+      switch (ev.event_type()){
+      case EVENT_EVENTTYPE_BRFAULT:
+        evCompatible = true;
+        break;
+      case EVENT_EVENTTYPE_BRTRIP:
+        evCompatible = true;
+        break;
+      case EVENT_EVENTTYPE_BRSHORT:
+        evCompatible = false;
+        break;
+      }
+      break;
+
+    case EVENT_ELEMENT_TYPE_GEN:
+    case EVENT_ELEMENT_TYPE_LOAD:
+    case EVENT_ELEMENT_TYPE_OTHER:
+      evCompatible = false;
+      break;
+    }
+
+    // Update global scenario compatibility flag
+    if (!evCompatible){
+      sceCompatible = false;
+      break;
+    }
   }
-  return compatibility;
+  return sceCompatible;
 }
 
 int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
 
 //  cout.precision(10);
-  init();
-  if ( _pwsLocal.status() != PWSSTATUS_PF )
-    return 1;
+  init(NULL);
+  if (_pwsLocal.status()!=PWSSTATUS_PF) return 1;
 
-  PrecisionTimer timer;
-  timer.Start();
 
+  // **********************************
+  // ***** GENERAL INITIALIZATION *****
+  // **********************************
   Scenario _sce(sce);
-  _sce.sort_t();//Put the events in order
+  _sce.sort_t(); // Put the events in order
+
   double baseF = _pwsLocal.baseF;
+  size_t genCount = _pwsLocal.getGenCount();
+  size_t loadCount = _pwsLocal.getLoadCount();
+  size_t busCount = _pwsLocal.getBusCount();
+  ublas::vector<complex> Vbus(busCount, complex(1.0,0.0)); // bus voltages
+  ublas::vector<complex> Ibus(busCount, complex(0.0,0.0)); // bus currents
+  ublas::matrix<complex,ublas::column_major> augY;         // augmented Y matrix
+  ublas::vector<complex> IN_1(busCount,0.0);               // Norton equivalent transient current source at buses
+  /* For GENMODEL_0p0 ("classical" generator model):
+       Xgen[*][0] -> delta in [rad]
+       Xgen[*][1] -> omega in [rad/sec]
+       Xgen[*][2] -> internal voltage E in [pu]
+     For GENMODEL_1p1 ("1.1" generator model)
+       Xgen[*][0] -> delta in [rad]
+       Xgen[*][1] -> omega in [rad/sec]
+       Xgen[*][2] -> transient quadrature axis voltage magnitude in [pu]
+       Xgen[*][3] -> transient direct axis voltage magnitude in [pu]      */
+  vector<vector<double> > Xgen(genCount, vector<double>(4,0.0) );
+  vector<double> Pel(genCount,0.0);                        // Electical power
+  vector<double> Efd(genCount,0.0);                        // Exitation current
 
-  _genCount = _pwsLocal.getGenCount();
-  _brCount = _pwsLocal.getBranchCount();
-  _loadCount = _pwsLocal.getLoadCount();
-  _busCount = _pwsLocal.getBusCount();
 
-  // Initialize generator specific internal variables
-  for ( size_t k = 0 ; k != _genCount ; ++k ){
-    Generator const* gen = _pwsLocal.getGenerator(k);
-    if (!gen->status) continue;
-
-    _genBusIntId.push_back(_pwsLocal.getBus_intId(gen->busExtId));
-    _genModel.push_back(gen->model);
-  }
-
-  // Initialize load specific internal variables and check whether loads other
-  // than constant impedance are present in the system
-  bool pwsHasNonZLoads = false;
-  for ( size_t k = 0 ; k != _loadCount ; ++k ){
-    Load const* load = _pwsLocal.getLoad(k);
-
-    _loadBusIntId.push_back( _pwsLocal.getBus_intId(load->busExtId) );
-    if ( load->type() != LOADTYPE_CONSTZ )
-      pwsHasNonZLoads = true;
-  }
-
-  // Initial bus voltages
-  vector<complex > Ubus0(_busCount);
-  for ( size_t k = 0 ; k != _busCount ; ++k ){
+  // ***************************************
+  // ***** BUS AND GRID INITIALIZATION *****
+  // ***************************************
+  // Initialize bus voltages
+  for (size_t k = 0 ; k != busCount ; ++k){
     Bus const* bus(_pwsLocal.getBus(k));
-    Ubus0[k] = bus->V * complex(cos(bus->theta), sin(bus->theta));
+    Vbus(k) = std::polar(bus->V,bus->theta);
   }
-  vector<complex > Ubus(Ubus0);
 
-  // ----- Calculate initial state of generators -----
-  // Electical power
-  vector<double> Pel(_genCount,0.0);
-  // Exitation current
-  vector<double> Efd(_genCount,0.0);
-  // Direct axis current
-  vector<double> Id(_genCount,0.0);
-  // Quadrature axis current
-  vector<double> Iq(_genCount,0.0);
-  /*
-    For _genModel == 0 (classical "1.0" generator model):
-      Xgen[*][0] -> delta in [rad]
-      Xgen[*][1] -> omega in [rad/sec]
-      Xgen[*][2] -> internal voltage E in [pu]
-    For _genModel == 1 ("1.1" generator model)
-      Xgen[*][0] -> delta in [rad]
-      Xgen[*][1] -> electrical speed in [rad/sec]
-      Xgen[*][2] -> quadrature axis voltage magnitude in [pu]
-      Xgen[*][3] -> direct axis voltage magnitude Ed in [pu]
-  */
-  vector<vector<double> > Xgen(_genCount, vector<double>(4,0.0) );
-
-  for ( size_t i = 0 ; i != _genCount ; ++i ) {
-    Generator* tempGen;
-    _pwsLocal.getGenerator(_pwsLocal.getGen_extId(i),tempGen);
-
-    if (_genModel[i] == GENMODEL_0p0) {
-      // Initial machine armature currents
-//      complex I0 = complex( tempGen->pgen(), -tempGen->qgen() )
-//                               / std::conj(Ubus[_genBusIntId[i]]);
-//      // Initial steady-state internal EMF
-//      complex E0 = Ubus[_genBusIntId[i]]
-//                  + I0 * complex(0.0, tempGen->xd_1);
-//      Xgen[i][0] = std::arg(E0);
-//      Xgen[i][1] = 2*M_PI*baseF;
-//      Xgen[i][2] = std::abs(E0);
-      Xgen[i][0] = tempGen->deltass();
-      Xgen[i][1] = 2*M_PI*baseF;
-      Xgen[i][2] = tempGen->Ess();
-    }
-
-    else if (_genModel[i] == GENMODEL_1p1) {
-      // Transient saliency is not supported => xd_t = xq_t
-      tempGen->xq_1 = tempGen->xd_1;
-      // Initial machine armature currents
-      complex Ia0 = complex( tempGen->Pgen, -tempGen->Qgen )
-                              / std::conj(Ubus[_genBusIntId[i]]);
-      double phi0 = std::arg(Ia0);
-      // Initial steady-state internal EMF
-      complex Eq0 = Ubus[_genBusIntId[i]]
-                  + Ia0 * complex(0.0, tempGen->xq);
-      double delta0 = std::arg(Eq0);
-      // Machine currents in dq frame
-      Id[i] = -std::abs(Ia0) * std::sin( delta0 - phi0 );
-      Iq[i] =  std::abs(Ia0) * std::cos( delta0 - phi0 );
-      // Field voltage
-      Efd[i] = std::abs(Eq0) - Id[i]*(tempGen->xd-tempGen->xq);
-      //Initial transient internal EMF
-      double Eq_tr0 = Efd[i] + Id[i]*(tempGen->xd-tempGen->xd_1);
-      double Ed_tr0 = -Iq[i]*(tempGen->xq-tempGen->xq_1);
-      Xgen[i][0] = delta0;
-      Xgen[i][1] = 2*M_PI*baseF;
-      Xgen[i][2] = Eq_tr0;
-      Xgen[i][3] = Ed_tr0;
-    }
-  }
-  _calculateMachineCurrents( Xgen, Ubus, _genBusIntId, Iq, Id, Pel );
-
-  // Main Loop: Xgen,Pel, Ubus change after here for each run
-  long int iterationCount = 0;
-  size_t eventCounter = 0;
-
-  vector<double> temp_angles;
-  vector<double> temp_speeds;
-  vector<double> temp_eq;
-  vector<double> temp_ed;
-  vector<complex > temp_Ibus;
-  vector<Event> curEvents; //concurrent events at specific t
-
-  // Store the step size before doing changes in order to restore i in the end
-  double currentTimeStep = _timeStep;
-  double stopTime = _sce.stopTime();
-  double t = _sce.startTime() - 0.02; // 0.02 without applying events
-
-  // Augmented Y matrix
-  ublas::matrix<complex,ublas::column_major> augY;
-  _calculateAugmentedYMatrix( Ubus, Ubus0, augY );
+  // Calculate and augment Y matrix
+  ssutils::buildY(_pwsLocal, augY);
+  _augmentYForLoads(augY,Vbus);
+  _augmentYForGenerators(augY);
 
   // Factorize augmented Y matrix
-  ublas::permutation_matrix<size_t> pmatrix(augY.size1());
-  ublas::matrix<complex,ublas::column_major> LUaugY(augY);
+  ublas::permutation_matrix<size_t> PaugY = ublas::permutation_matrix<size_t>(augY.size1());
+  ublas::matrix<complex,ublas::column_major> LUaugY = augY;
   BOOST_TRY {
-    ublas::lu_factorize(LUaugY, pmatrix);
+    ublas::lu_factorize(LUaugY, PaugY);
   } BOOST_CATCH(ublas::singular const& ex) {
     cout << "Singularity likely!" << endl;
     cout << "Exception message: " << ex.what() << endl;
@@ -270,24 +188,123 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
     return 2;
   } BOOST_CATCH_END
 
-  while ( t< stopTime+currentTimeStep ){
+  // Check whether loads other than constant impedance are present in the system
+  bool pwsHasNonZLoads = false;
+  for (size_t k=0; k!=loadCount; ++k){
+    Load const* load = _pwsLocal.getLoad(k);
+    if (load->type()!=LOADTYPE_CONSTZ){
+      pwsHasNonZLoads = true;
+      break;
+    }
+  }
 
-    // Stop exactly at stop time
-    if ( t+currentTimeStep > stopTime )
+
+  // *********************************
+  // ***** INITIALIZE GENERATORS *****
+  // *********************************
+  for (size_t i=0; i!=genCount; ++i){
+    Generator* gen = _pwsLocal.getGenerator(i);
+    int busExtId = gen->busExtId;
+    int busIntId = _pwsLocal.getBus_intId(busExtId);
+
+    switch (gen->model){
+
+    case GENMODEL_0p0:{
+      // Initialize dynamic variables
+      complex Sgen(gen->Pgen,gen->Qgen);
+      complex Vbus_ = Vbus(busIntId);
+      double delta;  // = gen->deltass();
+      double omega;
+      double EQDm_1; // = gen->Ess();
+      double Pel_;
+      _init0p0(Sgen, Vbus_, gen->ra, gen->xd_1, baseF,
+               delta, omega, EQDm_1, Pel_);
+
+      // Update the global stores
+      Xgen[i][0] = delta;
+      Xgen[i][1] = omega;
+      Xgen[i][2] = EQDm_1;
+      Pel[i] = Pel_;
+      break;}
+
+    case GENMODEL_1p1:{
+      // Initialize dynamic variables
+      complex Sgen(gen->Pgen,gen->Qgen);
+      complex Vbus_ = Vbus(busIntId);
+      double delta;
+      double omega;
+      double Eq_1;
+      double Ed_1;
+      double Efd_;
+      double Pel_;
+      _init1p1(Sgen, Vbus_, gen->ra, gen->xq, gen->xd, gen->xq_1, gen->xd_1, baseF,
+               delta, omega, Eq_1, Ed_1, Efd_, Pel_);
+
+      // Update the global stores
+      Xgen[i][0] = delta;
+      Xgen[i][1] = omega;
+      Xgen[i][2] = Eq_1;
+      Xgen[i][3] = Ed_1;
+      Efd[i] = Efd_;
+      Pel[i] = Pel_;
+
+      break;}
+    }
+  }
+
+
+  // *********************************
+  // *********** MAIN LOOP ***********
+  // *********************************
+  long int iterationCount = 0;
+  size_t eventCounter = 0;
+
+  // Result stores
+  vector<double> time_store;
+  vector<vector<double> > angles_store(genCount);
+  vector<vector<double> > speeds_store(genCount);
+  vector<vector<double> > eq_tr_store(genCount);
+  vector<vector<double> > ed_tr_store(genCount);
+  vector<vector<double> > Pel_store(genCount);
+  vector<vector<complex> > Vbus_store(busCount);
+  vector<vector<complex> > Ibus_store(busCount);
+
+  vector<Event> curEvents; //concurrent events at specific t
+
+  // Store the step size before doing changes in order to restore i in the end
+  double currentTimeStep = _timeStep;
+  double stopTime = _sce.stopTime();
+  double t = _sce.startTime() - 2*currentTimeStep; // prevision in case there are events at t=0
+
+  cout << "INIT" << endl;
+  cout << "augY: " << augY << endl;
+  cout << "LUaugY: " << LUaugY << endl;
+  cout << "PaugY: " << PaugY << endl;
+
+  // Xgen, Pel, Vbus change after here for each run
+  while (t < stopTime+currentTimeStep){
+
+    // Set currentTimeStep so that this iteration stops exactly at stopTime
+    if (t+currentTimeStep > stopTime)
       currentTimeStep = stopTime-t;
 
-    // ----- In case of powersystem with non-constant impedance loads -----
-    // ----- recalculate augmented Y matrix -----
-    if ( pwsHasNonZLoads ){
-      // Calculate augmented Y matrix proper
-      _calculateAugmentedYMatrix( Ubus, Ubus0, augY );
+    cout << "ITERATION: " << iterationCount << endl;
+    cout << "TIME: " << t << endl;
 
+    // ************************************
+    // ****** HANDLING OF NON-ZLOADS ******
+    // ************************************
+    // ----- In case of non-zload recalculate augmented Y matrix -----
+    if (pwsHasNonZLoads){ // COMMENTED-OUT ONLY FOR DEBUG PURPOSES
+      // Calculate augmented Y matrix proper
+      ssutils::buildY(_pwsLocal, augY);
+      _augmentYForLoads(augY, Vbus);
+      _augmentYForGenerators(augY);
       // Factorize augmented Y matrix
-      ublas::permutation_matrix<size_t> pm(augY.size1());
-      pmatrix = pm;
+      PaugY = ublas::permutation_matrix<size_t>(augY.size1());
       LUaugY = augY;
       BOOST_TRY {
-        ublas::lu_factorize(LUaugY, pmatrix);
+        ublas::lu_factorize(LUaugY, PaugY);
       } BOOST_CATCH(ublas::singular const& ex) {
         cout << "Singularity likely!" << endl;
         cout << "Exception message: " << ex.what() << endl;
@@ -298,109 +315,98 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
         cout << "Operation failed!" << endl;
         return 3;
       } BOOST_CATCH_END
+      cout << "NON-ZLOADS" << endl;
+      cout << "augY: " << augY << endl;
+      cout << "LUaugY: " << LUaugY << endl;
+      cout << "PaugY: " << PaugY << endl;
+    } // COMMENTED-OUT ONLY FOR DEBUG PURPOSES
+
+    // ************************************
+    // ******** MAIN SEQUENCE *************
+    // ************************************
+    cout << "MAIN SEQUENCE" << endl;
+    Xgen = _rungeKutta(LUaugY, PaugY, Xgen, Efd, currentTimeStep); // integration
+    cout << "Xgen: " << Xgen << endl;
+    IN_1 = _calculateNortonCurrents(Xgen);                         // determine internal Norton currents
+    cout << "IN_1: " << IN_1 << endl;
+    Vbus = _calculateGridVoltages(LUaugY, PaugY, IN_1);            // get grid voltage profile
+    cout << "Vbus: " << Vbus << endl;
+    Ibus = ublas::prod(augY,Vbus);                                 // calculate bus currents
+    cout << "Ibus: " << Ibus << endl;
+    Pel = _calculateGeneratorPowers(Vbus, Xgen);                   // calculate generator electric powers
+    cout << "Pel: " << Pel << endl;
+
+
+    // ************************************
+    // ******* STORE RESULTS **************
+    // ************************************
+    // Store results only for positive time
+    if (t < 0.){
+      t += currentTimeStep;
+      continue;
+    }
+    // Save the data in the local stores; the final store would be after the loop to the TD results
+    time_store.push_back(t);
+    for (size_t k(0); k!=genCount; ++k){
+      angles_store[k].push_back(Xgen[k][0]);
+      speeds_store[k].push_back(Xgen[k][1]/(2*M_PI*baseF));
+      eq_tr_store[k].push_back(Xgen[k][2]);
+      ed_tr_store[k].push_back(Xgen[k][3]);
+      Pel_store[k].push_back(Pel[k]);
+    }
+    for (size_t k(0); k!=busCount; ++k){
+      Vbus_store[k].push_back(Vbus(k));
+      Ibus_store[k].push_back(Ibus(k));
     }
 
-    // ----- Perform RK integration of -----
-    /*
-      Xgen: generator dynamic variables (angles, speeds)
-      Pel : generator electrical power
-      Efd : excitation voltage
-      Iq  : q-axis generator current
-      Id  : d-axis generator current
-      Ubus: bus voltages
-    */
-    _rungeKutta( LUaugY, pmatrix, _genBusIntId, currentTimeStep,
-                 Xgen, Pel, Efd, Iq, Id, Ubus );
-    temp_angles.resize( Xgen.size() );
-    temp_speeds.resize( Xgen.size() );
-    temp_eq.resize( Xgen.size() );
-    temp_ed.resize( Xgen.size() );
-    for ( size_t k = 0 ; k != Xgen.size() ; ++k ){
-      temp_angles[k] = Xgen[k][0];
-      temp_speeds[k] = Xgen[k][1]/(2*M_PI*baseF);
-      temp_eq[k] = Xgen[k][2];
-      temp_ed[k] = Xgen[k][3];
-    }
 
-    // Calculate the current injected at buses (from loads and gens)
-    ublas::vector<complex > U(Ubus.size());
-    std::copy(Ubus.begin(),Ubus.end(),U.begin());
-    ublas::vector<complex > I( ublas::prod(U,LUaugY) );
-    temp_Ibus.resize(I.size());
-    std::copy(I.begin(),I.end(),temp_Ibus.begin());
-
-    // Save the temporary data before the end of calibration
-    // The final store would be after the loop to the TD results
-    if ( t >= 0. ){
-      if ( _TDlog != NULL )
-        _TDlog->notifyProgress( t/stopTime*100 );
-      auxiliary::stayAlive();
-      _time.push_back(t);
-      _voltages.push_back(Ubus);
-      _currents.push_back(temp_Ibus);
-      _powers.push_back(Pel);
-      _angles.push_back(temp_angles);
-      _speeds.push_back(temp_speeds);
-      _eq_tr.push_back(temp_eq);
-      _ed_tr.push_back(temp_ed);
-    }
-
+    // ************************************
+    // ********** EVENT HANDLING **********
+    // ************************************
     // Check if next event occures in a smaller step
-    if ( eventCounter != _sce.getEventSetSize() ){
+    if (eventCounter != _sce.getEventSetSize()){
       // Set only if there is an event left
-      if (   (t+currentTimeStep) >= _sce.getEvent(eventCounter).time()
-             && _sce.getEvent(eventCounter).status() ){
+      if ((t+currentTimeStep) >= _sce.getEvent(eventCounter).time()
+          && _sce.getEvent(eventCounter).status()){
         // Event occured to a time smaller that time step
         currentTimeStep=_sce.getEvent(eventCounter).time()-t;
       }
     }
-
     // Check if event occured
     curEvents.clear();
     for (size_t i=eventCounter;i<_sce.getEventSetSize();++i){
       // Start from eventCounter, not from 0 but the next event, scenario must be in order
-      if (    DOUBLE_EQ(t,_sce.getEvent(i).time())
-           && _sce.getEvent(i).status() ){
+      if (DOUBLE_EQ(t,_sce.getEvent(i).time()) && _sce.getEvent(i).status()){
         curEvents.push_back(_sce.getEvent(i));
         eventCounter++;
       }
     }
     for (size_t i=0;i<curEvents.size();++i){
-
-      if (curEvents[i].element_type() == EVENT_ELEMENT_TYPE_BUS){ // Bus fault
-        _parseBusFault(curEvents[i]);
-      }
-      if (curEvents[i].element_type() == EVENT_ELEMENT_TYPE_BRANCH){ // Branch fault
-        _parseBrFault(curEvents[i]);
-      }
-      if (curEvents[i].element_type() == EVENT_ELEMENT_TYPE_GEN){ // Generator fault
-        _parseGenFault(curEvents[i]);
-      }
-      if (curEvents[i].element_type() == EVENT_ELEMENT_TYPE_LOAD){ // Load fault
-        _parseLoadFault(curEvents[i]);
-      }
+      if (curEvents[i].element_type() == EVENT_ELEMENT_TYPE_BUS)
+        _parseBusFault(curEvents[i]); // Bus fault
+      if (curEvents[i].element_type() == EVENT_ELEMENT_TYPE_BRANCH)
+        _parseBrFault(curEvents[i]); // Branch fault
     }
-
     // The new parameters of the pws was set, running power flow now
     if (curEvents.size() != 0) {
 
-      /*
-        If event happened:
+      /* If event happened:
           - build Y matrix
           - calculate augmented Y matrix
           - LU factorize augmented Y matrix
           - solve power flow
           - calculate machine currents
-          - calculate bus current injections
-      */
+          - calculate bus current injections */
       // Calculate augmented Y matrix
-      _calculateAugmentedYMatrix( Ubus, Ubus0, augY );
+      ssutils::buildY(_pwsLocal, augY);
+      _augmentYForLoads(augY,Vbus);
+      _augmentYForGenerators(augY);
       // LU factorize augmented Y matrix
       ublas::permutation_matrix<size_t> pm(augY.size1());
-      pmatrix = pm;
+      PaugY = pm;
       LUaugY = augY;
       BOOST_TRY {
-        ublas::lu_factorize(LUaugY, pmatrix);
+        ublas::lu_factorize(LUaugY, PaugY);
       } BOOST_CATCH(ublas::singular const& ex) {
         cout << "Singularity likely!" << endl;
         cout << "Exception message: " << ex.what() << endl;
@@ -411,200 +417,383 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
         cout << "Operation failed!" << endl;
         return 4;
       } BOOST_CATCH_END
-      // Solve power flow
-      _solveNetwork( LUaugY, pmatrix, Xgen, _genBusIntId, Ubus );
-      // Calculate machine currents
-      _calculateMachineCurrents( Xgen, Ubus, _genBusIntId, Iq, Id, Pel );
-      // Calculate bus current injections
-      ublas::vector<complex > U( Ubus.size() );
-      std::copy(Ubus.begin(),Ubus.end(),U.begin());
-      ublas::vector<complex > I( ublas::prod(U,LUaugY) );
-      temp_Ibus.resize(I.size());
-      std::copy(I.begin(),I.end(),temp_Ibus.begin());
+      cout << "EVENT" << endl;
+      cout << "augY: " << augY << endl;
+      cout << "LUaugY: " << LUaugY << endl;
+      cout << "PaugY: " << PaugY << endl;
+      // Xgen is not changed but the following line is necessary to update the size of IN_1
+      IN_1 = _calculateNortonCurrents(Xgen);              // determine internal Norton currents
+      cout << "IN_1: " << IN_1 << endl;
+      Vbus = _calculateGridVoltages(LUaugY, PaugY, IN_1); // get grid voltage profile
+      cout << "Vbus: " << Vbus << endl;
+      Ibus = ublas::prod(augY,Vbus);
+      cout << "Ibus: " << Ibus << endl;
+      Pel = _calculateGeneratorPowers(Vbus, Xgen);        // calculate generator electric powers
+      cout << "Pel: " << Pel << endl;
 
-      // Save again the values after the event at t for the t+(just before, we saved them for t-)
-      _time.push_back(t);
-      _voltages.push_back(Ubus);
-      _currents.push_back(temp_Ibus);
-      _powers.push_back(Pel);
-      _angles.push_back(temp_angles);
-      _speeds.push_back(temp_speeds);
-      _eq_tr.push_back(temp_eq);
-      _ed_tr.push_back(temp_ed);
+      // Save again the values after the event at t for the t+ (just before, we saved them for t-)
+      time_store.push_back(t);
+      for (size_t k(0); k!=genCount; ++k){
+        angles_store[k].push_back(Xgen[k][0]);
+        speeds_store[k].push_back(Xgen[k][1]/(2*M_PI*baseF));
+        eq_tr_store[k].push_back(Xgen[k][2]);
+        ed_tr_store[k].push_back(Xgen[k][3]);
+        Pel_store[k].push_back(Pel[k]);
+      }
+      for (size_t k(0); k!=busCount; ++k){
+        Vbus_store[k].push_back(Vbus(k));
+        Ibus_store[k].push_back(Ibus(k));
+      }
+
       currentTimeStep = _timeStep; // The event occured, returning to oldstep
     }
+
+
+    // ***************************************************
+    // ***** UPDATE PROGRESS BAR AND TIMESTEP ************
+    // ***************************************************
+    if (_TDlog!=NULL) _TDlog->notifyProgress(100*t/stopTime);
+    auxiliary::stayAlive();
     t += currentTimeStep;
     ++iterationCount;
-  }
+  } // end of MAIN LOOP
 
-//  double elapsedTime =
-      timer.Stop();
-//  cout << "Total sim time : "<< elapsedTime << " sec (";
-//  cout << elapsedTime/iterationCount << "sec/iteration)" << endl;
+  // Store all the computed data to TDresults to the user request
+  _storeTDResults(time_store, angles_store, speeds_store, eq_tr_store, eq_tr_store,
+                  Pel_store, Vbus_store, Ibus_store, res);
 
-  // Ask to store all the computed data to TDresults
-  // according to the requested results from the user
-  int ans = _storeTDResults(res);
-  if (ans) return 5;
+  if (_TDlog != NULL) _TDlog->notifyProgress(0);
 
   return 0;
 }
 
-Powersystem const* Simulator_sw::do_getPws() const{ return _pws; }
+Powersystem const* Simulator_sw::do_getPws() const{return _pws;}
 
-// TODO: Building Y in _calculateAugmentedYMatrix inefficient!
-int Simulator_sw::
-_calculateAugmentedYMatrix( vector<complex> const& Ubus,
-                            vector<complex> const& Ubus0,
-                            ublas::matrix<complex,ublas::column_major>& augY ){
+void Simulator_sw::_augmentYForLoads(ublas::matrix<complex,ublas::column_major>& augY,
+                                     ublas::vector<complex> const& Vbus) const{
+  size_t loadCount = _pwsLocal.getLoadCount();
+  for (size_t m=0; m!=loadCount; ++m){
+    // Get load and bus
+    Load const* load = _pwsLocal.getLoad(m);
+    int busExtId = load->busExtId;
+    int busIntId = _pwsLocal.getBus_intId(busExtId);
+    Bus const* bus = _pwsLocal.getBus(busIntId);
 
-  ssutils::buildY(_pwsLocal, augY);
-  size_t busCount = augY.size1();
+    // Steady-state
+    complex V0 = std::polar(bus->V, bus->theta);
+    double Vm0 = std::abs(V0);
+    complex V = Vbus(busIntId);
+    double Vm = std::abs(V);
+    complex S0 = complex(load->Pdemand,load->Qdemand);
+    double P0 = S0.real();
+    double Q0 = S0.imag();
+    double f0 = _pwsLocal.baseF;
 
-  // Load power
-  ublas::vector<complex > loadS(_loadCount);
-  for (size_t l=0;l<_loadCount;++l){
-    Load const* load = _pwsLocal.getLoad(l);
-    loadS.insert_element(l, complex(load->Pdemand,-load->Qdemand));
-  }
+    // Current state
+    double P = P0 * std::pow(Vm/Vm0, load->Vexpa); // *(1+load->kpf*(f-f0))
+    double Q = Q0 * std::pow(Vm/Vm0, load->Vexpb); // *(1+load->kpf*(f-f0))
+    complex S(P,Q);
+    complex I = std::conj(S/V);
+    double Im = std::abs(I);
 
-  // Equivvalent load admittance
-  ublas::vector <complex > yload(busCount);
-  unsigned int busofld;
-  for (size_t l=0;l<busCount;++l){
-    yload.insert_element(l,0);
-    for (size_t i=0;i<_loadCount;++i){
-      busofld=_pwsLocal.getBus_intId(_pwsLocal.getLoad(i)->busExtId);
-      if (busofld==l){
-        switch ( _pwsLocal.getLoad(i)->type() ){
-        case LOADTYPE_CONSTP:
-          yload(l) = loadS[i]/std::abs(Ubus0[l])/std::abs(Ubus0[l]) * (Ubus0[l]/Ubus[l])* (Ubus0[l]/Ubus[l]);
-          break;
-        case LOADTYPE_CONSTI:
-          yload(l) = loadS[i]/std::abs(Ubus0[l])/std::abs(Ubus0[l]) * (Ubus0[l]/Ubus[l]);
-          break;
-        case LOADTYPE_CONSTZ:
-          yload(l) = loadS[i]/std::abs(Ubus0[l])/std::abs(Ubus0[l]);
-          break;
-        }
-      }
-    }
-  }
+    // Compute resulting Y
+    complex Y = I/V;
+    double Ym = std::abs(Y);
 
-  // Equivalent generator admittance
-  vector<complex > ygen( busCount, complex(0.0,0.0) );
-  for ( size_t i = 0 ; i < busCount ; ++i )
-    for ( size_t g = 0 ; g < _genBusIntId.size() ; g++ )
-      if ( i == _genBusIntId[g] )
-        ygen[i] = 1.0/complex(0.0,_pwsLocal.getGenerator(g)->xd_1);
-
-  // Augmented Y matrix
-  for ( size_t i = 0 ; i != busCount ; ++i)
-    augY.at_element(i,i) += (ygen[i] + yload[i]);
-
-  return 0;
-}
-
-void Simulator_sw::_solveNetwork( ublas::matrix<complex,ublas::column_major> const& LUaugY,
-                               ublas::permutation_matrix<size_t> const& pmatrix,
-                               vector<vector<double> > const& Xgen,
-                               vector<size_t> const& genBusIntId,
-                               vector<complex >& Ubus ){
-
-  ublas::vector<complex > Ibus(pmatrix.size(),complex(0.0,0.0));
-  for ( size_t i = 0 ; i != _genCount ; ++i ){
-
-    complex Vgen;
-    if (_genModel[i]==GENMODEL_0p0){
-      Vgen = complex(Xgen[i][2],0.0)
-                * std::exp(complex(0.0,Xgen[i][0]));
-    } else if (_genModel[i]==GENMODEL_1p1) {
-      Vgen = complex(Xgen[i][2],Xgen[i][3])
-                * std::exp(complex(0.0,Xgen[i][0]));
-    }
-
-    complex Zgen = complex(0.0, _pwsLocal.getGenerator(i)->xd_1);
-
-    Ibus(genBusIntId[i]) += Vgen/Zgen;
-  }
-  ublas::lu_substitute(LUaugY, pmatrix, Ibus); // Ibus contains the solution
-
-  Ubus.resize( Ibus.size() );
-  std::copy( Ibus.begin(), Ibus.end(), Ubus.begin() );
-}
-
-void Simulator_sw::_calculateMachineCurrents( vector<vector<double> > const& Xgen,
-                                              vector<complex > const& Ubus,
-                                              vector<size_t> const& genBusIntId,
-                                              vector<double>& Iq,
-                                              vector<double>& Id,
-                                              vector<double>& Pel ){
-  if ( Pel.size() != _genCount )
-    Pel.resize(_genCount);
-
-  for ( size_t i = 0 ; i < _genCount ; ++i ) {
-    Generator const* gen = _pwsLocal.getGenerator(i);
-    switch ( _genModel[i] ){
-    case GENMODEL_0p0:
-      Pel[i] = (1.0/gen->xd_1)
-          * std::abs( Ubus[genBusIntId[i]] )
-          * std::abs( Xgen[i][2] )
-          * std::sin( Xgen[i][0]-std::arg(Ubus[genBusIntId[i]]) );
+    complex Ytemp;
+    switch ( load->type() ){
+    case LOADTYPE_CONSTP:
+      Ytemp = std::conj(S0)/std::abs(V0)/std::abs(V0) * (V0/V) * (V0/V);
       break;
+    case LOADTYPE_CONSTI:
+      Ytemp = std::conj(S0)/std::abs(V0)/std::abs(V0) * (V0/V);
+      break;
+    case LOADTYPE_CONSTZ:
+      Ytemp = std::conj(S0)/std::abs(V0)/std::abs(V0);
+      break;
+    }
+    augY.at_element(busIntId,busIntId) += Y;
+  }
+}
+
+// Adding the shunt Norton impedance of the generator to the Y matrix of the grid
+// See Padiyar fig. 12.4, p. 417
+void Simulator_sw::_augmentYForGenerators(ublas::matrix<complex,ublas::column_major>& augY) const{
+  size_t genCount = _pwsLocal.getGenCount();
+  for (size_t g=0; g!=genCount; g++){
+    Generator const* gen = _pwsLocal.getGenerator(g);
+    int busExtId = gen->busExtId;
+    int busIntId = _pwsLocal.getBus_intId(busExtId);
+    complex ygen = 1.0/complex(gen->ra,gen->xd_1);
+    augY.at_element(busIntId,busIntId) += ygen;
+  }
+}
+
+ublas::vector<complex> Simulator_sw::_calculateGridVoltages(ublas::matrix<complex,ublas::column_major> const& LUaugY,
+                                                            ublas::permutation_matrix<size_t> const& PaugY,
+                                                            ublas::vector<complex> const& I)  const{
+  ublas::vector<complex> V(I);            // initialize V with the current values
+  ublas::lu_substitute(LUaugY, PaugY, V); // V contains the solution
+  return V;
+}
+
+ublas::vector<complex> Simulator_sw::_calculateNortonCurrents(vector<vector<double> > const& Xgen) const{
+  size_t genCount = _pwsLocal.getGenCount();
+  size_t busCount = _pwsLocal.getBusCount();
+  ublas::vector<complex> IN_1(busCount,complex(0.0,0.0));
+  for ( size_t i = 0 ; i != genCount ; ++i ){
+    Generator const* gen = _pwsLocal.getGenerator(i);
+    int busExtId = gen->busExtId;
+    int busIntId = _pwsLocal.getBus_intId(busExtId);
+    switch (gen->model){
+    case GENMODEL_0p0:{
+      double EQDm_1 = Xgen[i][2];
+      double delta = Xgen[i][0];
+      IN_1(busIntId) += _calculateNortonCurrent_0p0(EQDm_1, delta, gen->ra, gen->xd_1);
+      break;}
     case GENMODEL_1p1:{
-      // Tranform U to rotor frame of reference
-      double vd = -std::abs(Ubus[genBusIntId[i]])
-                    * sin(Xgen[i][0]-std::arg(Ubus[genBusIntId[i]]));
-      double vq =  std::abs(Ubus[genBusIntId[i]])
-                    * cos(Xgen[i][0]-std::arg(Ubus[genBusIntId[i]]));
-      Iq[i] = -(vd - Xgen[i][3])/gen->xq_1;
-      Id[i] =  (vq - Xgen[i][2])/gen->xd_1;
-      Pel[i] = Xgen[i][2]*Iq[i] + Xgen[i][3]*Id[i] + (gen->xd_1-gen->xq_1)*Id[i]*Iq[i];
+      double delta = Xgen[i][0];
+      double Eq_1 = Xgen[i][2];
+      double Ed_1 = Xgen[i][3];
+      IN_1(busIntId) += _calculateNortonCurrent_1p1(Eq_1, Ed_1, delta, gen->ra, gen->xq_1);
       break;}
     }
   }
+  return IN_1;
 }
 
-void
-Simulator_sw::_calculateGeneratorDynamics( vector<vector<double> > const& Xgen,
-                                           vector<double> const& Pel,
-                                           vector<double> const& Efd,
-                                           vector<double> const& Iq,
-                                           vector<double> const& Id,
-                                           vector<vector<double> >& dXgen ){
-
- double omegas = 2.0*M_PI*_pwsLocal.baseF;
- dXgen.resize( _genCount, vector<double>(4,0.0) );
- for ( size_t i = 0 ; i != _genCount ; ++i ){
-   Generator const* gen = _pwsLocal.getGenerator(i);
-   if (_genModel[i]==GENMODEL_0p0){
-     dXgen[i][0] = Xgen[i][1] - omegas;
-     dXgen[i][1] = omegas*(gen->Pgen - Pel[i] - gen->D*(Xgen[i][1]-omegas))
-                   / gen->M;
-     dXgen[i][2] = 0.0; // Eq doesnt change for model 1
-   }
-   else if (_genModel[i]==GENMODEL_1p1){
-     dXgen[i][0] = Xgen[i][1] - omegas;
-     dXgen[i][1] = omegas*(gen->Pgen - Pel[i] - gen->D*(Xgen[i][1]-omegas))
-                   / gen->M;
-     dXgen[i][2] = ( Efd[i] - Xgen[i][2] + (gen->xd-gen->xd_1)*Id[i] )
-                   / gen->Td0_1;
-     dXgen[i][3] = ( -Xgen[i][3]- (gen->xq-gen->xq_1)*Iq[i] )
-                   / gen->Td0_1;
-   }
- }
+vector<double> Simulator_sw::_calculateGeneratorPowers(ublas::vector<complex> const& Vbus,
+                                                       vector<vector<double> > const& Xgen) const{
+  size_t genCount = _pwsLocal.getGenCount();
+  std::vector<double> Pel(genCount, 0.0);
+  // Calculate machine powers
+  for (size_t i(0); i!=genCount; ++i){
+    Generator const* gen = _pwsLocal.getGenerator(i);
+    int busExtId = gen->busExtId;
+    int busIntId = _pwsLocal.getBus_intId(busExtId);
+    switch (gen->model){
+    case GENMODEL_0p0:{
+      complex Vbus_ = Vbus(busIntId);
+      double EQDm_1 = Xgen[i][2];
+      double delta = Xgen[i][0];
+      complex IQD = _calculateCurrent_0p0(Vbus_, EQDm_1, delta, gen->ra, gen->xd_1);
+      Pel[i] = _calculateActivePower_0p0(Vbus_,IQD);
+      break;}
+    case GENMODEL_1p1:{
+      complex Vbus_ = Vbus(busIntId);
+      complex Iqd = _calculateCurrent_1p1(Vbus_, Xgen[i][0], Xgen[i][2], Xgen[i][3], gen->ra, gen->xd_1, gen->xq_1);
+      Pel[i] = _calculateActivePower_1p1(Vbus_, Xgen[i][0], Iqd);;
+      break;}
+    }
+  }
+  return Pel;
 }
 
-int Simulator_sw::_rungeKutta( ublas::matrix<complex,ublas::column_major> const& LUaugY,
-                               ublas::permutation_matrix<size_t> const& pmatrix,
-                               vector<size_t> const& genBusIntId,
-                               double stepSize,
-                               vector<vector<double> >& Xgen,
-                               vector<double>& Pel,
-                               vector<double>& Efd,
-                               vector<double>& Iq,
-                               vector<double>& Id,
-                               vector<complex >& Ubus ){
+////////////////////////////////////////////////////////////////////////////////
+/// 0p0 model related functions
+////////////////////////////////////////////////////////////////////////////////
+void Simulator_sw::_init0p0(complex Sgen, complex Vbus_, double ra, double xd_1, double baseF,
+                            double& delta, double& omega, double& EQDm_1, double& Pel_) const{
+  complex Z_1(ra,xd_1);                           // transient impedance
+  complex IQD = std::conj(Sgen)/std::conj(Vbus_); // armature current (DQ frame)
+  complex EQD_1 = Vbus_ + Z_1*IQD;                // internal transient voltage (DQ frame)
+  delta = std::arg(EQD_1);  // angle between the Q-axis (system frame of reference)
+                            // and the q-axis (machine frame of reference)
+  EQDm_1 = std::abs(EQD_1); // internal transient voltage magnitude
+  omega = 2.*M_PI*baseF;    // Synchronous speed in [rad/sec]
+  Pel_ = _calculateActivePower_0p0(Vbus_, IQD);
+}
+
+complex Simulator_sw::_calculateCurrent_0p0(complex Vbus_, double EQDm_1, double delta, double ra, double xd_1) const{
+  complex EQD_1 = std::polar(EQDm_1,delta); // transient internal voltage (DQ frame)
+  complex Z_1(ra,xd_1);                     // transient impedance
+  complex IQD = (EQD_1-Vbus_)/Z_1;          // armature current (DQ frame)
+  return IQD;
+}
+
+double Simulator_sw::_calculateActivePower_0p0(complex Vbus_, complex IQD) const{
+  complex S = Vbus_ * std::conj(IQD);
+  return S.real();
+}
+
+complex Simulator_sw::_calculateNortonCurrent_0p0(double EQDm_1, double delta, double ra, double xd_1) const{
+  complex EQD_1 = std::polar(EQDm_1,delta); // transient internal voltage (DQ frame)
+  complex Z_1(ra,xd_1);                     // transient impedance
+  complex IN_1 = EQD_1/Z_1;                 // Norton equivalent transient current source
+  return IN_1;
+}
+
+void Simulator_sw::_dynamics_0p0(complex Vbus_,
+                                 double EQDm_1, double delta, double omega,
+                                 double Pmech, double M, double D, double ra, double xd_1,
+                                 double& ddelta, double& domega) const{
+  double omegaNominal = 2.0*M_PI*_pwsLocal.baseF;
+  complex IQD = _calculateCurrent_0p0(Vbus_, EQDm_1, delta, ra, xd_1);
+  double Pel = _calculateActivePower_0p0(Vbus_, IQD);
+  ddelta = omega - omegaNominal;
+  domega = omegaNominal*(Pmech - Pel - D*(omega-omegaNominal))/M;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// 1p1 model related functions
+////////////////////////////////////////////////////////////////////////////////
+void Simulator_sw::_init1p1(complex Sgen, complex Vbus_, double ra, double xq, double xd, double xq_1, double xd_1, double baseF,
+                            double& delta, double& omega, double& Eq_1, double& Ed_1, double& Efd, double& Pel_) const{
+  // Steady-state and transient impedances
+  complex Z(ra,xq);           // steady state impedance
+  complex Z_1(ra,xq_1);       // transient impedance
+
+  // Determine the armature current
+  complex IQD = std::conj(Sgen)/std::conj(Vbus_); // armature current (DQ frame)
+
+  // Set the q-axis
+  complex EQD = Vbus_ + Z*IQD; // steady-state internal voltage (DQ frame)
+                              // only has q-axis component! as per Padiyar p. 189
+  delta = std::arg(EQD);     // angle between the Q-axis (system frame of reference)
+                              // and the q-axis (machine frame of reference)
+
+  // Determine the field voltage
+  complex Iqd = IQD * exp(complex(0,-delta)); // armature current (dq frame)
+//  double Iq = Iqd.real();     // q-axis armature current
+  double Id = Iqd.imag();     // q-axis armature current
+  Efd = std::abs(EQD) - (xd-xq) * Id;
+
+  // Equivalent circuit of Padiyar figure 12.4, p. 417
+  complex EQD_1 = Vbus_ + Z_1 * IQD;                // internal transient voltage (DQ frame)
+  complex Eqd_1 = EQD_1 * exp(complex(0,-delta)); // internal transient voltage (dq frame)
+
+//  // Alternatively, the following yields exactly the same result
+//  complex Vdq = Vbus_ * exp(complex(0,-delta));    // bus voltage (dq frame)
+//  complex Eqd_1 = Vdq + Z_1 * Iqd;
+
+  Eq_1 = Eqd_1.real(); // q-axis internal transient voltage
+  Ed_1 = Eqd_1.imag(); // d-axis internal transient voltage
+
+  // Synchronous speed in [rad/sec]
+  omega = 2.*M_PI*baseF;
+
+  // Initialize power
+  Pel_= _calculateActivePower_1p1(Vbus_, delta, Iqd);
+}
+
+complex Simulator_sw::_calculateCurrent_1p1(complex Vbus_, double delta, double Eq_1, double Ed_1, double ra, double xd_1, double xq_1) const{
+  // Tranform Vbus_ to rotor frame of reference (dq), (counterclockwise) rotating the frame of reference by delta
+  complex Vqd = Vbus_ * exp(complex(0,-delta)); // bus voltage (dq frame)
+  double Vq = Vqd.real();     // q-axis bus voltage
+  double Vd = Vqd.imag();     // d-axis bus voltage
+  // Eq_1 and Ed_1 are already in the dq frame: Eqd_1 = Eq_1 + j*Ed_1
+
+  // Transient saliency NOT neglected: xd_1 != xq_1
+  // Armature resistance NOT neglected: ra != 0
+  /* The following system has to be solved
+   *   Vq = Eq_1 - xd_1*Id - ra*Iq
+   *   Vd = Ed_1 - xq_1*Iq - ra*Id  */
+  // Solution of the system above given in Padiyar (12.26), p. 414
+  double Iq = (ra*(Eq_1-Vq) + xd_1*(Ed_1-Vd))/(ra*ra+xd_1*xq_1);  // q-axis armature current
+  double Id = (-xq_1*(Eq_1-Vq) + ra*(Ed_1-Vd))/(ra*ra+xd_1*xq_1); // d-axis armature current
+  complex Iqd(Iq,Id);                                             // armature current (dq frame)
+  return Iqd;
+
+//  // Transient saliency neglected: xd_1 == xq_1
+//  // Armature resistance NOT neglected: ra != 0
+//  double x_1 = xd_1;
+//  complex Z(ra,x_1);
+//  complex Eqd_1(Eq_1,Ed_1);
+//  complex Iqd = (Eqd_1-Vqd)/Z;
+//  return Iqd;
+
+//  // Transient saliency NOT neglected: xd_1 != xq_1
+//  // Armature resistance neglected: ra == 0
+//  double Iq = (Eq_1 - Vd)/xq_1;
+//  double Id = -(Ed_1 - Vq)/xd_1;
+//  complex Iqd(Iq,Id);
+//  return Iqd;
+}
+
+double Simulator_sw::_calculateActivePower_1p1(complex Vbus_, double delta, complex Iqd) const{
+  // Tranform Vbus_ to rotor frame of reference (dq), (counterclockwise) rotating the frame of reference by delta
+  complex Vqd = Vbus_ * exp(complex(0,-delta)); // bus voltage (dq frame)
+  complex S = Vqd * std::conj(Iqd);
+  return S.real();
+}
+
+complex Simulator_sw::_calculateNortonCurrent_1p1(double Eq_1, double Ed_1, double delta, double ra, double xq_1) const{
+  complex Eqd_1 = complex(Eq_1,Ed_1);                   // internal voltage (qd frame)
+  complex EQD_1 = Eqd_1 * std::exp(complex(0.0,delta)); // internal transient voltage (QD frame)
+                                                        // bring Eqd into the QD frame: multiply by exp(1i*delta)
+  complex Z_1 = complex(ra,xq_1);                       // transient impedance
+  complex IN_1 = EQD_1/Z_1;                             // Norton equivalent transient current source
+  return IN_1;
+}
+
+void Simulator_sw::_dynamics_1p1(complex Vbus_,
+                   double delta, double omega, double Eq_1, double Ed_1, double Efd,
+                   double Pmech, double M, double D, double ra, double xd, double xq, double xd_1, double xq_1, double Td0_1, double Tq0_1,
+                   double& ddelta, double& domega, double& dEq_1, double& dEd_1) const{
+  double omegaNominal = 2.0*M_PI*_pwsLocal.baseF;
+  complex Iqd = _calculateCurrent_1p1(Vbus_, delta, Eq_1, Ed_1, ra, xd_1, xq_1);
+  double Iq = Iqd.real(); // q-axis armature current
+  double Id = Iqd.imag(); // d-axis armature current
+  double Pel = _calculateActivePower_1p1(Vbus_, delta, Iqd);
+  ddelta = omega - omegaNominal;
+  domega = omegaNominal*(Pmech - Pel - D*(omega-omegaNominal))/M;
+  dEq_1 = (Efd - Eq_1 + (xd-xd_1)*Id)/Td0_1;
+  dEd_1 = (    - Ed_1 - (xq-xq_1)*Iq)/Tq0_1;
+}
+
+vector<vector<double> > Simulator_sw::_calculateGeneratorDynamics(
+                                  vector<vector<double> > const& Xgen,
+                                  vector<double> const& Efd,
+                                  ublas::vector<complex> const& Vbus ) const{
+  size_t genCount = _pwsLocal.getGenCount();
+  vector<vector<double> > dXgen(genCount, vector<double>(4,0.0));
+  for (size_t i=0; i!=genCount; ++i){
+    Generator const* gen = _pwsLocal.getGenerator(i);
+    int busExtId = gen->busExtId;
+    int busIntId = _pwsLocal.getBus_intId(busExtId);
+    complex Vbus_ = Vbus(busIntId);
+    switch (gen->model){
+    case GENMODEL_0p0:{
+      double delta = Xgen[i][0];
+      double omega = Xgen[i][1];
+      double EQDm_1 = Xgen[i][2];
+      double ddelta; // difference in delta; output variable
+      double domega; // difference in omega; output variable
+      _dynamics_0p0(Vbus_, EQDm_1, delta, omega,
+                    gen->Pgen, gen->M, gen->D, gen->ra, gen->xd_1,
+                    ddelta, domega);
+      dXgen[i][0] = ddelta;
+      dXgen[i][1] = domega;
+      dXgen[i][2] = 0.0; // Eq doesnt change for model 1
+      break;}
+
+    case GENMODEL_1p1:{
+      double delta = Xgen[i][0];
+      double omega = Xgen[i][1];
+      double Eq_1 = Xgen[i][2];
+      double Ed_1 = Xgen[i][3];
+      double ddelta; // difference in delta; output variable
+      double domega; // difference in omega; output variable
+      double dEq_1;  // difference in Eq_1; output variable
+      double dEd_1;  // difference in Ed_1; output variable
+      _dynamics_1p1(Vbus_, delta, omega, Eq_1, Ed_1, Efd[i],
+                    gen->Pgen, gen->M, gen->D, gen->ra, gen->xd, gen->xq, gen->xd_1, gen->xq_1, gen->Td0_1, gen->Tq0_1,
+                    ddelta, domega, dEq_1, dEd_1);
+      dXgen[i][0] = ddelta;
+      dXgen[i][1] = domega;
+      dXgen[i][2] = dEq_1;
+      dXgen[i][3] = dEd_1;
+      break;}
+    }
+  }
+  return dXgen;
+}
+
+vector<vector<double> > Simulator_sw::_rungeKutta(ublas::matrix<complex,ublas::column_major> const& LUaugY,
+                                                  ublas::permutation_matrix<size_t> const& PaugY,
+                                                  vector<vector<double> > const& Xgen,
+                                                  vector<double> const& Efd,
+                                                  double stepSize) const{
 
   // ----- Construction of RK coefficients -----
   //   a = [ 0   0   0   0
@@ -619,275 +808,217 @@ int Simulator_sw::_rungeKutta( ublas::matrix<complex,ublas::column_major> const&
   double RKcoef_b[4] = { 1.0/6.0, 2.0/6.0, 2.0/6.0, 1.0/6.0 };
 
   // ----- Initialization of variables -----
+  size_t genCount = _pwsLocal.getGenCount();
+  size_t busCount = _pwsLocal.getBusCount();
   vector<vector<double> > Kgen1, Kgen2, Kgen3, Kgen4;
-  vector<vector<double> > XgenNew(_genCount, vector<double>(4,0.0));
+  vector<vector<double> > XgenNew(genCount, vector<double>(4,0.0));
+  ublas::vector<complex> IN_1(busCount,0.0); // Norton equivalent transient current source at buses
+  ublas::vector<complex> Vbus(busCount,0.0); // bus voltages
 
   /* For each RK step S:
-    - generator dynamics (KgenS) are calculated based on current state
-    - generator dynamic variables are updated according to RK coefs and KgenS
-    - the network is solved for bus voltages (Ubus)
-    - machine currents (Iq, Id, and el. power Pel) are calculated for the new
-      voltage profile
-  */
+   * - based on the current state (Xgen) the Norton currents of the gens (IN_1) are calculated
+   * - then the voltage profile (Vbus) is extracted by the network (LUaugY & PaugY)
+   * - according to this voltage profile the generator dynamics are calculated (Kgen1, ...)
+   */
   // ----- First step -----
-  _calculateGeneratorDynamics(Xgen, Pel, Efd, Iq, Id, Kgen1);
-  for (size_t gen=0;gen<_genCount;++gen){
-    if (_genModel[gen]==GENMODEL_0p0){
-      XgenNew[gen][0] = Xgen[gen][0] + stepSize*RKcoef_a[1][0]*Kgen1[gen][0];
-      XgenNew[gen][1] = Xgen[gen][1] + stepSize*RKcoef_a[1][0]*Kgen1[gen][1];
-      XgenNew[gen][2] = Xgen[gen][2] + stepSize*RKcoef_a[1][0]*Kgen1[gen][2];
-    }
-    else if (_genModel[gen]==GENMODEL_1p1){
-      XgenNew[gen][0] = Xgen[gen][0] + stepSize*RKcoef_a[1][0]*Kgen1[gen][0];
-      XgenNew[gen][1] = Xgen[gen][1] + stepSize*RKcoef_a[1][0]*Kgen1[gen][1];
-      XgenNew[gen][2] = Xgen[gen][2] + stepSize*RKcoef_a[1][0]*Kgen1[gen][2];
-      XgenNew[gen][3] = Xgen[gen][3] + stepSize*RKcoef_a[1][0]*Kgen1[gen][3];
+  IN_1 = _calculateNortonCurrents(Xgen);
+  Vbus = _calculateGridVoltages(LUaugY, PaugY, IN_1);
+  Kgen1 = _calculateGeneratorDynamics(Xgen, Efd, Vbus);
+  for (size_t k=0; k!=genCount; ++k){
+    Generator const* gen = _pwsLocal.getGenerator(k);
+    switch (gen->model){
+    case GENMODEL_0p0:
+      XgenNew[k][0] = Xgen[k][0] + stepSize*RKcoef_a[1][0]*Kgen1[k][0];
+      XgenNew[k][1] = Xgen[k][1] + stepSize*RKcoef_a[1][0]*Kgen1[k][1];
+      XgenNew[k][2] = Xgen[k][2] + stepSize*RKcoef_a[1][0]*Kgen1[k][2];
+      break;
+    case GENMODEL_1p1:
+      XgenNew[k][0] = Xgen[k][0] + stepSize*RKcoef_a[1][0]*Kgen1[k][0];
+      XgenNew[k][1] = Xgen[k][1] + stepSize*RKcoef_a[1][0]*Kgen1[k][1];
+      XgenNew[k][2] = Xgen[k][2] + stepSize*RKcoef_a[1][0]*Kgen1[k][2];
+      XgenNew[k][3] = Xgen[k][3] + stepSize*RKcoef_a[1][0]*Kgen1[k][3];
+      break;
     }
   }
-  _solveNetwork( LUaugY, pmatrix, XgenNew, genBusIntId, Ubus );
-  _calculateMachineCurrents( XgenNew, Ubus, genBusIntId, Iq, Id, Pel);
 
   // ----- Second step -----
-  _calculateGeneratorDynamics(XgenNew, Pel, Efd, Iq, Id, Kgen2);
-  for (size_t gen=0;gen<_genCount;++gen){
-    if (_genModel[gen]==GENMODEL_0p0){
-      XgenNew[gen][0] = Xgen[gen][0] + stepSize*(  RKcoef_a[2][0]*Kgen1[gen][0]
-                                                + RKcoef_a[2][1]*Kgen2[gen][0]);
-      XgenNew[gen][1] = Xgen[gen][1] + stepSize*(  RKcoef_a[2][0]*Kgen1[gen][1]
-                                                + RKcoef_a[2][1]*Kgen2[gen][1]);
-      XgenNew[gen][2] = Xgen[gen][2] + stepSize*(  RKcoef_a[2][0]*Kgen1[gen][2]
-                                                + RKcoef_a[2][1]*Kgen2[gen][2]);
-    }
-    if (_genModel[gen]==GENMODEL_1p1){
-      XgenNew[gen][0] = Xgen[gen][0] + stepSize*(  RKcoef_a[2][0]*Kgen1[gen][0]
-                                                + RKcoef_a[2][1]*Kgen2[gen][0]);
-      XgenNew[gen][1] = Xgen[gen][1] + stepSize*(  RKcoef_a[2][0]*Kgen1[gen][1]
-                                                + RKcoef_a[2][1]*Kgen2[gen][1]);
-      XgenNew[gen][2] = Xgen[gen][2] + stepSize*(  RKcoef_a[2][0]*Kgen1[gen][2]
-                                                + RKcoef_a[2][1]*Kgen2[gen][2]);
-      XgenNew[gen][3] = Xgen[gen][3] + stepSize*(  RKcoef_a[2][0]*Kgen1[gen][3]
-                                                + RKcoef_a[2][1]*Kgen2[gen][3]);
+  IN_1 = _calculateNortonCurrents(XgenNew);
+  Vbus = _calculateGridVoltages(LUaugY, PaugY, IN_1);
+  Kgen2 = _calculateGeneratorDynamics(XgenNew, Efd, Vbus);
+  for (size_t k=0; k!=genCount; ++k){
+    Generator const* gen = _pwsLocal.getGenerator(k);
+    switch (gen->model){
+    case GENMODEL_0p0:
+      XgenNew[k][0] = Xgen[k][0] + stepSize*(RKcoef_a[2][0]*Kgen1[k][0] + RKcoef_a[2][1]*Kgen2[k][0]);
+      XgenNew[k][1] = Xgen[k][1] + stepSize*(RKcoef_a[2][0]*Kgen1[k][1] + RKcoef_a[2][1]*Kgen2[k][1]);
+      XgenNew[k][2] = Xgen[k][2] + stepSize*(RKcoef_a[2][0]*Kgen1[k][2] + RKcoef_a[2][1]*Kgen2[k][2]);
+      break;
+    case GENMODEL_1p1:
+      XgenNew[k][0] = Xgen[k][0] + stepSize*(RKcoef_a[2][0]*Kgen1[k][0] + RKcoef_a[2][1]*Kgen2[k][0]);
+      XgenNew[k][1] = Xgen[k][1] + stepSize*(RKcoef_a[2][0]*Kgen1[k][1] + RKcoef_a[2][1]*Kgen2[k][1]);
+      XgenNew[k][2] = Xgen[k][2] + stepSize*(RKcoef_a[2][0]*Kgen1[k][2] + RKcoef_a[2][1]*Kgen2[k][2]);
+      XgenNew[k][3] = Xgen[k][3] + stepSize*(RKcoef_a[2][0]*Kgen1[k][3] + RKcoef_a[2][1]*Kgen2[k][3]);
+      break;
     }
   }
-  _solveNetwork( LUaugY, pmatrix, XgenNew, genBusIntId, Ubus );
-  _calculateMachineCurrents( XgenNew, Ubus, genBusIntId, Iq, Id, Pel);
 
   // ----- Third step -----
-  _calculateGeneratorDynamics(XgenNew, Pel, Efd, Iq, Id, Kgen3);
-  for (size_t gen=0;gen<_genCount;++gen){
-    if (_genModel[gen]==GENMODEL_0p0){
-      XgenNew[gen][0] = Xgen[gen][0] + stepSize*(  RKcoef_a[3][0]*Kgen1[gen][0]
-                                                + RKcoef_a[3][1]*Kgen2[gen][0]
-                                                + RKcoef_a[3][2]*Kgen3[gen][0]);
-      XgenNew[gen][1] = Xgen[gen][1] + stepSize*(  RKcoef_a[3][0]*Kgen1[gen][1]
-                                                + RKcoef_a[3][1]*Kgen2[gen][1]
-                                                + RKcoef_a[3][2]*Kgen3[gen][1]);
-      XgenNew[gen][2] = Xgen[gen][2] + stepSize*(  RKcoef_a[3][0]*Kgen1[gen][2]
-                                                + RKcoef_a[3][1]*Kgen2[gen][2]
-                                                + RKcoef_a[3][2]*Kgen3[gen][2]);
-    }
-    if (_genModel[gen]==GENMODEL_1p1){
-      XgenNew[gen][0] = Xgen[gen][0] + stepSize*(  RKcoef_a[3][0]*Kgen1[gen][0]
-                                                + RKcoef_a[3][1]*Kgen2[gen][0]
-                                                + RKcoef_a[3][2]*Kgen3[gen][0]);
-      XgenNew[gen][1] = Xgen[gen][1] + stepSize*(  RKcoef_a[3][0]*Kgen1[gen][1]
-                                                + RKcoef_a[3][1]*Kgen2[gen][1]
-                                                + RKcoef_a[3][2]*Kgen3[gen][1]);
-      XgenNew[gen][2] = Xgen[gen][2] + stepSize*(  RKcoef_a[3][0]*Kgen1[gen][2]
-                                                + RKcoef_a[3][1]*Kgen2[gen][2]
-                                                + RKcoef_a[3][2]*Kgen3[gen][2]);
-      XgenNew[gen][3] = Xgen[gen][3] + stepSize*(  RKcoef_a[3][0]*Kgen1[gen][3]
-                                                + RKcoef_a[3][1]*Kgen2[gen][3]
-                                                + RKcoef_a[3][2]*Kgen3[gen][3]);
+  IN_1 = _calculateNortonCurrents(XgenNew);
+  Vbus = _calculateGridVoltages(LUaugY, PaugY, IN_1);
+  Kgen3 = _calculateGeneratorDynamics(XgenNew, Efd, Vbus);
+  for (size_t k=0; k!=genCount; ++k){
+    Generator const* gen = _pwsLocal.getGenerator(k);
+    switch (gen->model){
+    case GENMODEL_0p0:
+      XgenNew[k][0] = Xgen[k][0] + stepSize*(RKcoef_a[3][0]*Kgen1[k][0] + RKcoef_a[3][1]*Kgen2[k][0] + RKcoef_a[3][2]*Kgen3[k][0]);
+      XgenNew[k][1] = Xgen[k][1] + stepSize*(RKcoef_a[3][0]*Kgen1[k][1] + RKcoef_a[3][1]*Kgen2[k][1] + RKcoef_a[3][2]*Kgen3[k][1]);
+      XgenNew[k][2] = Xgen[k][2] + stepSize*(RKcoef_a[3][0]*Kgen1[k][2] + RKcoef_a[3][1]*Kgen2[k][2] + RKcoef_a[3][2]*Kgen3[k][2]);
+      break;
+    case GENMODEL_1p1:
+      XgenNew[k][0] = Xgen[k][0] + stepSize*(RKcoef_a[3][0]*Kgen1[k][0] + RKcoef_a[3][1]*Kgen2[k][0] + RKcoef_a[3][2]*Kgen3[k][0]);
+      XgenNew[k][1] = Xgen[k][1] + stepSize*(RKcoef_a[3][0]*Kgen1[k][1] + RKcoef_a[3][1]*Kgen2[k][1] + RKcoef_a[3][2]*Kgen3[k][1]);
+      XgenNew[k][2] = Xgen[k][2] + stepSize*(RKcoef_a[3][0]*Kgen1[k][2] + RKcoef_a[3][1]*Kgen2[k][2] + RKcoef_a[3][2]*Kgen3[k][2]);
+      XgenNew[k][3] = Xgen[k][3] + stepSize*(RKcoef_a[3][0]*Kgen1[k][3] + RKcoef_a[3][1]*Kgen2[k][3] + RKcoef_a[3][2]*Kgen3[k][3]);
+      break;
     }
   }
-  _solveNetwork( LUaugY, pmatrix, XgenNew, genBusIntId, Ubus );
-  _calculateMachineCurrents( XgenNew, Ubus, genBusIntId, Iq, Id, Pel);
 
   // ----- Fourth step -----
-  _calculateGeneratorDynamics(XgenNew, Pel, Efd, Iq, Id, Kgen4);
-  for (size_t gen=0;gen<_genCount;++gen){
-    if (_genModel[gen]==GENMODEL_0p0){
-      XgenNew[gen][0] = Xgen[gen][0] + stepSize*(  RKcoef_b[0]*Kgen1[gen][0]
-                                                + RKcoef_b[1]*Kgen2[gen][0]
-                                                + RKcoef_b[2]*Kgen3[gen][0]
-                                                + RKcoef_b[3]*Kgen4[gen][0] );
-      XgenNew[gen][1] = Xgen[gen][1] + stepSize*(  RKcoef_b[0]*Kgen1[gen][1]
-                                                + RKcoef_b[1]*Kgen2[gen][1]
-                                                + RKcoef_b[2]*Kgen3[gen][1]
-                                                + RKcoef_b[3]*Kgen4[gen][1] );
-      XgenNew[gen][2] = Xgen[gen][2] + stepSize*(  RKcoef_b[0]*Kgen1[gen][2]
-                                                + RKcoef_b[1]*Kgen2[gen][2]
-                                                + RKcoef_b[2]*Kgen3[gen][2]
-                                                + RKcoef_b[3]*Kgen4[gen][2] );
-    }
-    if (_genModel[gen]==GENMODEL_1p1){
-      XgenNew[gen][0] = Xgen[gen][0] + stepSize*(  RKcoef_b[0]*Kgen1[gen][0]
-                                                + RKcoef_b[1]*Kgen2[gen][0]
-                                                + RKcoef_b[2]*Kgen3[gen][0]
-                                                + RKcoef_b[3]*Kgen4[gen][0] );
-      XgenNew[gen][1] = Xgen[gen][1] + stepSize*(  RKcoef_b[0]*Kgen1[gen][1]
-                                                + RKcoef_b[1]*Kgen2[gen][1]
-                                                + RKcoef_b[2]*Kgen3[gen][1]
-                                                + RKcoef_b[3]*Kgen4[gen][1] );
-      XgenNew[gen][2] = Xgen[gen][2] + stepSize*(  RKcoef_b[0]*Kgen1[gen][2]
-                                                + RKcoef_b[1]*Kgen2[gen][2]
-                                                + RKcoef_b[2]*Kgen3[gen][2]
-                                                + RKcoef_b[3]*Kgen4[gen][2] );
-      XgenNew[gen][3] = Xgen[gen][3] + stepSize*(  RKcoef_b[0]*Kgen1[gen][3]
-                                                + RKcoef_b[1]*Kgen2[gen][3]
-                                                + RKcoef_b[2]*Kgen3[gen][3]
-                                                + RKcoef_b[3]*Kgen4[gen][3] );
+  IN_1 = _calculateNortonCurrents(XgenNew);
+  Vbus = _calculateGridVoltages(LUaugY, PaugY, IN_1);
+  Kgen4 = _calculateGeneratorDynamics(XgenNew, Efd, Vbus);
+  for (size_t k=0; k!=genCount; ++k){
+    Generator const* gen = _pwsLocal.getGenerator(k);
+    switch (gen->model){
+    case GENMODEL_0p0:
+      XgenNew[k][0] = Xgen[k][0] + stepSize*(  RKcoef_b[0]*Kgen1[k][0] + RKcoef_b[1]*Kgen2[k][0] + RKcoef_b[2]*Kgen3[k][0] + RKcoef_b[3]*Kgen4[k][0] );
+      XgenNew[k][1] = Xgen[k][1] + stepSize*(  RKcoef_b[0]*Kgen1[k][1] + RKcoef_b[1]*Kgen2[k][1] + RKcoef_b[2]*Kgen3[k][1] + RKcoef_b[3]*Kgen4[k][1] );
+      XgenNew[k][2] = Xgen[k][2] + stepSize*(  RKcoef_b[0]*Kgen1[k][2] + RKcoef_b[1]*Kgen2[k][2] + RKcoef_b[2]*Kgen3[k][2] + RKcoef_b[3]*Kgen4[k][2] );
+      break;
+    case GENMODEL_1p1:
+      XgenNew[k][0] = Xgen[k][0] + stepSize*(  RKcoef_b[0]*Kgen1[k][0] + RKcoef_b[1]*Kgen2[k][0] + RKcoef_b[2]*Kgen3[k][0] + RKcoef_b[3]*Kgen4[k][0] );
+      XgenNew[k][1] = Xgen[k][1] + stepSize*(  RKcoef_b[0]*Kgen1[k][1] + RKcoef_b[1]*Kgen2[k][1] + RKcoef_b[2]*Kgen3[k][1] + RKcoef_b[3]*Kgen4[k][1] );
+      XgenNew[k][2] = Xgen[k][2] + stepSize*(  RKcoef_b[0]*Kgen1[k][2] + RKcoef_b[1]*Kgen2[k][2] + RKcoef_b[2]*Kgen3[k][2] + RKcoef_b[3]*Kgen4[k][2] );
+      XgenNew[k][3] = Xgen[k][3] + stepSize*(  RKcoef_b[0]*Kgen1[k][3] + RKcoef_b[1]*Kgen2[k][3] + RKcoef_b[2]*Kgen3[k][3] + RKcoef_b[3]*Kgen4[k][3] );
+      break;
     }
   }
-  _solveNetwork( LUaugY, pmatrix, XgenNew, genBusIntId, Ubus );
-  _calculateMachineCurrents( XgenNew, Ubus, genBusIntId, Iq, Id, Pel);
 
-  Xgen = XgenNew;
-
-  return 0;
+  return XgenNew;
 }
 
-int Simulator_sw::_storeTDResults(TDResults& res){
-  //Separate real and imag part of voltages and currents
-  vector<double>volt_real;
-  vector<double>volt_imag;
-  vector<double>current_real;
-  vector<double>current_imag;
-
-  for (size_t i=0;i<res.dataExists().size();++i){
+void Simulator_sw::_storeTDResults(vector<double> const& time_store,
+                                   vector<vector<double> > const& angles_store,
+                                   vector<vector<double> > const& speeds_store,
+                                   vector<vector<double> > const& eq_tr_store,
+                                   vector<vector<double> > const& ed_tr_store,
+                                   vector<vector<double> > const& Pel_store,
+                                   vector<vector<complex> > const& Vbus_store,
+                                   vector<vector<complex> > const& Ibus_store,
+                                   TDResults& res) const{
+  vector<double> temp;
+  for (size_t i=0; i!=res.dataExists().size(); ++i){
+    temp.clear();
     // Only store if user selected so
-    if (res.dataExists().at(i)){
-      //Take the identifier for the specific data point
-      TDResultIdentifier tdri=res.identifiers().at(i);
-      volt_real.clear();
-      volt_imag.clear();
-      current_real.clear();
-      current_imag.clear();
-      if (tdri.elementType==TDRESULTS_BUS){
-        int intid = _pwsLocal.getBus_intId(tdri.extId);
-        for (size_t n=0;n<_voltages.size();++n){
-          volt_real.push_back(std::real(_voltages.at(n).at(intid)));
-          volt_imag.push_back(std::imag(_voltages.at(n).at(intid)));
-        }
-        if (tdri.variable==TDRESULTS_VOLTAGE_REAL)
-          res.set_data(i,volt_real);
-        else if (tdri.variable==TDRESULTS_VOLTAGE_IMAG)
-          res.set_data(i,volt_imag);
-      }
-      else if (tdri.elementType==TDRESULTS_GENERATOR){
-        int intid = _pwsLocal.getGen_intId(tdri.extId);
-        for (size_t n=0;n<_voltages.size();++n){
-          volt_real.push_back(std::real(_voltages.at(n).at(_genBusIntId[intid])));
-          volt_imag.push_back(std::imag(_voltages.at(n).at(_genBusIntId[intid])));
-        }
-        for (size_t n=0;n<_currents.size();++n){
-          current_real.push_back(std::real(_currents.at(n).at(_genBusIntId[intid])));
-          current_imag.push_back(std::imag(_currents.at(n).at(_genBusIntId[intid])));
-        }
-        vector<double> temp_angles;
-        vector<double> temp_speeds;
-        vector<double> temp_internal_voltages;
-        vector<double> temp_acc_power;
-        double Pmech = _pwsLocal.getGenerator(intid)->Pgen;
-        for ( size_t n=0 ; n<_angles.size() ; ++n ){
-          temp_angles.push_back(_angles.at(n).at(intid));
-          temp_speeds.push_back(_speeds.at(n).at(intid) - 1); // for uniformity
-                                                             // with emu_hw res
-          temp_internal_voltages.push_back(_eq_tr.at(n).at(intid));
-          temp_acc_power.push_back( Pmech - _powers.at(n).at(intid) );
-        }
-        if (tdri.variable==TDRESULTS_ANGLE){
-          res.set_data(i,temp_angles);
-        }
-        else if (tdri.variable==TDRESULTS_SPEED){
-          res.set_data(i,temp_speeds);
-        }
-        else if (tdri.variable==TDRESULTS_ACCELERATING_POWER){
-          res.set_data(i,temp_acc_power);
-        }
-        else if (tdri.variable==TDRESULTS_VOLTAGE_REAL){
-          res.set_data(i,volt_real);
-        }
-        else if (tdri.variable==TDRESULTS_VOLTAGE_IMAG){
-          res.set_data(i,volt_imag);
-        }
-        else if (tdri.variable==TDRESULTS_CURRENT_REAL){
-          res.set_data(i,current_real);
-        }
-        else if (tdri.variable==TDRESULTS_CURRENT_IMAG){
-          res.set_data(i,current_imag);
-        }
+    if (!res.dataExists().at(i)) continue;
 
-      }
-      else if (tdri.elementType==TDRESULTS_LOAD){
-        int intid = _pwsLocal.getLoad_intId(tdri.extId);
-        for (size_t n=0;n<_voltages.size();++n){
-          volt_real.push_back(std::real(_voltages.at(n).at(_loadBusIntId[intid])));
-          volt_imag.push_back(std::imag(_voltages.at(n).at(_loadBusIntId[intid])));
-        }
-        for (size_t n=0;n<_currents.size();++n){
-          current_real.push_back(std::real(_currents.at(n).at(_loadBusIntId[intid])));
-          current_imag.push_back(std::imag(_currents.at(n).at(_loadBusIntId[intid])));
-        }
-        if (tdri.variable==TDRESULTS_VOLTAGE_REAL){
-          res.set_data(i,volt_real);
-        }
-        else if (tdri.variable==TDRESULTS_VOLTAGE_IMAG){
-          res.set_data(i,volt_imag);
-        }
-        else if (tdri.variable==TDRESULTS_CURRENT_REAL){
-          res.set_data(i,current_real);
-        }
-        else if (tdri.variable==TDRESULTS_CURRENT_IMAG){
-          res.set_data(i,current_imag);
-        }
+    // Take the identifier for the specific data point
+    TDResultIdentifier tdri = res.identifiers().at(i);
 
+    switch (tdri.elementType) {
+    case TDRESULTS_BUS:{
+      int busIntId = _pwsLocal.getBus_intId(tdri.extId);
+
+      switch (tdri.variable){
+      case TDRESULTS_VOLTAGE_REAL:
+        for (size_t k=0; k!=Vbus_store[busIntId].size(); ++k)
+          temp.push_back(Vbus_store[busIntId][k].real());
+        break;
+      case TDRESULTS_VOLTAGE_IMAG:
+        for (size_t k=0; k!=Vbus_store[busIntId].size(); ++k)
+          temp.push_back(Vbus_store[busIntId][k].imag());
+        break;
+      case TDRESULTS_CURRENT_REAL:
+        for (size_t k(0); k!=Ibus_store[busIntId].size(); ++k)
+          temp.push_back(Ibus_store[busIntId][k].real());
+        break;
+      case TDRESULTS_CURRENT_IMAG:
+        for (size_t k(0); k!=Ibus_store[busIntId].size(); ++k)
+          temp.push_back(Ibus_store[busIntId][k].imag());
+        break;
       }
-      else if (tdri.elementType==TDRESULTS_OTHER){//Probably time
-        if (tdri.variable==TDRESULTS_TIME)
-          res.set_data(i,_time);
+      break;}
+
+    case TDRESULTS_GENERATOR:{
+      int genIntId = _pwsLocal.getGen_intId(tdri.extId);
+
+      switch (tdri.variable){
+      case TDRESULTS_ANGLE:
+        temp = angles_store[genIntId];
+        break;
+      case TDRESULTS_SPEED:
+        for (size_t k(0); k!=speeds_store[genIntId].size(); ++k)
+          temp.push_back(speeds_store[genIntId][k] - 1);
+          // -1 for uniformity with the hardware engine
+        break;
+      case TDRESULTS_ACCELERATING_POWER:{
+        Generator const* gen = _pwsLocal.getGenerator(genIntId);
+        double Pmech = gen->Pgen;
+        for (size_t k=0 ; k!=Pel_store[genIntId].size() ; ++k)
+          temp.push_back(Pmech - Pel_store[genIntId][k]);
+        break;}
+      case TDRESULTS_VOLTAGE_Q_TR:
+        temp = eq_tr_store[genIntId];
+        break;
+      case TDRESULTS_VOLTAGE_D_TR:
+        temp = ed_tr_store[genIntId];
+        break;
       }
+      break;}
+
+    case TDRESULTS_OTHER:
+      if (tdri.variable==TDRESULTS_TIME)
+        temp = time_store;
+      break;
     }
+    res.set_data(i,temp);
   }
-  return 0;
 }
 
-int Simulator_sw::_parseBusFault(Event &event){
-  int intid=_pwsLocal.getBus_intId(event.element_extId());
-  Bus* busofevent;
-  int ans = _pwsLocal.getBus(event.element_extId(),busofevent);
-  if (ans) return 1;
+void Simulator_sw::_parseBusFault(Event &event){
+  int busExtId = event.element_extId();
+  int busIntId = _pwsLocal.getBus_intId(busExtId);
+  Bus* bus = _pwsLocal.getBus(busIntId);
 
-  // 0: 3ph fault
-  if (event.event_type()==EVENT_EVENTTYPE_BUSFAULT){
+  switch (event.event_type()){
+  case EVENT_EVENTTYPE_BUSFAULT:
     if (event.bool_arg()){
-      //Storing the old
-      _busintid.push_back(intid);
-      _oldgsh.push_back(busofevent->Gsh);
-      _oldbsh.push_back(busofevent->Bsh);
+      // Storing the old
+      _busintid.push_back(busIntId);
+      _oldgsh.push_back(bus->Gsh);
+      _oldbsh.push_back(bus->Bsh);
       double gsh;
       double bsh;
       gsh=1/event.double_arg_1();
       bsh=-1/event.double_arg_2();
-      busofevent->Gsh = gsh;
-      busofevent->Bsh = bsh;
+      bus->Gsh = gsh;
+      bus->Bsh = bsh;
     }
 
-    //Restore the saved data
+    // Restore the saved data
     else{
       for (size_t i=0;i<_busintid.size();++i){
-        if (intid==_busintid[i]){
-          busofevent->Gsh = _oldgsh[i];
-          busofevent->Bsh = _oldbsh[i];
+        if (busIntId==_busintid[i]){
+          bus->Gsh = _oldgsh[i];
+          bus->Bsh = _oldbsh[i];
           _busintid.erase(_busintid.begin()+i);
           _oldgsh.erase(_oldgsh.begin()+i);
           _oldbsh.erase(_oldbsh.begin()+i);
         }
       }
     }
+    break;
   }
-  return 0;
 }
 
 int Simulator_sw::_parseBrFault(Event &event){
@@ -942,13 +1073,13 @@ int Simulator_sw::_parseBrFault(Event &event){
         Bus* busofevent = new Bus();
         // Set the default first ext id
         unsigned int maxextid = _pwsLocal.getBus_extId(0);
-        for (size_t m=0;m<_busCount;m++){
+        for (size_t m = 0; m < _pwsLocal.getBusCount(); m++){
           if (_pwsLocal.getBus_extId(m)>maxextid)
             maxextid=_pwsLocal.getBus_extId(m);
         }
 //        unsigned int maxextid;
 //        for ( maxextid = 0 ; maxextid != 0 ; ++maxextid )
-//        if ( _pws.getBus_intId( maxextid ) == -1 )
+//        if ( _pwsLocal.getBus_intId( maxextid ) == -1 )
 //        break;
         busofevent->extId = maxextid+1;
         double gsh = 1/event.double_arg_1();
@@ -967,7 +1098,7 @@ int Simulator_sw::_parseBrFault(Event &event){
         }
 //        unsigned int maxextidfrombr;
 //        for ( maxextidfrombr = 0 ; maxextidfrombr != 0 ; ++maxextidfrombr )
-//        if ( _pws.getBr_intId( maxextidfrombr ) == -1 )
+//        if ( _pwsLocal.getBr_intId( maxextidfrombr ) == -1 )
 //        break;
         newfromline->extId = maxextidfrombr+1;
         newfromline->status = true;
@@ -982,7 +1113,7 @@ int Simulator_sw::_parseBrFault(Event &event){
 
 
         // Create a new branch  tobus the new faulty bus
-//        _pws.getBranch(event.element_extId(),branchofevent);
+//        _pwsLocal.getBranch(event.element_extId(),branchofevent);
         Branch* newtoline = new Branch();
         unsigned int maxextidtobr=_pwsLocal.getBr_extId(0);//Set the default first ext id
         for (size_t m=0;m<_pwsLocal.getBranchCount();m++){
@@ -991,7 +1122,7 @@ int Simulator_sw::_parseBrFault(Event &event){
         }
 //        unsigned int maxextidtobr;
 //        for ( maxextidtobr = 0 ; maxextidtobr != 0 ; ++maxextidtobr )
-//        if ( _pws.getBr_intId( maxextidtobr ) == -1 )
+//        if ( _pwsLocal.getBr_intId( maxextidtobr ) == -1 )
 //        break;
         newtoline->extId = maxextidtobr+2;
         newtoline->status = true;
@@ -1111,61 +1242,8 @@ int Simulator_sw::_parseBrFault(Event &event){
   // 2: short
   else if (event.event_type()==EVENT_EVENTTYPE_BRSHORT){
     branchofevent->R = 1e-14; // near 0
-    branchofevent->R = 1e-14;
+    branchofevent->X = 1e-14;
   }
 
-  return 0;
-}
-
-int Simulator_sw::_parseGenFault(Event &event){
-
-  Generator* genofevent;
-  int ans=_pwsLocal.getGenerator(event.element_extId(),genofevent);
-  if ( ans ) return 1;
-
-  if (event.event_type()==EVENT_EVENTTYPE_GENTRIP){//0: trip
-    if (event.bool_arg()){
-      genofevent->status = false; //status == false meaning tripped
-      _genBusIntId.clear();
-      for (size_t i=0;i<_genCount;++i){
-        if (_pwsLocal.getGenerator(i)->status == true){
-          _genBusIntId.push_back(_pwsLocal.getBus_intId(_pwsLocal.getGenerator(i)->busExtId));
-        }
-      }
-      --_genCount;
-    }
-    else{
-      genofevent->status = true;
-      ++_genCount;
-      _genBusIntId.clear();
-      for (size_t i=0;i<_genCount;++i){
-        if (_pwsLocal.getGenerator(i)->status == true){
-          _genBusIntId.push_back(_pwsLocal.getBus_intId(_pwsLocal.getGenerator(i)->busExtId));
-        }
-      }
-    }
-  }
-  else if (event.event_type()==EVENT_EVENTTYPE_GENPCHANGE){//1: p change
-    genofevent->Pgen = event.double_arg();
-  }
-  else if (event.event_type()==EVENT_EVENTTYPE_GENQCHANGE){//2: q change
-    genofevent->Qgen = event.double_arg();
-  }
-
-  return 0;
-}
-
-int Simulator_sw::_parseLoadFault(Event &event){
-
-  Load* loadofevent;
-  int ans = _pwsLocal.getLoad(event.element_extId(),loadofevent);
-  if ( ans ) return 1;
-
-  if (event.event_type()==EVENT_EVENTTYPE_LOADPCHANGE){//1: p change
-    loadofevent->Pdemand = event.double_arg();
-  }
-  else if (event.event_type()==EVENT_EVENTTYPE_LOADQCHANGE){//2: q change
-    loadofevent->Qdemand = event.double_arg();
-  }
   return 0;
 }

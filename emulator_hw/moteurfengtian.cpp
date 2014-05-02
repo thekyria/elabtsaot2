@@ -60,7 +60,7 @@ enum MoteurFengtianMethod{
 #define DEFAULT_TIMEOUT 5.0
 
 MoteurFengtian::MoteurFengtian(Emulator* emu, Logger* log) :
-  SSEngine("MoteurFengtian (based on Emulator) s.s. engine", log),
+  SSEngine("Power flow with Lanz method (based on Emulator)", log),
   _emu(emu) {
 
   // ----- Prepare properties -----

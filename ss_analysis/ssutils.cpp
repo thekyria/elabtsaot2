@@ -111,8 +111,8 @@ void ssutils::calculatePower(matrix<complex,column_major> const& Y,
 }
 
 void ssutils::calculateCurrent(matrix<complex,column_major> const& Y,
-                                vector<complex> const& V,
-                                vector<complex>& I ){
+                               vector<complex> const& V,
+                               vector<complex>& I ){
   I.resize(V.size());
   I.clear();
   axpy_prod(Y,V,I,true);
@@ -143,9 +143,9 @@ vector<complex> ssutils::normComplexVec(vector<complex> const& v){
 }
 
 void ssutils::calculateDSdV(matrix<complex,column_major> const& Y,
-                             vector<complex> const& V,
-                             matrix<complex,column_major>& dSdVm,
-                             matrix<complex,column_major>& dSdVa){
+                            vector<complex> const& V,
+                            matrix<complex,column_major>& dSdVm,
+                            matrix<complex,column_major>& dSdVa){
   // Sparse provision
 
   size_t N=V.size();
