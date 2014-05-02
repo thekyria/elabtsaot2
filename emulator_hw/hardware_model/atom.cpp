@@ -7,12 +7,8 @@ using std::vector;
 #include <limits>
 using std::numeric_limits;
 
-Atom::Atom( DAC const* real_voltage_ref,
-            DAC const* imag_voltage_ref ) :
-    _embr_exist(EMBRPOS_UL+1, false),
-    _embr_real(EMBRPOS_UL+1),
-    _embr_imag(EMBRPOS_UL+1),
-    _real_voltage_ref(real_voltage_ref), _imag_voltage_ref(imag_voltage_ref){
+Atom::Atom() :
+    _embr_exist(EMBRPOS_UL+1, false), _embr_real(EMBRPOS_UL+1), _embr_imag(EMBRPOS_UL+1){
 
   // In initialization list and hereunder: emulator branch physical existance
   // vector is initialized to false for all positions but EMBRPOS_U, EMBRPOS_UR,

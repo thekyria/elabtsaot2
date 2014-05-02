@@ -65,24 +65,20 @@ enum EmbrPosition {
   hardware of the project contact: guillaume dot lanz at epfl dot ch (hw team
   leader)
 
-  \todo change functions XXX...(..., bool real = true)
-
   \author thekyria
-  \date Apr 2013
+  \date May 2014
 */
 class Atom{
 
  public:
 
-  Atom(DAC const* real_voltage_ref,
-       DAC const* imag_voltage_ref);
+  Atom();
   int reset( bool complete );
 
   size_t getEmbrCount() const; //!< number of emulator branches physically present on the Atom
   //! Get the minimum OVER the maximum achievable R of potentiometers in the atom (embrs and node)
   double getMinMaxAchievableR() const; // TODO: do that only for "used" resistors
   void calibrate(Atom const& cal_am);
-
 
 
   /*****************************************************************************
@@ -275,16 +271,13 @@ class Atom{
       return real ? embr_real_pot_far_swA(pos) : embr_imag_pot_far_swA(pos);
   }
 
-  Node node;       //!< node of the atom
+  Node node; //!< node of the atom
 
  private:
 
   std::vector<bool> _embr_exist; //!< whether branches (real and im) physically exist
   std::vector<EmulatorBranch> _embr_real; //!< Branches of real part of the grid
   std::vector<EmulatorBranch> _embr_imag; //!< Branches of imag part of the grid
-
-  DAC const* _real_voltage_ref;       //!< pointer to the real Vref of the slice
-  DAC const* _imag_voltage_ref;       //!< pointer to the imag Vref of the slice
 };
 
 } // end of namespace elabtsaot

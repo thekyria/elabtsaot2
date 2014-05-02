@@ -19,10 +19,9 @@ using std::endl;
 #define DEFGOTOFFSET 2.5          //!< Default GOT offset [Volt]
 
 SliceAnalog::SliceAnalog() :
-  _atomSet(VERTICALNUMBEROFATOMS, std::vector<Atom>(HORIZONTALNUMBEROFATOMS,
-          Atom(&_real_voltage_ref,&_imag_voltage_ref))),
-  _real_voltage_ref( DAC_DEF_TAP, DAC_DEF_RESOLUTION, DAC_DEF_OUTMIN, DAC_DEF_OUTMAX ),
-  _imag_voltage_ref( DAC_DEF_TAP, DAC_DEF_RESOLUTION, DAC_DEF_OUTMIN, DAC_DEF_OUTMAX ) {}
+  _atomSet(VERTICALNUMBEROFATOMS, std::vector<Atom>(HORIZONTALNUMBEROFATOMS,Atom())),
+  _real_voltage_ref(DAC_DEF_TAP, DAC_DEF_RESOLUTION, DAC_DEF_OUTMIN, DAC_DEF_OUTMAX),
+  _imag_voltage_ref(DAC_DEF_TAP, DAC_DEF_RESOLUTION, DAC_DEF_OUTMIN, DAC_DEF_OUTMAX) {}
 
 int SliceAnalog::reset(bool complete){
   int ans = 0;
