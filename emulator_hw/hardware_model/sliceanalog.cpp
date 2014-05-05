@@ -623,7 +623,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
   Atom const* atom;
   // --- Node 1 ---
   atom = &_atomSet[0][0];
-  brStatus((1-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((1-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((1-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((1-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((1-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -632,7 +632,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 2 ---
   atom = &_atomSet[0][1];
-  brStatus((2-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((2-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((2-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((2-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((2-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -641,7 +641,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 3 ---
   atom = &_atomSet[0][2];
-  brStatus((3-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((3-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((3-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((3-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((3-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -650,7 +650,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 4 ---
   atom = &_atomSet[0][3];
-  brStatus((4-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((4-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((4-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((4-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((4-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -659,7 +659,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 5 ---
   atom = &_atomSet[0][4];
-  brStatus((5-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((5-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((5-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((5-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((5-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -668,7 +668,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 6 ---
   atom = &_atomSet[0][5];
-  brStatus((6-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((6-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((6-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((6-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((6-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -679,7 +679,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 7 ---
   atom = &_atomSet[1][0];
-  brStatus((7-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((7-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((7-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((7-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((7-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -688,7 +688,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 8 ---
   atom = &_atomSet[1][1];
-  brStatus((8-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((8-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((8-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((8-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((8-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -697,7 +697,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 9 ---
   atom = &_atomSet[1][2];
-  brStatus((9-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((9-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((9-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((9-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((9-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -706,7 +706,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 10 ---
   atom = &_atomSet[1][3];
-  brStatus((10-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((10-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((10-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((10-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((10-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -715,7 +715,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 11 ---
   atom = &_atomSet[1][4];
-  brStatus((11-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((11-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((11-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((11-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((11-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -724,7 +724,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 12 ---
   atom = &_atomSet[1][5];
-  brStatus((12-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((12-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((12-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((12-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((12-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -735,7 +735,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 13 ---
   atom = &_atomSet[2][0];
-  brStatus((13-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((13-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((13-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((13-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((13-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -744,7 +744,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 14 ---
   atom = &_atomSet[2][1];
-  brStatus((14-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((14-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((14-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((14-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((14-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -753,7 +753,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 15 ---
   atom = &_atomSet[2][2];
-  brStatus((15-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((15-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((15-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((15-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((15-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -762,7 +762,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 16 ---
   atom = &_atomSet[2][3];
-  brStatus((16-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((16-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((16-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((16-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((16-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -771,7 +771,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 17 ---
   atom = &_atomSet[2][4];
-  brStatus((17-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((17-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((17-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((17-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((17-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -780,7 +780,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 18 ---
   atom = &_atomSet[2][5];
-  brStatus((18-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((18-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((18-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
 //  brStatus((18-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((18-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -791,7 +791,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 19 ---
   atom = &_atomSet[3][0];
-  brStatus((19-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((19-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((19-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((19-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((19-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -800,7 +800,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 20 ---
   atom = &_atomSet[3][1];
-  brStatus((20-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((20-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((20-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((20-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((20-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -809,7 +809,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 21 ---
   atom = &_atomSet[3][2];
-  brStatus((21-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((21-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((21-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((21-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((21-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -818,7 +818,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 22 ---
   atom = &_atomSet[3][3];
-  brStatus((22-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((22-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((22-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((22-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((22-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -827,7 +827,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 23 ---
   atom = &_atomSet[3][4];
-  brStatus((23-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((23-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((23-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
   brStatus((23-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
   brStatus((23-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -836,7 +836,7 @@ void SliceAnalog::buildBrStatus(vector<int>& brStatus, bool real) const{
 
   // --- Node 24 ---
   atom = &_atomSet[3][5];
-  brStatus((24-1)*6+0) = atom->node.pot_resistance_sw(real)&atom->node.sw_resistance(real)?1:0;
+  brStatus((24-1)*6+0) = atom->node.pot_resistance_sw(real) & (real?atom->node.real_sw_resistance:atom->node.imag_sw_resistance) ? 1 : 0;
   brStatus((24-1)*6+1) = atom->embr(EMBRPOS_U,real).pot_near_sw()|atom->embr(EMBRPOS_U,real).pot_far_sw()?1:0;
 //  brStatus((24-1)*6+2) = atom->embr(EMBRPOS_UR,real).pot_near_sw()|atom->embr(EMBRPOS_UR,real).pot_far_sw()?1:0;
 //  brStatus((24-1)*6+3) = atom->embr(EMBRPOS_R,real).pot_near_sw()|atom->embr(EMBRPOS_R,real).pot_far_sw()?1:0;
@@ -858,8 +858,8 @@ void SliceAnalog::calibrate(SliceAnalog const& cal_sl){
 int SliceAnalog::nodeCurrentSource(size_t id_ver, size_t id_hor, double seriesR, double shuntR){
   int ans = 0;
   // Connect current source
-  _atomSet[id_ver][id_hor].node.set_real_sw_current(true);
-  _atomSet[id_ver][id_hor].node.set_imag_sw_current(true);
+  _atomSet[id_ver][id_hor].node.real_sw_current = true;
+  _atomSet[id_ver][id_hor].node.imag_sw_current = true;
   // Set series resistance and close internal potentiometer switch
   ans |= _atomSet[id_ver][id_hor].node.set_real_pot_current_r( seriesR );
   ans |= _atomSet[id_ver][id_hor].node.set_imag_pot_current_r( seriesR );
@@ -868,16 +868,16 @@ int SliceAnalog::nodeCurrentSource(size_t id_ver, size_t id_hor, double seriesR,
 
 
   // Disconnect currenct voltage source, and shunt resistor
-  _atomSet[id_ver][id_hor].node.set_real_sw_voltage(false);
-  _atomSet[id_ver][id_hor].node.set_imag_sw_voltage(false);
-  _atomSet[id_ver][id_hor].node.set_real_sw_current_shunt(false);
-  _atomSet[id_ver][id_hor].node.set_imag_sw_current_shunt(false);
+  _atomSet[id_ver][id_hor].node.real_sw_voltage = false;
+  _atomSet[id_ver][id_hor].node.imag_sw_voltage = false;
+  _atomSet[id_ver][id_hor].node.real_sw_current_shunt = false;
+  _atomSet[id_ver][id_hor].node.imag_sw_current_shunt = false;
 
   // Connect resistance to ground - if needed
   if (shuntR > 0){
     // Close the resistance to ground switch
-    _atomSet[id_ver][id_hor].node.set_real_sw_resistance(true);
-    _atomSet[id_ver][id_hor].node.set_imag_sw_resistance(true);
+    _atomSet[id_ver][id_hor].node.real_sw_resistance = true;
+    _atomSet[id_ver][id_hor].node.imag_sw_resistance = true;
     // Set resistance to ground and close internal potentiometer switch
     ans |= _atomSet[id_ver][id_hor].node.set_real_pot_resistance_r( shuntR );
     ans |= _atomSet[id_ver][id_hor].node.set_imag_pot_resistance_r( shuntR );
@@ -885,8 +885,8 @@ int SliceAnalog::nodeCurrentSource(size_t id_ver, size_t id_hor, double seriesR,
     _atomSet[id_ver][id_hor].node.set_imag_pot_resistance_sw(true);
   } else {
     // Open the resistance to ground switch
-    _atomSet[id_ver][id_hor].node.set_real_sw_resistance(false);
-    _atomSet[id_ver][id_hor].node.set_imag_sw_resistance(false);
+    _atomSet[id_ver][id_hor].node.real_sw_resistance = false;
+    _atomSet[id_ver][id_hor].node.imag_sw_resistance = false;
     // Open the internal potentiometer switch
     _atomSet[id_ver][id_hor].node.set_real_pot_resistance_sw(false);
     _atomSet[id_ver][id_hor].node.set_imag_pot_resistance_sw(false);
@@ -897,24 +897,24 @@ int SliceAnalog::nodeCurrentSource(size_t id_ver, size_t id_hor, double seriesR,
 int SliceAnalog::nodeVoltageSource(size_t id_ver, size_t id_hor, double shuntR){
   int ans = 0;
   // Connect voltage source
-  _atomSet[id_ver][id_hor].node.set_real_sw_voltage(true);
-  _atomSet[id_ver][id_hor].node.set_imag_sw_voltage(true);
+  _atomSet[id_ver][id_hor].node.real_sw_voltage = true;
+  _atomSet[id_ver][id_hor].node.imag_sw_voltage = true;
 
   // Disconnect current source and open internal potentiometer switch
-  _atomSet[id_ver][id_hor].node.set_real_sw_current(false);
-  _atomSet[id_ver][id_hor].node.set_imag_sw_current(false);
+  _atomSet[id_ver][id_hor].node.real_sw_current = false;
+  _atomSet[id_ver][id_hor].node.imag_sw_current = false;
   _atomSet[id_ver][id_hor].node.set_real_pot_current_sw(false);
   _atomSet[id_ver][id_hor].node.set_imag_pot_current_sw(false);
 
   // Disconnect current shunt resistor
-  _atomSet[id_ver][id_hor].node.set_real_sw_current_shunt(false);
-  _atomSet[id_ver][id_hor].node.set_imag_sw_current_shunt(false);
+  _atomSet[id_ver][id_hor].node.real_sw_current_shunt = false;
+  _atomSet[id_ver][id_hor].node.imag_sw_current_shunt = false;
 
   // Connect resistance to ground - if needed
   if (shuntR > 0){
     // Close the resistance to ground switch
-    _atomSet[id_ver][id_hor].node.set_real_sw_resistance(true);
-    _atomSet[id_ver][id_hor].node.set_imag_sw_resistance(true);
+    _atomSet[id_ver][id_hor].node.real_sw_resistance = true;
+    _atomSet[id_ver][id_hor].node.imag_sw_resistance = true;
     // Set resistance to ground and close internal potentiometer switch
     ans |= _atomSet[id_ver][id_hor].node.set_real_pot_resistance_r( shuntR );
     ans |= _atomSet[id_ver][id_hor].node.set_imag_pot_resistance_r( shuntR );
@@ -922,8 +922,8 @@ int SliceAnalog::nodeVoltageSource(size_t id_ver, size_t id_hor, double shuntR){
     _atomSet[id_ver][id_hor].node.set_imag_pot_resistance_sw(true);
   } else {
     // Open the resistance to ground switch
-    _atomSet[id_ver][id_hor].node.set_real_sw_resistance(false);
-    _atomSet[id_ver][id_hor].node.set_imag_sw_resistance(false);
+    _atomSet[id_ver][id_hor].node.real_sw_resistance = false;
+    _atomSet[id_ver][id_hor].node.imag_sw_resistance = false;
     // Open the internal potentiometer switch
     _atomSet[id_ver][id_hor].node.set_real_pot_resistance_sw(false);
     _atomSet[id_ver][id_hor].node.set_imag_pot_resistance_sw(false);
@@ -933,14 +933,14 @@ int SliceAnalog::nodeVoltageSource(size_t id_ver, size_t id_hor, double shuntR){
 
 void SliceAnalog::nodeDisconnect(size_t id_ver, size_t id_hor){
   // Open all switches
-  _atomSet[id_ver][id_hor].node.set_real_sw_current(false);
-  _atomSet[id_ver][id_hor].node.set_imag_sw_current(false);
-  _atomSet[id_ver][id_hor].node.set_real_sw_current_shunt(false);
-  _atomSet[id_ver][id_hor].node.set_imag_sw_current_shunt(false);
-  _atomSet[id_ver][id_hor].node.set_real_sw_voltage(false);
-  _atomSet[id_ver][id_hor].node.set_imag_sw_voltage(false);
-  _atomSet[id_ver][id_hor].node.set_real_sw_resistance(false);
-  _atomSet[id_ver][id_hor].node.set_imag_sw_resistance(false);
+  _atomSet[id_ver][id_hor].node.real_sw_current = false;
+  _atomSet[id_ver][id_hor].node.imag_sw_current = false;
+  _atomSet[id_ver][id_hor].node.real_sw_current_shunt = false;
+  _atomSet[id_ver][id_hor].node.imag_sw_current_shunt = false;
+  _atomSet[id_ver][id_hor].node.real_sw_voltage = false;
+  _atomSet[id_ver][id_hor].node.imag_sw_voltage = false;
+  _atomSet[id_ver][id_hor].node.real_sw_resistance = false;
+  _atomSet[id_ver][id_hor].node.imag_sw_resistance = false;
 
   // Open all internal potentiometer switches
   _atomSet[id_ver][id_hor].node.set_real_pot_resistance_sw(false);

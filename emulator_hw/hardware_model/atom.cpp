@@ -42,10 +42,17 @@ size_t Atom::getEmbrCount() const{
 }
 
 void Atom::calibrate(Atom const& cal_am){
-  node.set_real_adc_offset_corr( cal_am.node.real_adc_offset_corr() );
-  node.set_imag_adc_offset_corr( cal_am.node.imag_adc_offset_corr() );
-  node.set_real_adc_gain_corr( cal_am.node.real_adc_gain_corr() );
-  node.set_imag_adc_gain_corr( cal_am.node.real_adc_gain_corr() );
+  // Real ADC & DAC
+  node.real_adc_offset_corr = cal_am.node.real_adc_offset_corr;
+  node.real_adc_gain_corr = cal_am.node.real_adc_gain_corr;
+  node.real_dac_offset_corr = cal_am.node.real_dac_offset_corr;
+  node.real_dac_gain_corr = cal_am.node.real_dac_gain_corr;
+
+  // Imag ADC & DAC
+  node.imag_adc_offset_corr = cal_am.node.imag_adc_offset_corr;
+  node.imag_adc_gain_corr = cal_am.node.imag_adc_gain_corr;
+  node.imag_dac_offset_corr = cal_am.node.imag_dac_offset_corr;
+  node.imag_dac_gain_corr = cal_am.node.imag_dac_gain_corr;
 
   node.set_real_pot_current_rab( cal_am.node.real_pot_current_rab(), true);
   node.set_imag_pot_current_rab( cal_am.node.imag_pot_current_rab(), true);

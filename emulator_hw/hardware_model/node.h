@@ -16,11 +16,11 @@ EPFL
 
 #define NODEDAC_RES 12
 #define NODEDAC_MAXOUT 5.0
+#define NODEADC_RES 12
 
 namespace elabtsaot{
 
-//! Class representing a node of the hardware emulator
-/*!
+/*! Class representing a node of the hardware emulator
   Nodes are an integral part of atoms. They represent the connection point of
   the ADC and DAC drivers interfacing the analog with the digital part of an
   emulator slice. Practically at a node occur all measurements and injections in
@@ -52,22 +52,11 @@ class Node{
  public:
 
   Node(); //!< Constructor - all node switches are open
-  virtual ~Node(){}
-
-  //! Outputs the member values to std::cout
-  int display() const;
-  //! Resets the node - all node switches are opened
-  int reset(bool complete);
+  int reset(bool complete); //!< Resets the node - all node switches are opened
 
   // --- getters ---
   /*! \name Getters */
   //@{
-  double real_adc_offset_corr() const;          //!< getter for _real_adc_offset_corr
-  double real_adc_gain_corr() const;            //!< getter for _real_adc_gain_corr
-  bool real_sw_voltage() const;                 //!< getter for _real_sw_voltage
-  bool real_sw_current() const;                 //!< getter for _real_sw_current
-  bool real_sw_current_shunt() const;           //!< getter for _real_sw_current_shunt
-  bool real_sw_resistance() const;              //!< getter for _real_sw_resistance
   double real_pot_current_rab() const;          //!< getter for _real_pot_current._rab
   double real_pot_current_rw() const;           //!< getter for _real_pot_current._rw
   double real_pot_current_r() const;            //!< getter for _real_pot_current._r
@@ -83,12 +72,6 @@ class Node{
   bool real_pot_resistance_swA() const;         //!< getter for _real_pot_resistance._swA
   double real_pot_resistance_getRMax() const;
 
-  double imag_adc_offset_corr() const;          //!< getter for _imag_adc_offset_corr
-  double imag_adc_gain_corr() const;            //!< getter for _imag_adc_gain_corr
-  bool imag_sw_voltage() const;                 //!< getter for _imag_sw_voltage
-  bool imag_sw_current() const;                 //!< getter for _imag_sw_current
-  bool imag_sw_current_shunt() const;           //!< getter for _imag_sw_current_shunt
-  bool imag_sw_resistance() const;              //!< getter for _imag_sw_resistance
   double imag_pot_current_rab() const;          //!< getter for _imag_pot_current._rab
   double imag_pot_current_rw() const;           //!< getter for _imag_pot_current._rw
   double imag_pot_current_r() const;            //!< getter for _imag_pot_current._r
@@ -104,24 +87,6 @@ class Node{
   bool imag_pot_resistance_swA() const;         //!< getter for _imag_pot_resistance._swA
   double imag_pot_resistance_getRMax() const;
 
-  inline double adc_offset_corr(bool real) const{
-    return real ? real_adc_offset_corr() : imag_adc_offset_corr();
-  }
-  inline double adc_gain_corr(bool real) const{
-    return real ? real_adc_gain_corr() : imag_adc_offset_corr();
-  }
-  inline bool sw_voltage(bool real) const{
-    return real ? real_sw_voltage() : imag_sw_voltage();
-  }
-  inline bool sw_current(bool real) const{
-    return real ? real_sw_current() : imag_sw_current();
-  }
-  inline bool sw_current_shunt(bool real) const{
-    return real ? real_sw_current_shunt() : imag_sw_current_shunt();
-  }
-  inline bool sw_resistance(bool real) const{
-    return real ? real_sw_resistance() : imag_sw_resistance();
-  }
   inline double pot_current_rab(bool real) const{
     return real ? real_pot_current_rab() : imag_pot_current_rab();
   }
@@ -169,12 +134,6 @@ class Node{
   // --- setters ---
   /*! @name Setters */
   //@{
-  void set_real_adc_offset_corr(double val); //!< setter for _real_adc_offset_corr
-  void set_real_adc_gain_corr(double val); //!< setter for _real_adc_gain_corr
-  void set_real_sw_voltage(bool val); //!< setter for _real_sw_voltage
-  void set_real_sw_current(bool val); //!< setter for _real_sw_current
-  void set_real_sw_current_shunt(bool val); //!< setter for _real_sw_current_shunt
-  void set_real_sw_resistance(bool val); //!< setter for _real_sw_resistance
   int set_real_pot_current_rab(double val, bool updateTap); //!< setter for _real_pot_current._rab
   int set_real_pot_current_rw(double val, bool updateTap); //!< setter for _real_pot_current._rw
   int set_real_pot_current_r(double val); //!< setter for _real_pot_current._r
@@ -188,12 +147,6 @@ class Node{
   void set_real_pot_resistance_sw(bool val); //!< setter for _real_pot_resistance._sw
   int set_real_pot_resistance_swA(bool val, bool updateTap); //!< setter for _real_pot_resistance._swA
 
-  void set_imag_adc_offset_corr(double val); //!< setter for _imag_adc_offset_corr
-  void set_imag_adc_gain_corr(double val); //!< setter for _imag_adc_gain_corr
-  void set_imag_sw_voltage(bool val); //!< setter for _imag_sw_voltage
-  void set_imag_sw_current(bool val); //!< setter for _imag_sw_current
-  void set_imag_sw_current_shunt(bool val); //!< setter for _imag_sw_current_shunt
-  void set_imag_sw_resistance(bool val); //!< setter for _imag_sw_resistance
   int set_imag_pot_current_rab(double val, bool updateTap); //!< setter for _imag_pot_current._rab
   int set_imag_pot_current_rw(double val, bool updateTap); //!< setter for _imag_pot_current._rw
   int set_imag_pot_current_r(double val); //!< setter for _imag_pot_current._r
@@ -207,24 +160,6 @@ class Node{
   void set_imag_pot_resistance_sw(bool val); //!< setter for _imag_pot_resistance._sw
   int set_imag_pot_resistance_swA(bool val, bool updateTap); //!< setter for _imag_pot_resistance._swA
 
-  inline void set_adc_offset_corr(double val, bool real){
-    return real ? set_real_adc_offset_corr(val) : set_imag_adc_offset_corr(val);
-  }
-  inline void set_adc_gain_corr(double val, bool real){
-    return real ? set_real_adc_gain_corr(val) : set_imag_adc_gain_corr(val);
-  }
-  inline void set_sw_voltage(bool val, bool real){
-    return real ? set_real_sw_voltage(val) : set_imag_sw_voltage(val);
-  }
-  inline void set_sw_current(bool val, bool real){
-    return real ? set_real_sw_current(val) : set_imag_sw_current(val);
-  }
-  inline void set_sw_current_shunt(bool val, bool real){
-    return real ? set_real_sw_current_shunt(val) : set_imag_sw_current_shunt(val);
-  }
-  inline void set_sw_resistance(bool val, bool real){
-    return real ? set_real_sw_resistance(val) : set_imag_sw_resistance(val);
-  }
   inline int set_pot_current_rab(double val, bool updateTap, bool real){
     return real ? set_real_pot_current_rab(val, updateTap) : set_imag_pot_current_rab(val, updateTap);
   }
@@ -263,62 +198,33 @@ class Node{
   }
   //@}
 
+  // -------------- Real part --------------
+  double real_adc_offset_corr;
+  double real_adc_gain_corr;
+  double real_dac_offset_corr;
+  double real_dac_gain_corr;
+  bool real_sw_voltage;              //!< Switch to apply voltage to the node (normally open)
+  bool real_sw_current;              //!< Switch to inject a current to the node
+  bool real_sw_current_shunt;        //!< Calibration switch (normally open)
+  bool real_sw_resistance;           //!< Switch to connect a resistance to GND
+  // -------------- Imag part --------------
+  double imag_adc_offset_corr;
+  double imag_adc_gain_corr;
+  double imag_dac_offset_corr;
+  double imag_dac_gain_corr;
+  bool imag_sw_voltage;              //!< Switch to apply voltage to the node (normally open)
+  bool imag_sw_current;              //!< Switch to inject a current to the node
+  bool imag_sw_current_shunt;        //!< Calibration switch (normally open)
+  bool imag_sw_resistance;           //!< Switch to connect a resistance to GND
+
  private:
 
   // -------------- Real part --------------
-  //! Correction on the offset value of the adc of the real part
-  /*!
-    This means that the final adc offset value that will be communicated to the
-    emulator hardware for the real part of every atom of a slice is going to be:
-    - Slice::_got_offset + Node::_real_adc_offset_corr
-  */
-  double _real_adc_offset_corr;
-  //! Correction on the gain value of the adc of the real part
-  /*!
-    This means that the final adc offset value that will be communicated to the
-    emulator hardware for the real part of every atom of a slice is going to be:
-    - Slice::_got_gain + Node::_real_adc_gain_corr
-  */
-  double _real_adc_gain_corr;
-  //! Switch to apply voltage to the node (normally open)
-  bool _real_sw_voltage;              // Switch to apply voltage to the node(no)
-  //! Switch to inject a current to the node
-  bool _real_sw_current;              // Switch to inject a current to the node
-  //! Calibration switch (no)
-  bool _real_sw_current_shunt;        // Calibration switch (normally open)
-  //! Switch to connect a resistance to GND
-  bool _real_sw_resistance;           // Switch to connect a resistance to GND
-  //! Potentiometer of the current source
-  Potentiometer _real_pot_current;    // Potentiometer of the current source
-  //! Resistance between node and GND
-  Potentiometer _real_pot_resistance; // Resistance between node and GND
+  Potentiometer _real_pot_current;    //!< Potentiometer of the current source
+  Potentiometer _real_pot_resistance; //!< Resistance between node and GND
   // -------------- Imag part --------------
-  //! Correction on the offset value of the adc of the imag part
-  /*!
-    This means that the final adc offset value that will be communicated to the
-    emulator hardware for the imag part of every atom of a slice is going to be:
-    - Slice::_got_offset + Node::_imag_adc_offset_corr
-  */
-  double _imag_adc_offset_corr;
-  //! Correction on the gain value of the adc of the imag part
-  /*!
-    This means that the final adc offset value that will be communicated to the
-    emulator hardware for the imag part of every atom of a slice is going to be:
-    - Slice::_got_gain + Node::_imag_adc_gain_corr
-  */
-  double _imag_adc_gain_corr;
-  //! Switch to apply voltage to the node (normally open)
-  bool _imag_sw_voltage;            // Switch to apply voltage to the node(no)
-  //! Switch to inject a current to the node
-  bool _imag_sw_current;            // Switch to inject a current to the node
-  //! Calibration switch (no)
-  bool _imag_sw_current_shunt;      // Calibration switch (normally open)
-  //! Switch to connect a resistance to GND
-  bool _imag_sw_resistance;         // Switch to connect a resistance to GND
-  //! Potentiometer of the current source
-  Potentiometer _imag_pot_current;    // Potentiometer of the current source
-  //! Resistance between node and GND
-  Potentiometer _imag_pot_resistance; // Resistance between node and GND
+  Potentiometer _imag_pot_current;    //!< Potentiometer of the current source
+  Potentiometer _imag_pot_resistance; //!< Resistance between node and GND
 };
 
 } // end of namespace elabtsaot

@@ -39,19 +39,19 @@ int NodeDialog::exec(){
   bottomLay->addLayout( switchesLay );
 
   sw_voltage = new QCheckBox("Voltage switch");
-  sw_voltage->setChecked( _a->node.sw_voltage(_real) );
+  sw_voltage->setChecked( _real ? _a->node.real_sw_voltage : _a->node.imag_sw_voltage );
   switchesLay->addWidget( sw_voltage );
 
   sw_current = new QCheckBox("Current switch");
-  sw_current->setChecked( _a->node.sw_current(_real) );
+  sw_current->setChecked( _real ? _a->node.real_sw_current : _a->node.imag_sw_current );
   switchesLay->addWidget( sw_current );
 
   sw_current_shunt = new QCheckBox("Current shunt switch");
-  sw_current_shunt->setChecked( _a->node.sw_current_shunt(_real) );
+  sw_current_shunt->setChecked( _real ? _a->node.real_sw_current_shunt : _a->node.imag_sw_current_shunt );
   switchesLay->addWidget( sw_current_shunt );
 
   sw_resistance = new QCheckBox("Resistance switch");
-  sw_resistance->setChecked( _a->node.sw_resistance(_real) );
+  sw_resistance->setChecked( _real ? _a->node.real_sw_resistance : _a->node.imag_sw_resistance );
   switchesLay->addWidget( sw_resistance );
 
   // ----- Current source -----
@@ -150,10 +150,17 @@ int NodeDialog::exec(){
 
   if (dialog->exec()){
     // Dialog executed properly
-    _a->node.set_sw_voltage( sw_voltage->isChecked(), _real );
-    _a->node.set_sw_current( sw_current->isChecked(), _real );
-    _a->node.set_sw_current_shunt( sw_current_shunt->isChecked(), _real );
-    _a->node.set_sw_resistance( sw_resistance->isChecked(), _real );
+    if (_real){
+      _a->node.real_sw_voltage = sw_voltage->isChecked();
+      _a->node.real_sw_current = sw_current->isChecked();
+      _a->node.real_sw_current_shunt = sw_current_shunt->isChecked();
+      _a->node.real_sw_resistance = sw_resistance->isChecked();
+    } else {
+      _a->node.imag_sw_voltage = sw_voltage->isChecked();
+      _a->node.imag_sw_current = sw_current->isChecked();
+      _a->node.imag_sw_current_shunt = sw_current_shunt->isChecked();
+      _a->node.imag_sw_resistance = sw_resistance->isChecked();
+    }
 
     _a->node.set_pot_current_tap( pot_current_tap->value(), _real );
     _a->node.set_pot_current_sw( pot_current_sw->isChecked(), _real );

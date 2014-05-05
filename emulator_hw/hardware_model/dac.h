@@ -22,17 +22,14 @@ class DAC{
 
  public:
 
-  DAC( unsigned int tap,
-       unsigned int resolution,
-       double out_min,
-       double out_max );
+  DAC(unsigned int tap, unsigned int resolution, double out_min, double out_max);
   int reset( bool tapwise, bool complete);
 
   // Setters
-  int set_out( double val, double* p_mismatch = 0, bool force = true);
-  int set_tap( unsigned int val );
-  int set_out_min( double val, bool updateTap );
-  int set_out_max( double val, bool updateTap );
+  int set_out(double val, double* p_mismatch = 0, bool force = true);
+  int set_tap(unsigned int val);
+  int set_out_min(double val, bool updateTap);
+  int set_out_max(double val, bool updateTap);
 
   // Getters
   double out() const;
