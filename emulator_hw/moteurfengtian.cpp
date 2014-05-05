@@ -16,6 +16,8 @@ using std::cout;
 using std::endl;
 using std::vector;
 using std::polar;
+#include <limits>
+using std::numeric_limits;
 
 enum MoteurFengtianProperties{
   MFT_PROPERTY_FLATSTART,
@@ -24,7 +26,8 @@ enum MoteurFengtianProperties{
   MFT_PROPERTY_PTOL,
   MFT_PROPERTY_QTOL,
   MFT_PROPERTY_MAXIT,
-  MFT_PROPERTY_METHOD
+  MFT_PROPERTY_METHOD,
+  MFT_PROPERTY_TRIGD
 };
 
 enum MoteurFengtianMethod{
@@ -125,6 +128,15 @@ MoteurFengtian::MoteurFengtian(Emulator* emu, Logger* log) :
   tempPt.minValue = static_cast<int>(MFT_METHOD_GPF);
   tempPt.maxValue = static_cast<int>(MFT_METHOD_DC);
   _properties[tempPt] = tempPt.defaultValue;
+
+  tempPt.key = MFT_PROPERTY_TRIGD;
+  tempPt.dataType = PROPERTYT_DTYPE_INT;
+  tempPt.name = "Cycle trigger delay";
+  tempPt.description = "Number of FPGA clock cycles between two computation iterations; -1: auto; 0+: manual";
+  tempPt.defaultValue = 1050;
+  tempPt.minValue = -1;
+  tempPt.maxValue = numeric_limits<int>::max();
+  _properties[tempPt] = tempPt.defaultValue;
 }
 
 int MoteurFengtian::resetGPF() const{
@@ -151,37 +163,34 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
 //    return 0;
 
   // ----- Retrieve options -----
-  /* beta1       :
+  /* method      :
+
+     flatStart   :
+     beta1       :
      beta2       :
      Ptolerance  :
      Qtolerance  :
      maxIterCount:
-     method      : */
+     trigDelay   :
+  */
+  int method;
   bool flatStart;
   double beta1;
   double beta2;
   double Ptolerance;
   double Qtolerance;
   size_t maxIterCount;
-  int method;
-  _getOptions(flatStart, beta1, beta2, Ptolerance, Qtolerance, maxIterCount, method);
+  int trigDelay;
+  _getOptions(method, flatStart, beta1, beta2, Ptolerance, Qtolerance, maxIterCount, trigDelay);
 
   // Initialize output voltages
   bool converged(false);
   size_t busCount = pws.getBusCount();
   V.resize(busCount);
-  ublas::vector<double> Va(busCount), Vm(busCount);
   for (size_t k(0); k!=busCount; ++k){
     Bus const* bus = pws.getBus(k);
-    if (flatStart){
-      V(k) = complex(1,0);
-      Va(k) = 0;
-      Vm(k) = 1;
-    } else {
-      V(k) = polar(bus->V,bus->theta);
-      Va(k) = bus->theta;
-      Vm(k) = bus->V;
-    }
+    if (flatStart) V(k) = complex(1,0);
+    else           V(k) = polar(bus->V,bus->theta);
   }
 
   switch (method){
@@ -190,121 +199,11 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
    ****************************************************************************/
   case MFT_METHOD_GPF:{
     cout << "MoteurFengtian using GPF" << endl;
-    // Map & fit & encode pws & end calib. mode
-    int ans = _emu->preconditionEmulator(EMU_OPTYPE_GPF);
-    if (ans) return ans;
-
-    // Finalize encoding
-    // beta
-    int32_t tempMSB, tempLSB;
-    encoder::detail::form_word(beta2, 11, 10, false, &tempMSB);
-    encoder::detail::form_word(beta1, 11, 10, false, &tempLSB);
-    int32_t tempBeta = (tempMSB<<16) | (tempLSB);
-    // tolerance
-    encoder::detail::form_word(Qtolerance, 16, 11, false, &tempMSB);
-    encoder::detail::form_word(Ptolerance, 16, 11, false, &tempLSB);
-    int32_t tempTol = (tempMSB<<16) | (tempLSB);
-    // max iteration
-    int32_t mask7 = (1<<7)-1;
-    int32_t tempMaxIter = maxIterCount;
-    tempMaxIter &= mask7;
-    for (size_t k(0);k!=_emu->encoding.size();++k){
-      _emu->encoding[k][GPF_ADDR_BETA-1]    = tempBeta;
-      _emu->encoding[k][GPF_ADDR_MAXITER-1] = tempMaxIter;
-      _emu->encoding[k][GPF_ADDR_TOL-1]     = tempTol;
+    int ans = _gpf(pws, V, converged, beta1, beta2, Ptolerance, Qtolerance, maxIterCount, trigDelay);
+    if (ans){
+      cout << "MoteurFengtian::_gpf() failed with code " << ans << endl;
+      return 100+MFT_METHOD_GPF;
     }
-
-    // Finally write the modified _emu->encoding vector to the devices
-    cout << "Writing encoding ..." << endl;
-    ans = _emu->writeEncoding(false);
-    if (ans) return 42;
-
-    size_t sliceCount = _emu->getHwSliceCount();
-    vector<int> devId(sliceCount);
-    for(size_t k(0); k!=_emu->getHwSliceCount();++k)
-      devId[k] = _emu->sliceDeviceMap(k);
-    // Determine the start codes
-    vector<unsigned int> _NIOSStartCodes(sliceCount,0); // start code for each emulator slice
-    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
-      Slice* sl = &_emu->emuhw()->sliceSet[sliceId_];
-      if (   sl->dig.pipe_GPFPQ.element_count()   ==0
-          && sl->dig.pipe_GPFslack.element_count()==0)  // if all pipelines empty
-        _NIOSStartCodes[sliceId_] = GPF_WRCODE_HIZ; // then start code=6666 (==slice in HiZ)
-      else
-        _NIOSStartCodes[sliceId_] = GPF_WRCODE_START; // if not empty normal start
-    }
-
-    // Write the start codes
-    cout << "Writing start codes ..." << endl;
-    size_t address(GPF_ADDR_START);
-    vector<uint32_t> encoding605(1);
-    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
-      cout << "slice: " << sliceId_ << " start_code: " << _NIOSStartCodes[sliceId_] << endl;
-      encoding605[0] = _NIOSStartCodes[sliceId_];
-      ans = _emu->usbWrite(devId[sliceId_], address, encoding605);
-    }
-    if (ans) return 43;
-
-    // Check convergeance (read stop code)
-    cout << "Polling convergence flag ... ";
-    ans = _waitForGPFConvergence(10.0, converged);
-    if (ans) return 44;
-    if (converged)
-      cout << "converged! (" << GPF_RDCODE_CONVERGED << ")" << endl;
-    else
-      cout << "not converged! (" << GPF_RDCODE_NOTCONVERGED << ")" << endl;
-
-    vector<uint32_t> readBuffer;
-    // Read number of iterations by the algorithm
-    address = GPF_ADDR_ITERCOUNT;
-    ans = _emu->usbRead(devId[0], address, 1, readBuffer);
-    if (ans) return 45;
-    size_t iterCount = static_cast<size_t>(readBuffer[0]);
-    cout << "Iteration count (address " << GPF_ADDR_ITERCOUNT << "): " << iterCount << endl;
-
-    // Retrieve the mapping of the buses
-    vector<MappingPosition> busMap(busCount);
-    for (size_t k(0); k!=busCount; ++k){
-      Bus const* bus = pws.getBus(k);
-      MappingPosition tempMapPos; size_t tempEmbrPos; // tempEmbrPos redundant (pointer not used)
-      _emu->mmd()->getElementMapping(PWSMODELELEMENTTYPE_BUS, bus->extId, &tempMapPos, &tempEmbrPos);
-      busMap[k] = tempMapPos;
-    }
-
-    // Read and actual voltage results & update results
-    cout << "Reading results ... " << endl;
-    address = GPF_ADDR_RESULTS;
-    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
-      using auxiliary::operator <<;
-
-      // Read results for sliceId_
-      ans = _emu->usbRead(devId[sliceId_], address, 24, readBuffer);
-      cout << "readBuffer: " << readBuffer << endl;
-      // Parse them for sliceId_
-      vector<complex> out;
-      _parseVoltage(readBuffer,out);
-      cout << "readBuffer (parsed): " << out << endl;
-
-      // Check which buses will have results on this slice
-      GPFPQPipeline* pipe = &_emu->emuhw()->sliceSet[sliceId_].dig.pipe_GPFPQ;
-      for (size_t k(0); k!=busMap.size(); ++k){
-        MappingPosition tempMapPos = busMap[k];
-        if (tempMapPos.tab == static_cast<int>(sliceId_)){
-          // For these results, get index in the PQPipeline of the slice
-          int tempRow = tempMapPos.row;
-          int tempCol = tempMapPos.col;
-          int tempIndex = pipe->search_element(tempRow,tempCol);
-          // If found in the pipeline the respective V result is updated
-          if (tempIndex >= 0)
-            V(k) = out[tempIndex];
-        }
-      }
-    }
-
-    // TEMPORARILY COMMENTED; GPF CAN/SHOULD BE RESET FROM THE AUXILIARY TAB
-//    ans = resetGPF();
-//    if (ans) return 46;
-    cout << "WARNING: GPF reset skipped! Please manually reset using the auxiliary tab!" << endl;
     break;
   }
 
@@ -314,112 +213,26 @@ int MoteurFengtian::do_solvePowerFlow(Powersystem const& pws, ublas::vector<comp
 
   case MFT_METHOD_DC:{
     cout << "MoteurFengtian using DC PF" << endl;
-
-    // Reset voltage magnitudes to 1
-    size_t N = busCount;
-    for (size_t k(0); k!=N; ++k)
-      Vm(k) = 1.;
-
-    // Map & fit & encode pws & end calib. mode
-    int ans = _emu->preconditionEmulator(EMU_OPTYPE_DCPF);
-    if (ans) return ans;
-
-    // Finally write the modified _emu->encoding vector to the devices
-    cout << "Writing encoding ..." << endl;
-    ans = _emu->writeEncoding(false);
-    if (ans) return 42;
-
-    // Get the slice-device mapping
-    cout << "Getting slice-device mapping ... " << endl;
-    size_t sliceCount = _emu->getHwSliceCount();
-    vector<int> devId(sliceCount);
-    for(size_t k(0); k!=_emu->getHwSliceCount();++k)
-      devId[k] = _emu->sliceDeviceMap(k);
-
-    // Determine whether a slice is empty or not
-    cout << "Determining empty slices ... " << endl;
-    vector<unsigned int> _NIOSStartCodes(sliceCount,0); // start code for each emulator slice
-    vector<bool> empty(sliceCount, true);
-    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
-      Slice* sl = &_emu->emuhw()->sliceSet[sliceId_];
-      for (size_t k(0); k<MAX_VERATOMCOUNT; k++){
-        for (size_t m(0); m!=MAX_HORATOMCOUNT; ++m){
-          if (sl->dig.injectionTypes[k][m]==NODE_IINJECTION){
-            empty[sliceId_]=false;
-            k=MAX_VERATOMCOUNT; // to break the outer loop
-            break;              // to break the inner loop
-          }
-        }
-      }
+    int ans = _dcpf(pws, V, converged);
+    if (ans){
+      cout << "MoteurFengtian::_dcpf() failed with code " << ans << endl;
+      return 100+MFT_METHOD_DC;
     }
-    // Determine the start codes
-    cout << "Determining start codes ... " << endl;
-    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
-      if (empty[sliceId_])                             // if all pipelines empty
-        _NIOSStartCodes[sliceId_] = DCPF_WRCODE_HIZ;   // then slice in HiZ)
-      else                                             // if not empty
-        _NIOSStartCodes[sliceId_] = DCPF_WRCODE_START; // normal start
-    }
-
-    // Write the start codes
-    cout << "Writing start codes ..." << endl;
-    size_t address(DCPF_ADDR_START);
-    vector<uint32_t> encoding605(1);
-    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
-      cout << "slice: " << sliceId_ << " start_code: " << _NIOSStartCodes[sliceId_] << endl;
-      encoding605[0] = _NIOSStartCodes[sliceId_];
-      ans = _emu->usbWrite(devId[sliceId_], address, encoding605);
-    }
-    if (ans) return 43;
-
-//    // Retrieve the mapping of the buses
-//    cout << "Retrieving mapping of buses ... " << endl;
-//    vector<MappingPosition> busMap(busCount);
-//    for (size_t k(0); k!=busCount; ++k){
-//      Bus const* bus = pws.getBus(k);
-//      MappingPosition tempMapPos; size_t tempEmbrPos; // tempEmbrPos redundant (pointer not used)
-//      _emu->mmd()->getElementMapping(PWSMODELELEMENTTYPE_BUS, bus->extId, &tempMapPos, &tempEmbrPos);
-//      busMap[k] = tempMapPos;
-//    }
-
-    // Read and actual voltage results & update results
-    vector<uint32_t> readBuffer;
-    cout << "Reading results ... " << endl;
-    address = DCPF_ADDR_RESULTS;
-    for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
-      using auxiliary::operator <<;
-
-      // Read results for sliceId_
-      ans = _emu->usbRead(devId[sliceId_], address, 24, readBuffer);
-      cout << "readBuffer: " << readBuffer << endl;
-
-      // TODO
-    }
-
-    // TODO
-
-//    // Update voltage
-//    for (size_t k=0;k!=N;++k){
-//      V(k) = polar(Vm(k),Va(k));
-//      Vm(k) = std::abs(V(k)); // Update Vm & Va in case
-//      Va(k) = std::arg(V(k)); // we wrapped around the angle
-//    }
-
-//    converged = true;
     break;
   }
 
   /* Invalid method type */
-  default: return 10;
+  default: return 99;
   }
 
   if (!converged) return 2;
   return 0;
 }
 
-void MoteurFengtian::_getOptions(bool& flatStart, double& beta1, double& beta2,
+void MoteurFengtian::_getOptions(int& method,
+                                 bool& flatStart, double& beta1, double& beta2,
                                  double& Ptolerance, double& Qtolerance,
-                                 size_t& maxIterCount, int& method) const{
+                                 size_t& maxIterCount, int& trigDelay) const{
   // Retrieve boost::any properties
   boost::any anyFlatStart    = _getPropertyValueFromKey(MFT_PROPERTY_FLATSTART);
   boost::any anyBeta1        = _getPropertyValueFromKey(MFT_PROPERTY_BETA1);
@@ -428,6 +241,7 @@ void MoteurFengtian::_getOptions(bool& flatStart, double& beta1, double& beta2,
   boost::any anyQtolerance   = _getPropertyValueFromKey(MFT_PROPERTY_QTOL);
   boost::any anyMaxIterCount = _getPropertyValueFromKey(MFT_PROPERTY_MAXIT);
   boost::any anyMethod       = _getPropertyValueFromKey(MFT_PROPERTY_METHOD);
+  boost::any anyTrigDelay    = _getPropertyValueFromKey(MFT_PROPERTY_TRIGD);
   // Store them in output arguments
   flatStart    = boost::any_cast<bool>(anyFlatStart);
   beta1        = boost::any_cast<double>(anyBeta1);
@@ -437,6 +251,144 @@ void MoteurFengtian::_getOptions(bool& flatStart, double& beta1, double& beta2,
   int intMaxIterCount = boost::any_cast<int>(anyMaxIterCount); // interface with boost::any has to be int
   maxIterCount = static_cast<size_t>(intMaxIterCount);
   method       = boost::any_cast<int>(anyMethod);
+  trigDelay    = boost::any_cast<int>(anyTrigDelay);
+}
+
+int MoteurFengtian::_gpf(Powersystem const& pws, ublas::vector<complex>& V, bool& converged,
+                         double beta1, double beta2, double Ptolerance, double Qtolerance, size_t maxIterCount, int trigDelay) const{
+
+  size_t busCount = pws.getBusCount();
+
+  // Map & fit & encode pws & end calib. mode
+  int ans = _emu->preconditionEmulator(EMU_OPTYPE_GPF);
+  if (ans) return ans;
+
+  // Get sliceDeviceMap
+  size_t sliceCount = _emu->getHwSliceCount(); // _emu->encoding.size()
+  vector<int> devId(sliceCount);
+  for(size_t k(0); k!=sliceCount; ++k)
+    devId[k] = _emu->sliceDeviceMap(k);
+
+  // Finalize encoding
+  // --- beta
+  int32_t tempMSB, tempLSB;
+  encoder::detail::form_word(beta2, 11, 10, false, &tempMSB);
+  encoder::detail::form_word(beta1, 11, 10, false, &tempLSB);
+  int32_t tempBeta = (tempMSB<<16) | (tempLSB);
+  // --- tolerance
+  encoder::detail::form_word(Qtolerance, 16, 11, false, &tempMSB);
+  encoder::detail::form_word(Ptolerance, 16, 11, false, &tempLSB);
+  int32_t tempTol = (tempMSB<<16) | (tempLSB);
+  // --- max iteration
+  int32_t mask7 = (1<<7)-1;
+  int32_t tempMaxIter = maxIterCount;
+  tempMaxIter &= mask7;
+  for (size_t k(0); k!=sliceCount; ++k){
+    _emu->encoding[k][GPF_ADDR_BETA-1]    = tempBeta;
+    _emu->encoding[k][GPF_ADDR_MAXITER-1] = tempMaxIter;
+    _emu->encoding[k][GPF_ADDR_TOL-1]     = tempTol;
+  }
+  // --- trigDelay
+  for (size_t k(0); k!=sliceCount; ++k){
+    Slice* sl = &_emu->emuhw()->sliceSet[k];
+    uint32_t temp = 0;
+    // if the slice pipelines are not empty then the LSB of _emu->encoding[k][381] is not left 0
+    if (sl->dig.pipe_GPFPQ.element_count()!=0 || sl->dig.pipe_GPFslack.element_count()!=0)
+      temp = trigDelay;
+    uint32_t mask30 = (1<<30)-1;
+    temp &= mask30;                      // mask for 30 bits
+    encoder::stamp_NIOS_confirm(temp);   // stamp with 0b11xx..xx
+    _emu->encoding[k][381] = temp;       // update encoding
+  }
+
+  // Finally write the modified _emu->encoding vector to the devices
+  cout << "Writing encoding ..." << endl;
+  ans = _emu->writeEncoding(false);
+  if (ans) return 42;
+
+  // Determine the start codes
+  vector<unsigned int> _NIOSStartCodes(sliceCount,0); // start code for each emulator slice
+  for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+    Slice* sl = &_emu->emuhw()->sliceSet[sliceId_];
+    if (   sl->dig.pipe_GPFPQ.element_count()   ==0
+        && sl->dig.pipe_GPFslack.element_count()==0)  // if all pipelines empty
+      _NIOSStartCodes[sliceId_] = GPF_WRCODE_HIZ; // then start code=6666 (==slice in HiZ)
+    else
+      _NIOSStartCodes[sliceId_] = GPF_WRCODE_START; // if not empty normal start
+  }
+
+  // Write the start codes
+  cout << "Writing start codes ..." << endl;
+  size_t address(GPF_ADDR_START);
+  vector<uint32_t> encoding605(1);
+  for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+    cout << "slice: " << sliceId_ << " start_code: " << _NIOSStartCodes[sliceId_] << endl;
+    encoding605[0] = _NIOSStartCodes[sliceId_];
+    ans = _emu->usbWrite(devId[sliceId_], address, encoding605);
+  }
+  if (ans) return 43;
+
+  // Check convergeance (read stop code)
+  cout << "Polling convergence flag ... ";
+  ans = _waitForGPFConvergence(10.0, converged);
+  if (ans) return 44;
+  if (converged)
+    cout << "converged! (" << GPF_RDCODE_CONVERGED << ")" << endl;
+  else
+    cout << "not converged! (" << GPF_RDCODE_NOTCONVERGED << ")" << endl;
+
+  vector<uint32_t> readBuffer;
+  // Read number of iterations by the algorithm
+  address = GPF_ADDR_ITERCOUNT;
+  ans = _emu->usbRead(devId[0], address, 1, readBuffer);
+  if (ans) return 45;
+  size_t iterCount = static_cast<size_t>(readBuffer[0]);
+  cout << "Iteration count (address " << GPF_ADDR_ITERCOUNT << "): " << iterCount << endl;
+
+  // Retrieve the mapping of the buses
+  vector<MappingPosition> busMap(busCount);
+  for (size_t k(0); k!=busCount; ++k){
+    Bus const* bus = pws.getBus(k);
+    MappingPosition tempMapPos; size_t tempEmbrPos; // tempEmbrPos redundant (pointer not used)
+    _emu->mmd()->getElementMapping(PWSMODELELEMENTTYPE_BUS, bus->extId, &tempMapPos, &tempEmbrPos);
+    busMap[k] = tempMapPos;
+  }
+
+  // Read and actual voltage results & update results
+  cout << "Reading results ... " << endl;
+  address = GPF_ADDR_RESULTS;
+  for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+    using auxiliary::operator <<;
+
+    // Read results for sliceId_
+    ans = _emu->usbRead(devId[sliceId_], address, 24, readBuffer);
+    cout << "readBuffer: " << readBuffer << endl;
+    // Parse them for sliceId_
+    vector<complex> out;
+    _parseVoltage(readBuffer,out);
+    cout << "readBuffer (parsed): " << out << endl;
+
+    // Check which buses will have results on this slice
+    GPFPQPipeline* pipe = &_emu->emuhw()->sliceSet[sliceId_].dig.pipe_GPFPQ;
+    for (size_t k(0); k!=busMap.size(); ++k){
+      MappingPosition tempMapPos = busMap[k];
+      if (tempMapPos.tab == static_cast<int>(sliceId_)){
+        // For these results, get index in the PQPipeline of the slice
+        int tempRow = tempMapPos.row;
+        int tempCol = tempMapPos.col;
+        int tempIndex = pipe->search_element(tempRow,tempCol);
+        // If found in the pipeline the respective V result is updated
+        if (tempIndex >= 0)
+          V(k) = out[tempIndex];
+      }
+    }
+  }
+
+  // TEMPORARILY COMMENTED; GPF CAN/SHOULD BE RESET FROM THE AUXILIARY TAB
+//    ans = resetGPF();
+//    if (ans) return 46;
+  cout << "WARNING: GPF reset skipped! Please manually reset using the auxiliary tab!" << endl;
+  return 0;
 }
 
 int MoteurFengtian::_waitForGPFConvergence(double timeout_, bool& converged) const{
@@ -491,4 +443,104 @@ void MoteurFengtian::_parseVoltage(vector<uint32_t> const& val, vector<complex>&
     double temp_imag = static_cast<double>(MSB) / static_cast<double>(1<<14);
     out[k] = complex(temp_real,temp_imag);
   }
+}
+
+int MoteurFengtian::_dcpf(Powersystem const& pws, ublas::vector<complex>& V,
+                          bool& converged) const{
+  size_t busCount = pws.getBusCount();
+  size_t N = busCount;
+
+  ublas::vector<double> Va(busCount), Vm(busCount);
+  for (size_t k(0); k!=busCount; ++k){
+    Va(k) = std::arg(V(k));
+    Vm(k) = std::abs(V(k));
+  }
+  // Reset voltage magnitudes to 1
+  for (size_t k(0); k!=N; ++k) Vm(k) = 1.;
+
+  // Map & fit & encode pws & end calib. mode
+  int ans = _emu->preconditionEmulator(EMU_OPTYPE_DCPF);
+  if (ans) return ans;
+
+  // Finally write the modified _emu->encoding vector to the devices
+  cout << "Writing encoding ..." << endl;
+  ans = _emu->writeEncoding(false);
+  if (ans) return 42;
+
+  // Get the slice-device mapping
+  cout << "Getting slice-device mapping ... " << endl;
+  size_t sliceCount = _emu->getHwSliceCount();
+  vector<int> devId(sliceCount);
+  for(size_t k(0); k!=_emu->getHwSliceCount();++k)
+    devId[k] = _emu->sliceDeviceMap(k);
+
+  // Determine whether a slice is empty or not
+  cout << "Determining empty slices ... " << endl;
+  vector<unsigned int> _NIOSStartCodes(sliceCount,0); // start code for each emulator slice
+  vector<bool> empty(sliceCount, true);
+  for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+    Slice* sl = &_emu->emuhw()->sliceSet[sliceId_];
+    for (size_t k(0); k<MAX_VERATOMCOUNT; k++){
+      for (size_t m(0); m!=MAX_HORATOMCOUNT; ++m){
+        if (sl->dig.injectionTypes[k][m]==NODE_IINJECTION){
+          empty[sliceId_]=false;
+          k=MAX_VERATOMCOUNT; // to break the outer loop
+          break;              // to break the inner loop
+        }
+      }
+    }
+  }
+  // Determine the start codes
+  cout << "Determining start codes ... " << endl;
+  for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+    if (empty[sliceId_])                             // if all pipelines empty
+      _NIOSStartCodes[sliceId_] = DCPF_WRCODE_HIZ;   // then slice in HiZ)
+    else                                             // if not empty
+      _NIOSStartCodes[sliceId_] = DCPF_WRCODE_START; // normal start
+  }
+
+  // Write the start codes
+  cout << "Writing start codes ..." << endl;
+  size_t address(DCPF_ADDR_START);
+  vector<uint32_t> encoding605(1);
+  for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+    cout << "slice: " << sliceId_ << " start_code: " << _NIOSStartCodes[sliceId_] << endl;
+    encoding605[0] = _NIOSStartCodes[sliceId_];
+    ans = _emu->usbWrite(devId[sliceId_], address, encoding605);
+  }
+  if (ans) return 43;
+
+//    // Retrieve the mapping of the buses
+//    cout << "Retrieving mapping of buses ... " << endl;
+//    vector<MappingPosition> busMap(busCount);
+//    for (size_t k(0); k!=busCount; ++k){
+//      Bus const* bus = pws.getBus(k);
+//      MappingPosition tempMapPos; size_t tempEmbrPos; // tempEmbrPos redundant (pointer not used)
+//      _emu->mmd()->getElementMapping(PWSMODELELEMENTTYPE_BUS, bus->extId, &tempMapPos, &tempEmbrPos);
+//      busMap[k] = tempMapPos;
+//    }
+
+  // Read and actual voltage results & update results
+  vector<uint32_t> readBuffer;
+  cout << "Reading results ... " << endl;
+  address = DCPF_ADDR_RESULTS;
+  for (size_t sliceId_(0); sliceId_!=sliceCount; ++sliceId_){
+    using auxiliary::operator <<;
+
+    // Read results for sliceId_
+    ans = _emu->usbRead(devId[sliceId_], address, 24, readBuffer);
+    cout << "readBuffer: " << readBuffer << endl;
+
+    // TODO
+  }
+
+  // TODO
+
+//    // Update voltage
+//    for (size_t k=0;k!=N;++k){
+//      V(k) = polar(Vm(k),Va(k));
+//    }
+
+  converged = false; // TODO
+  return ans;
 }

@@ -72,13 +72,11 @@ int encode_resistors( Slice const& sl, std::vector<uint32_t>& res_conf, std::vec
 int encode_switches( Slice const& sl, std::vector<uint32_t>& switches_conf );
 
 // GPF specific encoding functions
-int encode_GPFgot( Slice const& sl, std::vector<uint32_t>& got_conf );
-int encode_GPFpositions( Slice const& sl, std::vector<uint32_t>& nodeCount_conf,
-                         std::vector<uint32_t>& PQpos_conf,
-                         std::vector<uint32_t>& slpos_conf );
-void encode_GPFauxiliary(Slice const& sl,
-                         std::vector<uint32_t>& conf_conf,
-                         std::vector<uint32_t>& starter_conf,
+int encode_GPFgot(Slice const& sl, std::vector<uint32_t>& got_conf);
+int encode_GPFpositions(Slice const& sl, std::vector<uint32_t>& nodeCount_conf,
+                        std::vector<uint32_t>& PQpos_conf,
+                        std::vector<uint32_t>& slpos_conf);
+void encode_GPFauxiliary(std::vector<uint32_t>& conf_conf,
                          std::vector<uint32_t>& nios_conf);
 void encode_GPFIinit( Slice const& sl, std::vector<uint32_t>& icar_conf, std::vector<uint32_t>& ipol_conf );
 void encode_GPFPQsetpoints( Slice const& sl, std::vector<uint32_t>& pqset_conf );

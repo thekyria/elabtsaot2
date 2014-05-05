@@ -47,16 +47,16 @@ class TDEmulator : public TDEngine {
                    std::vector<double>& cctMin, std::vector<double>& cctMax );
 
   // Property functions
-  void updateProperties( std::list<property> const& properties );
-  int updateProperty( property const& property_ );
+  void updateProperties(std::list<property> const& properties);
+  int updateProperty(property const& property_);
   int _getIntTStepOption() const;
   int _getNIOSSampleRate() const;
   int _getDampIt() const;
   int _getTrigDelay() const;
-  int _setIntTStepOption( int val );
-  int _setNIOSSampleRate( int val );
-  int _setDampIt( int val );
-  int _setTrigDelay( int val );
+  int _setIntTStepOption(int val);
+  int _setNIOSSampleRate(int val);
+  int _setDampIt(int val);
+  int _setTrigDelay(int val);
   void _updateTimeStep();
 
   // Encoding functions
@@ -68,7 +68,7 @@ class TDEmulator : public TDEngine {
                            unsigned int& switchConf,
                            unsigned int& stopSample,
                            bool& refittingPerformed );
-  int _encodeScenario( Scenario sce );
+  int _encodeScenario(Scenario sce);
   void _resetDampingEncoding();
   void _resetSpiesEncoding();
   int _encodeScenarioCCT( Scenario sce,

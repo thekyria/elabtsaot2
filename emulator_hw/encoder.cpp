@@ -45,7 +45,7 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
   // slpos_conf    | 351:354 | 352:355 [  4] detail::encode_GPFpositions
   // vref_conf     | 355:356 | 356:357 [  2] detail::encode_vref
   // icar_conf     | 357:380 | 358:381 [ 24] detail::encode_GPFIinit
-  // starter_conf  |     381 |     382 [  1] detail::encode_GPFauxiliary
+  // starter_conf  |     381 |     382 [  1]  none (placeholder words)
   // res_conf      | 382:485 | 383:486 [104] detail::encode_resistors
   // res_tcon_conf | 486:537 | 487:538 [ 52] detail::encode_resistors
   // switches_conf | 538:550 | 539:551 [ 13] detail::encode_switches
@@ -65,7 +65,6 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
   vector<uint32_t> conf_conf;
   vector<uint32_t> vref_conf;
   vector<uint32_t> icar_conf;
-  vector<uint32_t> starter_conf;
   vector<uint32_t> res_conf;
   vector<uint32_t> res_tcon_conf;
   vector<uint32_t> switches_conf;
@@ -75,7 +74,7 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
 
   ans |= detail::encode_GPFgot(sl, got_conf);
   ans |= detail::encode_GPFpositions(sl, nodeCount_conf, PQpos_conf, slpos_conf);
-  detail::encode_GPFauxiliary(sl, conf_conf, starter_conf, nios_conf);
+  detail::encode_GPFauxiliary(conf_conf, nios_conf);
   ans |= detail::encode_vref(sl, vref_conf);
   detail::encode_GPFIinit(sl, icar_conf, ipol_conf);
   ans |= detail::encode_resistors(sl, res_conf, res_tcon_conf );
@@ -91,7 +90,7 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
   sliceConf.insert(sliceConf.end(), slpos_conf.begin(), slpos_conf.end() );
   sliceConf.insert(sliceConf.end(), vref_conf.begin(), vref_conf.end() );
   sliceConf.insert(sliceConf.end(), icar_conf.begin(), icar_conf.end() );
-  sliceConf.insert(sliceConf.end(), starter_conf.begin(), starter_conf.end() );
+  none.resize(1,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
   sliceConf.insert(sliceConf.end(), res_conf.begin(), res_conf.end() );
   sliceConf.insert(sliceConf.end(), res_tcon_conf.begin(), res_tcon_conf.end() );
   sliceConf.insert(sliceConf.end(), switches_conf.begin(), switches_conf.end() );
@@ -1232,23 +1231,12 @@ int encoder::detail::encode_GPFpositions( Slice const& sl,
   return 0;
 }
 
-void encoder::detail::encode_GPFauxiliary( Slice const& sl,
-                                          vector<uint32_t>& conf_conf,
-                                          vector<uint32_t>& starter_conf,
-                                          vector<uint32_t>& nios_conf ){
+void encoder::detail::encode_GPFauxiliary(vector<uint32_t>& conf_conf,
+                                          vector<uint32_t>& nios_conf){
   conf_conf.clear();
   uint32_t temp = 0U;
   stamp_NIOS_confirm(temp);
   conf_conf.push_back(temp);
-
-  starter_conf.clear();
-  if (   sl.dig.pipe_GPFPQ.element_count()   ==0
-      && sl.dig.pipe_GPFslack.element_count()==0)  // if all pipelines empty
-    temp = 0U;
-  else
-    temp = 1050U;
-  stamp_NIOS_confirm(temp);
-  starter_conf.push_back(temp);
 
   nios_conf.clear();
   temp = 1U;

@@ -20,11 +20,16 @@ class MoteurFengtian : public SSEngine {
 private:
 
   int do_solvePowerFlow(Powersystem const& pws, ublas::vector<complex>& V) const;
-  void _getOptions(bool& flatStart, double& beta1, double& beta2,
+  void _getOptions(int& method,
+                   bool& flatStart, double& beta1, double& beta2,
                    double& Ptolerance, double& Qtolerance,
-                   size_t& maxIterCount, int& method ) const;
+                   size_t& maxIterCount, int& trigDelay) const;
+
+  int _gpf(Powersystem const& pws, ublas::vector<complex>& V, bool& converged,
+           double beta1, double beta2, double Ptolerance, double Qtolerance, size_t maxIterCount, int trigDelay) const;
   int _waitForGPFConvergence(double timeout_, bool& converged) const;
   void _parseVoltage(std::vector<uint32_t> const& val, std::vector<complex>& out) const;
+  int _dcpf(Powersystem const& pws, ublas::vector<complex>& V, bool& converged) const;
 
   Emulator* _emu;
 
