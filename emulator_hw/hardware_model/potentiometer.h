@@ -30,20 +30,20 @@ namespace elabtsaot{
 
                rab
     -------\/\/\/\/\/\/\/\-----
-         (1-n)rab  .  nrab
+         (1-n)rab  .  n*rab
                   / \
-            rw     |              Resulting r = rw//(1-n)rab + nrab
-    -----\/\/\/\----              where n = tap/tap_max
+            rw     |              Resulting in r = rw//(1-n)rab + n*rab
+    -----\/\/\/\----                     where n = tap/tap_max
 
 
   With _swA = false (switch open):
 
                rab
     --]  [-\/\/\/\/\/\/\/\-----
-                   .  nrab
+                   .  n*rab
                   / \
-            rw     |              Resulting r = rw + n*rab
-    -----\/\/\/\----              where n = tap/tap_max
+            rw     |              Resulting in r = rw + n*rab
+    -----\/\/\/\----                     where n = tap/tap_max
 
   rw the wiper resistance, rab resistance from terminals A to B
 
@@ -80,7 +80,7 @@ class Potentiometer{
 
   // --- functions ---
   //! Outputs member values to std::cout
-  int display() const;
+  void display() const;
   //! Potentiometer switch closed and tap setting reset to
   //! POTENTIOMETER_DEFTAPVALUE. If the 'complete' flag is set then _rab is
   //! reset back to its default value POTENTIOMETER_RAB
@@ -140,8 +140,8 @@ class Potentiometer{
   unsigned int tap_max() const;    //!< getter for _tap_max
   bool sw() const;                 //!< getter for _sw
   bool swA() const;                //!< getter for _swA
+  double getRMin() const;          //!< returns the minimum achievable r
   double getRMax() const;          //!< returns the maximum achievable r
-
   //@}
 
   //! Static calculator function; returns the equivalent resistance of two

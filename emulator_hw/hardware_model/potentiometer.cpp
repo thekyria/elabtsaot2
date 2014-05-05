@@ -35,12 +35,8 @@ Potentiometer::Potentiometer(unsigned int tap) :
   set_tap( tap );
 }
 
-int Potentiometer::display() const{
-  cout << "Internal sw: " << _sw;
-  cout << " Tap: " << _tap;
-  cout << " => R: " << _r << endl;
-
-  return 0;
+void Potentiometer::display() const{
+  cout << "Internal sw: " << _sw << " Tap: " << _tap << " => R: " << _r << endl;
 }
 
 int Potentiometer::reset( bool complete ){
@@ -73,16 +69,12 @@ int Potentiometer::set_rab(double rab, bool updateTap){
       ans = 0;
     }
   }
-
   return ans;
 }
 
 int Potentiometer::set_rw(double rw, bool updateTap){
-
-  if ( rw <= 0) {
-    // Invalid new rw value!
-    return 1;
-  }
+  // Invalid new rw value!
+  if (rw<=0) return 1;
 
   _rw = rw;
   // If the update tap flag is set then the tap setting is updated in order to
@@ -100,7 +92,6 @@ int Potentiometer::set_rw(double rw, bool updateTap){
       ans = 0;
     }
   }
-
   return ans;
 }
 
@@ -192,6 +183,10 @@ unsigned int Potentiometer::tap() const{ return _tap; }
 unsigned int Potentiometer::tap_max() const{ return _tap_max; }
 bool Potentiometer::sw() const{ return _sw; }
 bool Potentiometer::swA() const{ return _swA; }
+double Potentiometer::getRMin() const{
+  double rmin = _swA ? parallel_r(_rw,_rab) : _rw;
+  return rmin;
+}
 double Potentiometer::getRMax() const{
   double rmax = _swA ? _rab : _rw+_rab;
   return rmax;

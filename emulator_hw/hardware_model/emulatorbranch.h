@@ -42,6 +42,7 @@ class EmulatorBranch{
   double pot_near_rab() const;           //!< getter for _pot_near._rab
   double pot_near_rw() const;            //!< getter for _pot_near._rw
   double pot_near_r() const;             //!< getter for _pot_near._r
+  double pot_near_getRMin() const;
   double pot_near_getRMax() const;       //!< wrapper for _pot_near.getRMax
   unsigned int pot_near_tap() const;     //!< getter for _pot_near._tap
   unsigned int pot_near_tap_max() const; //!< getter for _pot_near._tap_max
@@ -51,6 +52,7 @@ class EmulatorBranch{
   double pot_far_rab() const;            //!< getter for _pot_far._rab
   double pot_far_rw() const;             //!< getter for _pot_far._rw
   double pot_far_r() const;              //!< getter for _pot_far._r
+  double pot_far_getRMin() const;
   double pot_far_getRMax() const;        //!< wrapper for _pot_far.getRMax
   unsigned int pot_far_tap() const;      //!< getter for _pot_far._tap
   unsigned int pot_far_tap_max() const;  //!< getter for _pot_far._tap_max

@@ -15,7 +15,7 @@ using namespace elabtsaot;
 #include <QLabel>
 #include <QCheckBox>
 
-NodeDialog::NodeDialog( Atom* a, bool real, QWidget* parent) :
+NodeDialog::NodeDialog(Atom* a, bool real, QWidget* parent) :
     QObject(parent), _a(a), _real(real){}
 
 int NodeDialog::exec(){
@@ -148,7 +148,7 @@ int NodeDialog::exec(){
   buttonsLay->addWidget( cancel );
   connect( cancel, SIGNAL(clicked()), dialog, SLOT(reject()));
 
-  if ( dialog->exec() ){
+  if (dialog->exec()){
     // Dialog executed properly
     _a->node.set_sw_voltage( sw_voltage->isChecked(), _real );
     _a->node.set_sw_current( sw_current->isChecked(), _real );

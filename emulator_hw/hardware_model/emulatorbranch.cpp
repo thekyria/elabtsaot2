@@ -6,14 +6,11 @@ EmulatorBranch::EmulatorBranch():
     _sw_sc(false), _sw_mid(false), _pot_near(), _pot_far() {}
 
 int EmulatorBranch::reset( bool complete ){
-
   _sw_sc = false;
   _sw_mid = false;
-
-  int ans = 0;
-  ans |= _pot_near.reset( complete );
-  ans |= _pot_far.reset( complete );
-
+  int ans(0);
+  ans |= _pot_near.reset(complete);
+  ans |= _pot_far.reset(complete);
   return ans;
 }
 
@@ -24,6 +21,7 @@ bool EmulatorBranch::sw_mid() const{ return _sw_mid; }
 double EmulatorBranch::pot_near_rab() const{ return _pot_near.rab(); }
 double EmulatorBranch::pot_near_rw() const{ return _pot_near.rw(); }
 double EmulatorBranch::pot_near_r() const{ return _pot_near.r(); }
+double EmulatorBranch::pot_near_getRMin() const{ return _pot_near.getRMin(); }
 double EmulatorBranch::pot_near_getRMax() const{ return _pot_near.getRMax(); }
 unsigned int EmulatorBranch::pot_near_tap() const{ return _pot_near.tap(); }
 unsigned int EmulatorBranch::pot_near_tap_max() const{ return _pot_near.tap_max(); }
@@ -33,6 +31,7 @@ bool EmulatorBranch::pot_near_swA() const{ return _pot_near.swA(); }
 double EmulatorBranch::pot_far_rab() const{ return _pot_far.rab(); }
 double EmulatorBranch::pot_far_rw() const{ return _pot_far.rw(); }
 double EmulatorBranch::pot_far_r() const{ return _pot_far.r(); }
+double EmulatorBranch::pot_far_getRMin() const{ return _pot_far.getRMin(); }
 double EmulatorBranch::pot_far_getRMax() const{ return _pot_far.getRMax(); }
 unsigned int EmulatorBranch::pot_far_tap() const{ return _pot_far.tap(); }
 unsigned int EmulatorBranch::pot_far_tap_max() const{ return _pot_far.tap_max(); }

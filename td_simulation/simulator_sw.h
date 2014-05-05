@@ -31,8 +31,8 @@ class Simulator_sw : public TDEngine {
 
  public:
 
-  Simulator_sw( Powersystem const* pws, Logger* log );
-  int init( Powersystem const* pws );
+  Simulator_sw(Powersystem const* pws, Logger* log);
+  int init(Powersystem const* pws);
 
  private:
 

@@ -5,10 +5,11 @@ using namespace elabtsaot;
 #include "powersystem.h"
 #include "auxiliary.h"
 #include "emulator.h"
-#include "nodedialog.h"
 
 #include "guiauxiliary.h"
 #include "fitteremulatoreditor.h"
+#include "nodedialog.h"
+#include "emulatorbranchdialog.h"
 
 #include <QToolBar>
 #include <QAction>
@@ -204,7 +205,7 @@ void FitterEditor::fittingPositionClickedSlot(int emulator_tab,
                                               int emulator_row,
                                               int emulator_col,
                                               int emulator_elm){
-
+  int ans(0);
   /*
     emulator_elm follows the following convention for the element clicked:
     0b0..0zyyyxxx
@@ -214,10 +215,6 @@ void FitterEditor::fittingPositionClickedSlot(int emulator_tab,
           4: short circt sw; 5: mid gnd sw
     xxx - embr pos according to EmbrPosition 0: EMBRPOS_ U; 1: UR ...; 7: UL
   */
-  int ans;
-  bool valBool;
-  double valDouble;
-  QString text;
   int isNode = (1<<6) & emulator_elm;           // extracting z
   int embrPos = 7 & emulator_elm;               // extracting xxx
   int embrElm = ((7<<3) & emulator_elm) >> 3;   // extracting yyy
@@ -226,73 +223,83 @@ void FitterEditor::fittingPositionClickedSlot(int emulator_tab,
 
   if (isNode){
     NodeDialog dialog(atom, real);
-    dialog.exec();
+    ans = dialog.exec();
     return;
+  } else { // Emulator branch or nothing
+    // Get pointer to EmulatorBranch
+    EmulatorBranch* embr = real ? &atom->embr_real[embrPos] : &atom->embr_imag[embrPos];
+    // Execute dialog for the EmulatorBranch
+    EmulatorBranchDialog  dialog(embr);
+    ans = dialog.exec();
   }
+  // If dialog successfully executed update FitterEmulatorEditor
+  if (ans) return;
+  else fee->updt();
 
-  switch (embrElm){
-  case 0: // near pot sw
-    valBool = atom->embr(embrPos,real).pot_near_sw();
-    if (real)
-      atom->embr_real[embrPos].set_pot_near_sw(!valBool);
-    else
-      atom->embr_imag[embrPos].set_pot_near_sw(!valBool);
-    break;
+//  QString text;
+//  double valDouble;
+//  bool valBool;
+//  switch (embrElm){
+//  case 0: // near pot sw
+//    valBool = atom->embr(embrPos,real).pot_near_sw();
+//    if (real)
+//      atom->embr_real[embrPos].set_pot_near_sw(!valBool);
+//    else
+//      atom->embr_imag[embrPos].set_pot_near_sw(!valBool);
+//    break;
 
-  case 1: // near pot res
-    text = QString("Near pot res of embr %0 of atom [tab,row,col]: [%1,%2,%3]")
-            .arg(embrPos).arg(emulator_tab).arg(emulator_row).arg(emulator_col);
-    valDouble = atom->embr(embrPos,real).pot_near_r();
-    ans = guiauxiliary::askDouble(text, valDouble);
-    if (!ans){
-      if (real)
-        ans = atom->embr_real[embrPos].set_pot_near_r(valDouble, NULL);
-      else
-        ans = atom->embr_imag[embrPos].set_pot_near_r(valDouble, NULL);
-      if (ans) cout << "Failed to set: " << text.toStdString() << endl;
-    }
-    break;
+//  case 1: // near pot res
+//    text = QString("Near pot res of embr %0 of atom [tab,row,col]: [%1,%2,%3]")
+//            .arg(embrPos).arg(emulator_tab).arg(emulator_row).arg(emulator_col);
+//    valDouble = atom->embr(embrPos,real).pot_near_r();
+//    ans = guiauxiliary::askDouble(text, valDouble);
+//    if (!ans){
+//      if (real)
+//        ans = atom->embr_real[embrPos].set_pot_near_r(valDouble, NULL);
+//      else
+//        ans = atom->embr_imag[embrPos].set_pot_near_r(valDouble, NULL);
+//      if (ans) cout << "Failed to set: " << text.toStdString() << endl;
+//    }
+//    break;
 
-  case 2: // far pot sw
-    valBool = atom->embr(embrPos,real).pot_far_sw();
-    if (real)
-      atom->embr_real[embrPos].set_pot_far_sw(!valBool);
-    else
-      atom->embr_imag[embrPos].set_pot_far_sw(!valBool);
-    break;
+//  case 2: // far pot sw
+//    valBool = atom->embr(embrPos,real).pot_far_sw();
+//    if (real)
+//      atom->embr_real[embrPos].set_pot_far_sw(!valBool);
+//    else
+//      atom->embr_imag[embrPos].set_pot_far_sw(!valBool);
+//    break;
 
-  case 3: // far pot res
-    text = QString("Far pot res of embr %0 of atom [tab,row,col]: [%1,%2,%3]")
-            .arg(embrPos).arg(emulator_tab).arg(emulator_row).arg(emulator_col);
-    valDouble=atom->embr(embrPos,real).pot_far_r();
-    ans = guiauxiliary::askDouble( text, valDouble );
-    if (!ans){
-      if (real)
-        ans = atom->embr_real[embrPos].set_pot_far_r(valDouble, NULL);
-      else
-        ans = atom->embr_imag[embrPos].set_pot_far_r(valDouble, NULL);
-      if (ans) cout << "Failed to set: " << text.toStdString() << endl;
-    }
-    break;
+//  case 3: // far pot res
+//    text = QString("Far pot res of embr %0 of atom [tab,row,col]: [%1,%2,%3]")
+//            .arg(embrPos).arg(emulator_tab).arg(emulator_row).arg(emulator_col);
+//    valDouble=atom->embr(embrPos,real).pot_far_r();
+//    ans = guiauxiliary::askDouble( text, valDouble );
+//    if (!ans){
+//      if (real)
+//        ans = atom->embr_real[embrPos].set_pot_far_r(valDouble, NULL);
+//      else
+//        ans = atom->embr_imag[embrPos].set_pot_far_r(valDouble, NULL);
+//      if (ans) cout << "Failed to set: " << text.toStdString() << endl;
+//    }
+//    break;
 
-  case 4: // short circt sw
-    valBool = atom->embr(embrPos,real).sw_sc();
-    if (real)
-      atom->embr_real[embrPos].set_sw_sc(!valBool);
-    else
-      atom->embr_imag[embrPos].set_sw_sc(!valBool);
-    break;
+//  case 4: // short circt sw
+//    valBool = atom->embr(embrPos,real).sw_sc();
+//    if (real)
+//      atom->embr_real[embrPos].set_sw_sc(!valBool);
+//    else
+//      atom->embr_imag[embrPos].set_sw_sc(!valBool);
+//    break;
 
-  case 5: // mid gnd sw
-    valBool = atom->embr(embrPos,real).sw_mid();
-    if (real)
-      atom->embr_real[embrPos].set_sw_mid(!valBool);
-    else
-      atom->embr_imag[embrPos].set_sw_mid(!valBool);
-    break;
-  }
-
-  fee->updt();
+//  case 5: // mid gnd sw
+//    valBool = atom->embr(embrPos,real).sw_mid();
+//    if (real)
+//      atom->embr_real[embrPos].set_sw_mid(!valBool);
+//    else
+//      atom->embr_imag[embrPos].set_sw_mid(!valBool);
+//    break;
+//  }
 
   return;
 }

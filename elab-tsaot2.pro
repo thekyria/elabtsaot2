@@ -160,6 +160,7 @@ SOURCES += \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/tabularmapperview.cpp \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/tabularmappereditor.cpp \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/nodedialog.cpp \
+  $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/emulatorbranchdialog.cpp \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/calibrationeditor.cpp \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/communicationeditor.cpp \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/auxiliaryeditor.cpp \
@@ -279,6 +280,7 @@ HEADERS += \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/tabularmapperview.h \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/tabularmappereditor.h \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/nodedialog.h \
+  $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/emulatorbranchdialog.h \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/calibrationeditor.h \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/communicationeditor.h \
   $$ELABTSAOT2_ROOT/gui/emulator_hw_editor/auxiliaryeditor.h \
