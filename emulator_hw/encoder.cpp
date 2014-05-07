@@ -269,51 +269,7 @@ void encoder::stamp_NIOS_confirm(int32_t& word, uint32_t confirm_stamp){
   word |= confirm_stamp;
 }
 
-void encoder::detail::encode_atomsGot(Slice const& sl, vector<uint32_t>& got_conf){
-  got_conf.clear();
-  size_t maxver, maxhor; sl.ana.size(maxver, maxhor);
-  // ----------- GOT gain -----------
-  // 31  26 25        13 12         0
-  // 000000 [Q3.10 imag] [Q3.10 real]
-  // 000000 [ tempMSB  ] [ tempLSB  ]
-  // 000000 [         temp          ]
-  // --------------------------------
-  for (size_t k=0; k!=maxver; ++k){
-    for (size_t m=0; m!=maxhor; ++m){
-      Atom const* am = sl.ana.getAtom(k,m);
-      double imag_gain = sl.ana.ADCGain * am->node.imag_adc_gain_corr;
-      double real_gain = sl.ana.ADCGain * am->node.real_adc_gain_corr;
-      int32_t tempMSB, tempLSB;
-      detail::form_word(imag_gain, 13, 10, true, &tempMSB);
-      detail::form_word(real_gain, 13, 10, true, &tempLSB);
-      int32_t temp = (tempMSB<<13) | (tempLSB);
-      got_conf.push_back(static_cast<uint32_t>(temp));
-    }
-  }
-  // --------- GOT offset ---------
-  // 31    24 23      12 11       0
-  // 00000000 [12b imag] [12b real]
-  // 00000000 [tempMSB ] [tempLSB ]
-  // 00000000 [       temp        ]
-  // ------------------------------
-  int32_t mask12 = (1 << 12) - 1;
-  for (size_t k=0; k!=maxver; ++k){
-    for (size_t m=0; m!=maxhor; ++m){
-      Atom const* am = sl.ana.getAtom(k,m);
-      double imag_offset = sl.ana.ADCOffset + am->node.imag_adc_offset_corr;
-      double real_offset = sl.ana.ADCOffset + am->node.real_adc_offset_corr;
-      int32_t tempMSB = static_cast<int32_t>( auxiliary::round(imag_offset/DAC_DEF_OUTMAX*pow(2,12)) );
-      tempMSB &= mask12;
-      int32_t tempLSB = static_cast<int32_t>( auxiliary::round(real_offset/DAC_DEF_OUTMAX*pow(2,12)) );
-      tempLSB &= mask12;
-      int32_t temp = (tempMSB<<12) | (tempLSB);
-      got_conf.push_back(static_cast<uint32_t>(temp));
-    }
-  }
-}
-
-int encoder::detail::encode_vref( Slice const& sl,
-                                  vector<uint32_t>& vref_conf ){
+int encoder::detail::encode_vref( Slice const& sl, vector<uint32_t>& vref_conf ){
   vref_conf.clear();
 
   // Retrieve ref DAC tap setting

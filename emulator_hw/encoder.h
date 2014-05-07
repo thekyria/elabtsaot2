@@ -66,7 +66,6 @@ void stamp_NIOS_confirm( int32_t& word, uint32_t confirm_stamp = 0xC0000000 );
 namespace detail{
 
 // General encoding functions
-void encode_atomsGot(Slice const& sl, std::vector<uint32_t>& got_conf);
 int encode_vref(Slice const& sl, std::vector<uint32_t>& vref_conf);
 int encode_resistors(Slice const& sl, std::vector<uint32_t>& res_conf, std::vector<uint32_t>& res_tcon_conf);
 int encode_switches(Slice const& sl, std::vector<uint32_t>& switches_conf);

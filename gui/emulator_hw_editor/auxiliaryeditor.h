@@ -50,7 +50,6 @@ class AuxiliaryEditor : public QSplitter{
   void encodePowersystemTDSlot();
   void writeEncodingSlot();
   void logPowersystemEncodingSlot();
-  void logGotEncodingSlot();
   void importEncodingSlot();
 
   void hardResetPressedSlot();

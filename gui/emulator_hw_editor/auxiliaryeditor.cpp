@@ -168,11 +168,6 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, MoteurFengt
   QPushButton* logEncodingBut = new QPushButton("Log powersystem encoding");
   encodingLay->addRow(logEncodingLabel,logEncodingBut);
 
-  // Log (calibrated) got encoding
-  QLabel* logGotEncodingLabel = new QLabel("Log GOT encoding");
-  QPushButton* logGotEncodingBut = new QPushButton("Log GOT encoding");
-  encodingLay->addRow(logGotEncodingLabel,logGotEncodingBut);
-
   // Import encoding
   QLabel* importEncodingLabel = new QLabel("Import encoding");
   QPushButton* importEncodingBut = new QPushButton("Import encoding");
@@ -184,7 +179,6 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, MoteurFengt
   connect(encodePowersystemTDBut, SIGNAL(clicked()), this, SLOT(encodePowersystemTDSlot()));
   connect(writeEncodingBut, SIGNAL(clicked()), this, SLOT(writeEncodingSlot()));
   connect(logEncodingBut, SIGNAL(clicked()), this, SLOT(logPowersystemEncodingSlot()));
-  connect(logGotEncodingBut, SIGNAL(clicked()), this, SLOT(logGotEncodingSlot()));
   connect(importEncodingBut, SIGNAL(clicked()), this, SLOT(importEncodingSlot()));
 
   // ---------------------------------------------------------------------------
@@ -434,32 +428,6 @@ void AuxiliaryEditor::logPowersystemEncodingSlot(){
     break;
   case LogEncodingDialogTarget_toFile:
     auxiliary::log_vector( _emu->encoding.at(sliceId), 1, mode, fname );
-    break;
-  }
-}
-
-void AuxiliaryEditor::logGotEncodingSlot(){
-  // Get slice count, abort if zero
-  size_t sliceCount = _emu->getHwSliceCount();
-  if (sliceCount==0) return;
-  // Show options dialog
-  size_t sliceId;
-  int target;
-  string mode, fname;
-  LogEncodingDialog dialog( sliceCount, sliceId, target, mode, fname);
-  int ans = dialog.exec();
-  if (ans) return;
-  // Get atomsGot encoding that was asked for
-  vector<uint32_t> got_conf;
-  Slice const& sl(_emu->emuhw()->sliceSet[sliceId]);
-  encoder::detail::encode_atomsGot(sl,got_conf);
-  // Log according to options
-  switch ( target ){
-  case LogEncodingDialogTarget_toConsole:
-    auxiliary::log_vector( got_conf, 1, mode, cout );
-    break;
-  case LogEncodingDialogTarget_toFile:
-    auxiliary::log_vector( got_conf, 1, mode, fname );
     break;
   }
 }
