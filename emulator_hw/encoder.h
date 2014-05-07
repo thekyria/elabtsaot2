@@ -81,8 +81,8 @@ int encode_GPFpositions(Slice const& sl, std::vector<uint32_t>& nodeCount_conf,
                         std::vector<uint32_t>& slpos_conf);
 void encode_GPFauxiliary(std::vector<uint32_t>& conf_conf,
                          std::vector<uint32_t>& nios_conf);
-void encode_GPFIinit( Slice const& sl, std::vector<uint32_t>& icar_conf, std::vector<uint32_t>& ipol_conf );
-void encode_GPFPQsetpoints( Slice const& sl, std::vector<uint32_t>& pqset_conf );
+void encode_GPFIinit(Slice const& sl, std::vector<uint32_t>& icar_conf, std::vector<uint32_t>& ipol_conf);
+void encode_GPFPQsetpoints(Slice const& sl, std::vector<uint32_t>& pqset_conf);
 
 // DCPF specific encoding functions
 int encode_DCPFgot(Slice const& sl, std::vector<uint32_t>& got_conf);

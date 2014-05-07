@@ -1058,18 +1058,19 @@ int encoder::detail::encode_GPFADCDACgot(Slice const& sl,
                                          vector<uint32_t>& dacGain_conf,
                                          vector<uint32_t>& dacOffset_conf){
 
-  adcGain_conf.clear();
   int32_t tempMSB, tempLSB, temp;
+  size_t rows, cols;
+  sl.ana.size(rows,cols);
+  size_t atomCount = rows*cols;
+  vector<pair<int,int> > pos = sl.dig.pipe_GPFPQ.position();
+
+  adcGain_conf.clear();
   // ----------- ADC gain -----------
   // 31  26 25        13 12         0
   // 000000 [Q3.10 imag] [Q3.10 real]
   // 000000 [ tempMSB  ] [ tempLSB  ]
   // 000000 [         temp          ]
   // --------------------------------
-  size_t rows, cols;
-  sl.ana.size(rows,cols);
-  size_t atomCount = rows*cols;
-  vector<pair<int,int> > pos = sl.dig.pipe_GPFPQ.position();
   double real_gain, imag_gain;
   for (size_t k=0 ; k!=atomCount; ++k){
 
@@ -1089,15 +1090,15 @@ int encoder::detail::encode_GPFADCDACgot(Slice const& sl,
     adcGain_conf.push_back(static_cast<uint32_t>(temp));
   }
 
-  adcOffset_conf.clear();
   // --------- ADC offset ---------
   // 31    24 23      12 11       0
   // 00000000 [12b imag] [12b real]
   // 00000000 [tempMSB ] [tempLSB ]
   // 00000000 [       temp        ]
   // ------------------------------
+  adcOffset_conf.clear();
   double real_offset, imag_offset;
-  int32_t mask12 = (1 << 12) - 1;
+  int32_t mask12 = (1<<12) - 1;
   for (size_t k=0; k!=atomCount; ++k){
     if ( k < sl.dig.pipe_GPFPQ.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
@@ -1109,51 +1110,58 @@ int encoder::detail::encode_GPFADCDACgot(Slice const& sl,
     }
 
     temp = 0;
-    tempMSB = static_cast<int32_t>( auxiliary::round(imag_offset/DAC_DEF_OUTMAX*pow(2,12)) );
+    tempMSB = static_cast<int32_t>(auxiliary::round(imag_offset/NODE_DAC_MAXOUT*pow(2,12)));
     tempMSB &= mask12;
-    tempLSB = static_cast<int32_t>( auxiliary::round(real_offset/DAC_DEF_OUTMAX*pow(2,12)) );
+    tempLSB = static_cast<int32_t>(auxiliary::round(real_offset/NODE_DAC_MAXOUT*pow(2,12)));
     tempLSB &= mask12;
     temp = (tempMSB << 12) | (tempLSB);
     adcOffset_conf.push_back( static_cast<uint32_t>(temp) );
   }
 
-
-  dacGain_conf.clear();
   // ----------- DAC gain -----------
   // 31  24 23        12 11         0
   // 000000 [Q2.10 imag] [Q2.10 real]
   // 000000 [ tempMSB  ] [ tempLSB  ]
   // 000000 [         temp          ]
   // --------------------------------
+  dacGain_conf.clear();
   for (size_t v(0); v!=cols; ++v){
     for (size_t h(0); h!=rows; ++h){
       Atom const* atom = sl.ana.getAtom(v,h);
-//      detail::form_word(atom->node.imag_dac_gain_corr, 12, 10, false, &tempMSB);
-      detail::form_word(NODE_DAC_GAIN_CORR_NOMINAL, 12, 10, false, &tempMSB);
+      if (sl.dig.pipe_GPFslack.search_element(v,h) < 0){
+        detail::form_word(atom->node.imag_dac_gain_corr, 12, 10, false, &tempMSB);
+        detail::form_word(atom->node.real_adc_gain_corr, 12, 10, false, &tempLSB);
+      } else  {
+        // If the node contains a slack element, the nominal values are entered!
+        detail::form_word(NODE_DAC_GAIN_CORR_NOMINAL, 12, 10, false, &tempMSB);
+        detail::form_word(NODE_DAC_GAIN_CORR_NOMINAL, 12, 10, false, &tempLSB);
+      }
       tempMSB &= mask12;
-//      detail::form_word(atom->node.real_adc_gain_corr, 12, 10, false, &tempLSB);
-      detail::form_word(NODE_DAC_GAIN_CORR_NOMINAL, 12, 10, false, &tempLSB);
       tempLSB &= mask12;
       temp = (tempMSB << 12) | (tempLSB);
-      dacGain_conf.push_back( static_cast<uint32_t>(temp) );
+      dacGain_conf.push_back(static_cast<uint32_t>(temp));
     }
   }
 
-  dacOffset_conf.clear();
   // ---------- DAC offset ----------
   // 31  24 23        12 11         0
   // 000000 [Q2.10 imag] [Q2.10 real]
   // 000000 [ tempMSB  ] [ tempLSB  ]
   // 000000 [         temp          ]
   // --------------------------------
+  dacOffset_conf.clear();
   for (size_t v(0); v!=cols; ++v){
     for (size_t h(0); h!=rows; ++h){
       Atom const* atom = sl.ana.getAtom(v,h);
-//      tempMSB = static_cast<int32_t>(auxiliary::round(atom->node.imag_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));
-      tempMSB = static_cast<int32_t>(auxiliary::round(NODE_DAC_OFFSET_CORR_NOMINAL/NODE_DAC_MAXOUT*pow(2,12)));
+      if (sl.dig.pipe_GPFslack.search_element(v,h) < 0){
+        tempMSB = static_cast<int32_t>(auxiliary::round(atom->node.imag_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));
+        tempLSB = static_cast<int32_t>(auxiliary::round(atom->node.real_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));
+      } else {
+        // If the node contains a slack element, the nominal values are entered!
+        tempMSB = static_cast<int32_t>(auxiliary::round(NODE_DAC_OFFSET_CORR_NOMINAL/NODE_DAC_MAXOUT*pow(2,12)));
+        tempLSB = static_cast<int32_t>(auxiliary::round(NODE_DAC_OFFSET_CORR_NOMINAL/NODE_DAC_MAXOUT*pow(2,12)));
+      }
       tempMSB &= mask12;
-//      tempLSB = static_cast<int32_t>(auxiliary::round(atom->node.real_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));
-      tempLSB = static_cast<int32_t>(auxiliary::round(NODE_DAC_OFFSET_CORR_NOMINAL/NODE_DAC_MAXOUT*pow(2,12)));
       tempLSB &= mask12;
       temp = (tempMSB << 12) | (tempLSB);
       dacOffset_conf.push_back(static_cast<uint32_t>(temp));
@@ -1163,10 +1171,10 @@ int encoder::detail::encode_GPFADCDACgot(Slice const& sl,
   return 0;
 }
 
-int encoder::detail::encode_GPFpositions( Slice const& sl,
-                                          vector<uint32_t>& nodeCount_conf,
-                                          vector<uint32_t>& PQpos_conf,
-                                          vector<uint32_t>& slpos_conf ){
+int encoder::detail::encode_GPFpositions(Slice const& sl,
+                                         vector<uint32_t>& nodeCount_conf,
+                                         vector<uint32_t>& PQpos_conf,
+                                         vector<uint32_t>& slpos_conf){
   nodeCount_conf.clear();
   PQpos_conf.clear();
   slpos_conf.clear();
@@ -1241,8 +1249,7 @@ int encoder::detail::encode_GPFpositions( Slice const& sl,
   return 0;
 }
 
-void encoder::detail::encode_GPFauxiliary(vector<uint32_t>& conf_conf,
-                                          vector<uint32_t>& nios_conf){
+void encoder::detail::encode_GPFauxiliary(vector<uint32_t>& conf_conf, vector<uint32_t>& nios_conf){
   conf_conf.clear();
   uint32_t temp = 0U;
   stamp_NIOS_confirm(temp);
@@ -1253,50 +1260,51 @@ void encoder::detail::encode_GPFauxiliary(vector<uint32_t>& conf_conf,
   nios_conf.push_back(temp);
 }
 
-void encoder::detail::encode_GPFIinit( Slice const& sl,
-                                       vector<uint32_t>& icar_conf,
-                                       vector<uint32_t>& ipol_conf ){
+void encoder::detail::encode_GPFIinit(Slice const& sl,
+                                      vector<uint32_t>& icar_conf,
+                                      vector<uint32_t>& ipol_conf){
   size_t rows, cols;
   sl.ana.size(rows, cols);
   size_t atomCount = rows*cols;
-
-  icar_conf.resize(atomCount,0);
-  ipol_conf.resize(atomCount,0);
-
   int32_t tempMSB, tempLSB, temp;
-  size_t nodeId;
-  complex<double> I0;
   // --------- Icartesian ---------
   // 31    24 23      12 11       0
   // 00000000 [12b imag] [12b real]
   // 00000000 [tempMSB ] [tempLSB ]
   // 00000000 [       temp        ]
   // ------------------------------
-  //
-  // --------- Ipolar --------------
-  // 31           16 15            0
-  // [Q5.11  arg(I)] [Q5.11  abs(I)]
-  // [  tempMBS    ] [  tempLSB    ]
-  // [            temp             ]
-  // -------------------------------
+  icar_conf.resize(atomCount,0);
   GPFPQPipeline const& pipePQ(sl.dig.pipe_GPFPQ);
   vector<pair<int,int> > pos = pipePQ.position();
   for (size_t k=0; k!=pipePQ.element_count(); ++k){
-    I0 = pipePQ.I0[k];
-    // Cartesian ///////////////////////////////////////////////////////////////
-    nodeId = pipePQ.calculate_pseudo_id(pos[k].first,pos[k].second);
-    detail::form_word( I0.real() , 12, 7, true, &tempLSB );
-    detail::form_word(-I0.imag() , 12, 7, true, &tempMSB );
+    // Get the atom which corresponds to the current node
+    int ver = pos[k].first;
+    int hor = pos[k].second;
+    Atom const* atom = sl.ana.getAtom(ver,hor);
+
+    // Get the (original, perfect, uncalibrated) current that is stored in the pipelines
+    complex<double> I0 = pipePQ.I0[k];
+    double Ireal =  I0.real();
+    double Iimag = -I0.imag();
+
+    // Calibrate the current
+    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
+    // Vimag) network so it is to be calibrated with imag_ corrections.
+    // Analogously for Iimag, to be calcibrated with real_ corrections.
+    Ireal += atom->node.imag_dac_offset_corr; // TODO!
+    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
+    Iimag += atom->node.real_dac_offset_corr; // TODO!
+    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
+
+    // Form the word
+    detail::form_word(Ireal, 12, 7, true, &tempLSB);
+    detail::form_word(Iimag, 12, 7, true, &tempMSB);
     temp = (tempMSB<<12)|(tempLSB);
+
+    // Write it to the _conf (using nodeId indexing)
+    size_t nodeId = pipePQ.calculate_pseudo_id(ver, hor);
     icar_conf[nodeId] = static_cast<uint32_t>(temp);
-
-    // Polar ///////////////////////////////////////////////////////////////////
-    detail::form_word(std::abs(I0) , 16, 11, true, &tempLSB);
-    detail::form_word(std::arg(I0) , 16, 10, true, &tempMSB);
-    temp = (tempMSB<<16)|(tempLSB);
-    ipol_conf[k] = static_cast<uint32_t>(temp);
   }
-
   // Include the slack in the cartesian configuration
   // Comment: both real and imag currents for the slack are negated because
   // on the emulator the slack is implemented in a "load" pipeline, that has a
@@ -1306,13 +1314,52 @@ void encoder::detail::encode_GPFIinit( Slice const& sl,
   // the loads, whereas for the real emulator DAC, the convention is that there
   // is a flow OUT OF the DAC (into the grid). Therefore, currents of loads have
   // to be negated.
-  I0 = sl.dig.pipe_GPFslack.I0[0];
-  pair<int,int> posSl =  sl.dig.pipe_GPFslack.position()[0];
-  nodeId = pipePQ.calculate_pseudo_id(posSl.first,posSl.second);
-  detail::form_word(  -I0.real() , 12, 7, true, &tempLSB );
-  detail::form_word(-(-I0.imag()) , 12, 7, true, &tempMSB );
-  temp = (tempMSB<<12)|(tempLSB);
-  icar_conf[nodeId] = static_cast<uint32_t>(temp);
+  GPFSlackPipeline const& pipeSlack(sl.dig.pipe_GPFslack);
+  pos = pipeSlack.position();
+  for (size_t k(0); k!=pipeSlack.element_count(); ++k){
+    // Get the atom which corresponds to the current node
+    int ver = pos[k].first;
+    int hor = pos[k].second;
+    Atom const* atom = sl.ana.getAtom(ver,hor);
+
+    // Get the (original, perfect, uncalibrated) current that is stored in the pipelines
+    complex<double> I0 = pipeSlack.I0[k];
+    double Ireal = -  I0.real() ;
+    double Iimag = -(-I0.imag());
+
+    // Calibrate the current
+    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
+    // Vimag) network so it is to be calibrated with imag_ corrections.
+    // Analogously for Iimag, to be calcibrated with real_ corrections.
+    Ireal += atom->node.imag_dac_offset_corr; // TODO!
+    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
+    Iimag += atom->node.real_dac_offset_corr; // TODO!
+    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
+
+    // Form the word
+    detail::form_word(Ireal, 12, 7, true, &tempLSB);
+    detail::form_word(Iimag, 12, 7, true, &tempMSB);
+    temp = (tempMSB<<12)|(tempLSB);
+
+    // Write it to the _conf (using nodeId indexing)
+    size_t nodeId = pipeSlack.calculate_pseudo_id(ver, hor);
+    icar_conf[nodeId] = static_cast<uint32_t>(temp);
+  }
+
+  // --------- Ipolar --------------
+  // 31           16 15            0
+  // [Q5.11  arg(I)] [Q5.11  abs(I)]
+  // [  tempMBS    ] [  tempLSB    ]
+  // [            temp             ]
+  // -------------------------------
+  ipol_conf.resize(atomCount,0);
+  for (size_t k=0; k!=pipePQ.element_count(); ++k){
+    complex<double> I0 = pipePQ.I0[k];
+    detail::form_word(std::abs(I0) , 16, 11, true, &tempLSB);
+    detail::form_word(std::arg(I0) , 16, 10, true, &tempMSB);
+    temp = (tempMSB<<16)|(tempLSB);
+    ipol_conf[k] = static_cast<uint32_t>(temp);
+  }
 
   // Stamp confirm
   stamp_NIOS_confirm(icar_conf.back());

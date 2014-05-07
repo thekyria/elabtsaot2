@@ -68,9 +68,9 @@ int GPFPQPipeline::insert_element(size_t ver_pos, size_t hor_pos, Bus const& el,
       break;
   }
 
-  if ( !pos_already_taken )
+  if (!pos_already_taken)
     // Make space for new element
-    for ( m = _elementCount ; m != k ; --m ){
+    for (m=_elementCount; m!=k; --m){
       _position[m] = _position[m-1];
       Sset[m] = Sset[m-1];
       I0[m] = I0[m-1];

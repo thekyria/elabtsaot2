@@ -89,7 +89,6 @@ class SliceAnalog{
   double imag_voltage_ref_val_max() const;
   unsigned int imag_voltage_ref_tap_max() const;
 
-
   double ADCGain;   //!< ADC gain
   double ADCOffset; //!< ADC offset in [V] (the "zero" corresponds to this value)
 
