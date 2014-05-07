@@ -273,8 +273,8 @@ int encoder::detail::encode_vref( Slice const& sl, vector<uint32_t>& vref_conf )
   vref_conf.clear();
 
   // Retrieve ref DAC tap setting
-  int32_t tempVrefReal = sl.ana.real_voltage_ref_tap();
-  int32_t tempVrefImag = sl.ana.imag_voltage_ref_tap();
+  int32_t tempVrefReal = sl.ana.real_voltage_ref.tap();
+  int32_t tempVrefImag = sl.ana.imag_voltage_ref.tap();
 
   // Push back to conf vector
   vref_conf.push_back( static_cast<uint32_t>(tempVrefReal) ); // Real Vref Q16.0 [0,5)
@@ -1570,7 +1570,7 @@ void encoder::detail::encode_DCPFI(Slice const& sl, vector<uint32_t>& i_conf){
         i_conf[nodeId] = temp;
       } else if (sl.dig.injectionTypes[k][m]==NODE_VINJECTION){
         // The corrected DAC code has to be written in i_conf, if the node is a V injection
-        double realV = sl.dig.VInjections[k][m]+sl.ana.real_voltage_ref_val();
+        double realV = sl.dig.VInjections[k][m]+sl.ana.real_voltage_ref.out();
         // Node DAC value 4095 is max tap setting, giving 5Volts * 4095/4096 as max V out
         double Vmax = NODE_DAC_MAXOUT*(pow(2,NODE_DAC_RES)-1)/pow(2,NODE_DAC_RES);
         double normalizedRealV = realV/Vmax; // [0,1]

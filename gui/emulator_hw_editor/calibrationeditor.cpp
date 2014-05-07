@@ -597,8 +597,8 @@ void CalibrationEditor::updt(){
   for (size_t i(0); i<_cal_emuhw->sliceSet.size(); ++i){
     int devId = _emu->sliceDeviceMap(i);
     if (devId<0) continue;
-    References_Real->at(devId)->setValue(_emu->emuhw()->sliceSet[i].ana.real_voltage_ref_tap());
-    References_Imag->at(devId)->setValue(_emu->emuhw()->sliceSet[i].ana.imag_voltage_ref_tap());
+    References_Real->at(devId)->setValue(_emu->emuhw()->sliceSet[i].ana.real_voltage_ref.tap());
+    References_Imag->at(devId)->setValue(_emu->emuhw()->sliceSet[i].ana.imag_voltage_ref.tap());
   }
 }
 

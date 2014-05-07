@@ -67,36 +67,18 @@ class SliceAnalog{
   int embrConnect(size_t id_ver, size_t id_hor, size_t pos, double r_near, double r_far);
   int embrDisconnect(size_t id_ver, size_t id_hor, size_t pos);
 
-  int set_real_voltage_ref_val(double val);
-  int set_real_voltage_ref_tap(unsigned int tap);
-  int set_real_voltage_ref_out_min(double val, bool updateTap);
-  int set_real_voltage_ref_out_max(double val, bool updateTap);
-  int set_imag_voltage_ref_val(double val);
-  int set_imag_voltage_ref_tap(unsigned int val);
-  int set_imag_voltage_ref_out_min(double val, bool updateTap);
-  int set_imag_voltage_ref_out_max(double val, bool updateTap);
-
   Atom const* getAtom(size_t ver, size_t hor) const;
   size_t getEmbrCount() const; //!< emulator branches physically present on slice
-  double real_voltage_ref_val() const;
-  unsigned int real_voltage_ref_tap() const;
-  double real_voltage_ref_val_min() const;
-  double real_voltage_ref_val_max() const;
-  unsigned int real_voltage_ref_tap_max() const;
-  double imag_voltage_ref_val() const;
-  unsigned int imag_voltage_ref_tap() const;
-  double imag_voltage_ref_val_min() const;
-  double imag_voltage_ref_val_max() const;
-  unsigned int imag_voltage_ref_tap_max() const;
 
   double ADCGain;   //!< ADC gain
   double ADCOffset; //!< ADC offset in [V] (the "zero" corresponds to this value)
+  DAC real_voltage_ref; //!< Real voltage reference in [Volt]
+  DAC imag_voltage_ref; //!< Imaginary voltage reference in [Volt]
 
-private:
+ private:
 
   std::vector<std::vector<Atom> > _atomSet;
-  DAC _real_voltage_ref; //!< Real voltage reference in [Volt]
-  DAC _imag_voltage_ref; //!< Imaginary voltage reference in [Volt]
+
 };
 
 } // end of namespace elabtsaot

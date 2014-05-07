@@ -75,9 +75,9 @@ void FitterSliceTab::updt(){
   gotGainForm->setValue( _slc->ana.ADCGain );
   gotOffsetForm->setValue( _slc->ana.ADCOffset );
 //  realVrefValForm->setValue( _slc->real_voltage_ref_val() );
-  realVrefTapForm->setValue( _slc->ana.real_voltage_ref_tap() ); // updates also realVrefValForm
+  realVrefTapForm->setValue( _slc->ana.real_voltage_ref.tap() ); // updates also realVrefValForm
 //  imagVrefValForm->setValue( _slc->imag_voltage_ref_val() );
-  imagVrefTapForm->setValue( _slc->ana.imag_voltage_ref_tap() ); // updates also imagVrefTapForm
+  imagVrefTapForm->setValue( _slc->ana.imag_voltage_ref.tap() ); // updates also imagVrefTapForm
 
   // ----------------- Update pipelines -----------------
   // Generators pipeline
@@ -162,8 +162,8 @@ void FitterSliceTab::realVrefValSlot(double val){
 }
 
 void FitterSliceTab::realVrefTapSlot(int tap){
-  _slc->ana.set_real_voltage_ref_tap( static_cast<unsigned int>(tap) );
-  realVrefValForm->setValue( _slc->ana.real_voltage_ref_val() );
+  _slc->ana.real_voltage_ref.set_tap(static_cast<unsigned int>(tap));
+  realVrefValForm->setValue(_slc->ana.real_voltage_ref.out());
 }
 
 void FitterSliceTab::imagVrefValSlot(double val){
@@ -174,8 +174,8 @@ void FitterSliceTab::imagVrefValSlot(double val){
 }
 
 void FitterSliceTab::imagVrefTapSlot(int tap){
-  _slc->ana.set_imag_voltage_ref_tap( static_cast<unsigned int>(tap) );
-  imagVrefValForm->setValue( _slc->ana.imag_voltage_ref_val() );
+  _slc->ana.imag_voltage_ref.set_tap(static_cast<unsigned int>(tap));
+  imagVrefValForm->setValue(_slc->ana.imag_voltage_ref.out());
 }
 
 void FitterSliceTab::genPipeSlot(int row, int col){
@@ -396,33 +396,31 @@ void FitterSliceTab::_init_globalParamsBox(){
   QLabel* realVrefValLabel = new QLabel("Real Vref val");
   realVrefValForm = new QDoubleSpinBox();
   realVrefValForm->setDecimals( 4 );
-  realVrefValForm->setRange( _slc->ana.real_voltage_ref_val_min(),
-                             _slc->ana.real_voltage_ref_val_max() );
+  realVrefValForm->setRange(_slc->ana.real_voltage_ref.out_min(), _slc->ana.real_voltage_ref.out_max());
   realVrefValForm->setSingleStep(0.01);
-  globalParamsLay->addRow( realVrefValLabel, realVrefValForm );
+  globalParamsLay->addRow(realVrefValLabel, realVrefValForm);
   realVrefValForm->setEnabled( false );
 
   // Real V ref tap
   QLabel* realVrefTapLabel = new QLabel("Real Vref tap");
   realVrefTapForm = new QSpinBox();
-  realVrefTapForm->setRange( 0, _slc->ana.real_voltage_ref_tap_max() );
-  globalParamsLay->addRow( realVrefTapLabel, realVrefTapForm );
+  realVrefTapForm->setRange(0, _slc->ana.real_voltage_ref.tap_max());
+  globalParamsLay->addRow(realVrefTapLabel, realVrefTapForm);
 
   // Imag V ref val
   QLabel* imagVrefValLabel = new QLabel("Imag Vref val");
   imagVrefValForm = new QDoubleSpinBox();
   imagVrefValForm->setDecimals( 4 );
-  imagVrefValForm->setRange( _slc->ana.imag_voltage_ref_val_min(),
-                             _slc->ana.imag_voltage_ref_val_max() );
+  imagVrefValForm->setRange(_slc->ana.imag_voltage_ref.out_min(), _slc->ana.imag_voltage_ref.out_max());
   imagVrefValForm->setSingleStep(0.01);
-  globalParamsLay->addRow( imagVrefValLabel, imagVrefValForm );
+  globalParamsLay->addRow(imagVrefValLabel, imagVrefValForm);
   imagVrefValForm->setEnabled( false );
 
   // Imag V ref tap
   QLabel* imagVrefTapLabel = new QLabel("Imag Vref tap");
   imagVrefTapForm = new QSpinBox();
-  imagVrefTapForm->setRange( 0, _slc->ana.imag_voltage_ref_tap_max() );
-  globalParamsLay->addRow( imagVrefTapLabel, imagVrefTapForm );
+  imagVrefTapForm->setRange(0, _slc->ana.imag_voltage_ref.out_max());
+  globalParamsLay->addRow(imagVrefTapLabel, imagVrefTapForm);
 
   // ----------------- Connect signals -----------------
   connect( gotGainForm, SIGNAL(valueChanged(double)),

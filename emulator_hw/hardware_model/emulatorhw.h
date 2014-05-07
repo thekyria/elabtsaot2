@@ -68,9 +68,9 @@ class EmulatorHw{
   size_t getEmbrCount() const;
   void set_got_gain(double val);
   void set_got_offset(double val);
-  int set_real_voltage_ref_val(double val);
+  int set_real_voltage_ref_out(double val);
   int set_real_voltage_ref_tap(unsigned int tap);
-  int set_imag_voltage_ref_val(double val);
+  int set_imag_voltage_ref_out(double val);
   int set_imag_voltage_ref_tap(unsigned int tap);
 
   std::vector<Slice> sliceSet;

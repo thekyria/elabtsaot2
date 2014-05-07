@@ -53,27 +53,27 @@ void EmulatorHw::set_got_offset(double val){
     sliceSet[k].ana.ADCOffset = val;
 }
 
-int EmulatorHw::set_real_voltage_ref_val(double val){
+int EmulatorHw::set_real_voltage_ref_out(double val){
   for ( size_t k = 0 ; k != sliceSet.size() ; ++k )
-    if ( int ans = sliceSet[k].ana.set_real_voltage_ref_val(val) )
+    if ( int ans = sliceSet[k].ana.real_voltage_ref.set_out(val) )
       return k | (ans << 3);
   return 0;
 }
 int EmulatorHw::set_real_voltage_ref_tap(unsigned int tap){
   for ( size_t k = 0 ; k != sliceSet.size() ; ++k )
-    if ( int ans = sliceSet[k].ana.set_real_voltage_ref_tap(tap) )
+    if ( int ans = sliceSet[k].ana.real_voltage_ref.set_tap(tap) )
       return k | (ans << 3);
   return 0;
 }
-int EmulatorHw::set_imag_voltage_ref_val(double val){
+int EmulatorHw::set_imag_voltage_ref_out(double val){
   for ( size_t k = 0 ; k != sliceSet.size() ; ++k )
-    if ( int ans = sliceSet[k].ana.set_imag_voltage_ref_val(val) )
+    if ( int ans = sliceSet[k].ana.imag_voltage_ref.set_out(val) )
       return k | (ans << 3);
   return 0;
 }
 int EmulatorHw::set_imag_voltage_ref_tap(unsigned int tap){
   for ( size_t k = 0 ; k != sliceSet.size() ; ++k )
-    if ( int ans = sliceSet[k].ana.set_imag_voltage_ref_tap(tap) )
+    if ( int ans = sliceSet[k].ana.imag_voltage_ref.set_tap(tap) )
       return k | (ans << 3);
   return 0;
 }

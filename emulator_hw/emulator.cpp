@@ -323,8 +323,8 @@ int Emulator::nodeSetGPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus){
   if (ans) return 21;
   slc->ana.nodeDisconnect(id_ver,id_hor);
 
-  double Vmaxreal = slc->ana.real_voltage_ref_val_max()- slc->ana.real_voltage_ref_val();
-  double Vmaximag = slc->ana.imag_voltage_ref_val_max()- slc->ana.imag_voltage_ref_val();
+  double Vmaxreal = slc->ana.real_voltage_ref.out_max() - slc->ana.real_voltage_ref.out();
+  double Vmaximag = slc->ana.imag_voltage_ref.out_max()- slc->ana.imag_voltage_ref.out();
   // Normal PQ (non-slack) bus
   if (!slack){
     // Normal (non-slack) bus inserted into PQ pipeline
@@ -383,7 +383,7 @@ int Emulator::nodeSetDCPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus){
      *  Vdac_max - Vref = Ipu_max*ratioI * R
      *  R = (Vdac_max-Vref)/(Ipu_max*ratioI)
      * The latter value for R, respect limits for Vdac_max and Ipu_max */
-    double realVmax = NODE_DAC_MAXOUT-slc->ana.real_voltage_ref_val();
+    double realVmax = NODE_DAC_MAXOUT-slc->ana.real_voltage_ref.out();
     double seriesR = realVmax /(_maxIpu*_ratioI);
     slc->dig.injectionTypes[id_ver][id_hor] = NODE_IINJECTION;
     slc->dig.IInjections[id_ver][id_hor] = bus.P; // Ideally i would like to have bus.P*_ratioI here
@@ -410,8 +410,8 @@ int Emulator::nodeSetTD(size_t id_tab, size_t id_ver, size_t id_hor, Generator c
   ans |= slc->dig.remove(id_ver,id_hor);
   slc->ana.nodeDisconnect(id_ver,id_hor);
 
-  double Vmaxreal = slc->ana.real_voltage_ref_val_max()- slc->ana.real_voltage_ref_val();
-  double Vmaximag = slc->ana.imag_voltage_ref_val_max()- slc->ana.imag_voltage_ref_val();
+  double Vmaxreal = slc->ana.real_voltage_ref.out_max()- slc->ana.real_voltage_ref.out();
+  double Vmaximag = slc->ana.imag_voltage_ref.out_max()- slc->ana.imag_voltage_ref.out();
   if ( gen.M < GEN_MECHSTARTTIME_THRESHOLD ){
     // Normal (non-slack) generator inserted into generator pipeline
     // Configure dig.pipe_gen
@@ -492,8 +492,8 @@ int Emulator::nodeSetTD(size_t id_tab, size_t id_ver, size_t id_hor, Load const&
   }
 
   // Configure atom as load
-  double Vmaxreal = slc->ana.real_voltage_ref_val_max()- slc->ana.real_voltage_ref_val();
-  double Vmaximag = slc->ana.imag_voltage_ref_val_max()- slc->ana.imag_voltage_ref_val();
+  double Vmaxreal = slc->ana.real_voltage_ref.out_max()- slc->ana.real_voltage_ref.out();
+  double Vmaximag = slc->ana.imag_voltage_ref.out_max()- slc->ana.imag_voltage_ref.out();
   double Vmax = std::min(Vmaxreal,Vmaximag);
   double seriesR = Vmax/(_maxIpu*_ratioI);
   ans |= slc->ana.nodeCurrentSource(id_ver,id_hor, seriesR, -1);
@@ -1088,26 +1088,26 @@ int Emulator::_precalibrateSlice( size_t sliceId, bool toDefaultVoltage ){
   unsigned int tapImagMeasurement = tapMeasurements.second;
 
   // Real voltage reference precalibration
-  double newOutMax = sl->ana.real_voltage_ref_val_min()
-      + (REAL_VOLTAGE_REF_MEASURED_VAL - sl->ana.real_voltage_ref_val_min())
-      * ( (static_cast<double>(sl->ana.real_voltage_ref_tap_max()) + 1)
+  double newOutMax = sl->ana.real_voltage_ref.out_min()
+      + (REAL_VOLTAGE_REF_MEASURED_VAL - sl->ana.real_voltage_ref.out_min())
+      * ( (static_cast<double>(sl->ana.real_voltage_ref.tap_max()) + 1)
            / tapRealMeaserement );
-  int ans = sl->ana.set_real_voltage_ref_out_max( newOutMax, true );
+  int ans = sl->ana.real_voltage_ref.set_out_max( newOutMax, true );
   if (ans) return 4;
 
   // Imag voltage reference precalibration
-  newOutMax = sl->ana.imag_voltage_ref_val_min()
-      + (IMAG_VOLTAGE_REF_MEASURED_VAL - sl->ana.imag_voltage_ref_val_min())
-      * ( (static_cast<double>(sl->ana.imag_voltage_ref_tap_max()) + 1)
+  newOutMax = sl->ana.imag_voltage_ref.out_min()
+      + (IMAG_VOLTAGE_REF_MEASURED_VAL - sl->ana.imag_voltage_ref.out_min())
+      * ( (static_cast<double>(sl->ana.imag_voltage_ref.tap_max()) + 1)
            / tapImagMeasurement );
-  ans = sl->ana.set_imag_voltage_ref_out_max( newOutMax, true );
+  ans = sl->ana.imag_voltage_ref.set_out_max( newOutMax, true );
   if (ans) return 5;
 
   // Set voltage to default value if asked so
   if ( toDefaultVoltage ){
-    ans = sl->ana.set_real_voltage_ref_val( REAL_VOLTAGE_REF_MEASURED_VAL );
+    ans = sl->ana.real_voltage_ref.set_out(REAL_VOLTAGE_REF_MEASURED_VAL);
     if (ans) return 6;
-    ans = sl->ana.set_imag_voltage_ref_val( REAL_VOLTAGE_REF_MEASURED_VAL );
+    ans = sl->ana.imag_voltage_ref.set_out(REAL_VOLTAGE_REF_MEASURED_VAL);
     if (ans) return 7;
   }
 
@@ -1119,7 +1119,7 @@ vector<bool> Emulator::_isAtCalibrationMode(){
   vector<uint32_t> tempvector;
   for ( size_t k = 0 ; k != _usb->devices.size() ; ++k ){
     _usb->read(k, 0, 1, tempvector );
-    if ( tempvector[0] == DEVICE_CALIBRATION_SIGNATURE )
+    if (tempvector[0] == DEVICE_CALIBRATION_SIGNATURE)
       ans.push_back( true );
     else
       ans.push_back( false );

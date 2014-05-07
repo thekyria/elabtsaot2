@@ -20,8 +20,8 @@ using std::endl;
 
 SliceAnalog::SliceAnalog() :
   _atomSet(VERTICALNUMBEROFATOMS, std::vector<Atom>(HORIZONTALNUMBEROFATOMS,Atom())),
-  _real_voltage_ref(DAC_DEF_TAP, DAC_DEF_RESOLUTION, DAC_DEF_OUTMIN, DAC_DEF_OUTMAX),
-  _imag_voltage_ref(DAC_DEF_TAP, DAC_DEF_RESOLUTION, DAC_DEF_OUTMIN, DAC_DEF_OUTMAX) {}
+  real_voltage_ref(DAC_DEF_TAP, DAC_DEF_RESOLUTION, DAC_DEF_OUTMIN, DAC_DEF_OUTMAX),
+  imag_voltage_ref(DAC_DEF_TAP, DAC_DEF_RESOLUTION, DAC_DEF_OUTMIN, DAC_DEF_OUTMAX) {}
 
 int SliceAnalog::reset(bool complete){
   int ans = 0;
@@ -44,8 +44,8 @@ int SliceAnalog::reset(bool complete){
   ADCOffset = static_cast<double>(DEFGOTOFFSET);
   // Perform value-wise reset to the voltage reference DACs
   // (alternative is tap-wise reset)
-  ans |= _real_voltage_ref.reset( false, complete );
-  ans |= _imag_voltage_ref.reset( false, complete );
+  ans |= real_voltage_ref.reset( false, complete );
+  ans |= imag_voltage_ref.reset( false, complete );
   return ans;
 }
 
@@ -1011,18 +1011,8 @@ int SliceAnalog::embrDisconnect(size_t id_ver, size_t id_hor, size_t pos){
   return ans;
 }
 
-int SliceAnalog::set_real_voltage_ref_val(double val){return _real_voltage_ref.set_out(val);}
-int SliceAnalog::set_real_voltage_ref_tap(unsigned int tap){return _real_voltage_ref.set_tap(tap);}
-int SliceAnalog::set_real_voltage_ref_out_min(double val,bool updateTap){return _real_voltage_ref.set_out_min(val,updateTap);}
-int SliceAnalog::set_real_voltage_ref_out_max(double val,bool updateTap){return _real_voltage_ref.set_out_max(val,updateTap);}
-
-int SliceAnalog::set_imag_voltage_ref_val(double val){return _imag_voltage_ref.set_out(val);}
-int SliceAnalog::set_imag_voltage_ref_tap(unsigned int tap){return _imag_voltage_ref.set_tap(tap);}
-int SliceAnalog::set_imag_voltage_ref_out_min(double val,bool updateTap){return _imag_voltage_ref.set_out_min(val,updateTap);}
-int SliceAnalog::set_imag_voltage_ref_out_max(double val,bool updateTap){return _imag_voltage_ref.set_out_max(val,updateTap);}
-
-// --- getters ---
 Atom const* SliceAnalog::getAtom(size_t ver, size_t hor) const{return dynamic_cast<Atom const*>(&_atomSet[ver][hor]);}
+
 size_t SliceAnalog::getEmbrCount() const{
   size_t ans = 0;
   for ( size_t k = 0 ; k != _atomSet.size() ; ++k )
@@ -1030,13 +1020,3 @@ size_t SliceAnalog::getEmbrCount() const{
       ans += _atomSet[k][m].getEmbrCount();
   return ans;
 }
-double SliceAnalog::real_voltage_ref_val() const{ return _real_voltage_ref.out(); }
-unsigned int SliceAnalog::real_voltage_ref_tap() const{ return _real_voltage_ref.tap(); }
-double SliceAnalog::real_voltage_ref_val_min() const{ return _real_voltage_ref.out_min(); }
-double SliceAnalog::real_voltage_ref_val_max() const{ return _real_voltage_ref.out_max(); }
-unsigned int SliceAnalog::real_voltage_ref_tap_max() const{ return _real_voltage_ref.tap_max(); }
-double SliceAnalog::imag_voltage_ref_val() const{ return _imag_voltage_ref.out(); }
-unsigned int SliceAnalog::imag_voltage_ref_tap() const{ return _imag_voltage_ref.tap(); }
-double SliceAnalog::imag_voltage_ref_val_min() const{ return _imag_voltage_ref.out_min(); }
-double SliceAnalog::imag_voltage_ref_val_max() const{ return _imag_voltage_ref.out_max(); }
-unsigned int SliceAnalog::imag_voltage_ref_tap_max() const{ return _imag_voltage_ref.tap_max(); }
