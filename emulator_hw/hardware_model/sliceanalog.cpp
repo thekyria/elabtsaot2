@@ -29,15 +29,15 @@ int SliceAnalog::reset(bool complete){
   // Add left side connections of the slice
   if ( _atomSet.size() > 1 )
     for ( size_t k = 0; k != _atomSet.size()-1 ; ++k)
-      _atomSet[k][0].set_embr_exist( EMBRPOS_L , true );
+      _atomSet[k][0].embr_exist[EMBRPOS_L]=true;
   // Add down side connections of the slice
   if ( _atomSet[0].size() > 2)
     for ( size_t k = 1; k != _atomSet[0].size()-1 ; ++k)
-      _atomSet[0][k].set_embr_exist( EMBRPOS_D , true );
+      _atomSet[0][k].embr_exist[EMBRPOS_D]=true;
   // Initialize atom members
   for ( size_t k = 0 ; k != _atomSet.size() ; ++k )
     for ( size_t m = 0 ; m != _atomSet[k].size() ; ++m )
-      ans |= _atomSet[k][m].reset( complete );
+      ans |= _atomSet[k][m].reset(complete);
 
   // ----- Initialize private members -----
   ADCGain = static_cast<double>(DEFGOTGAIN);
@@ -955,7 +955,7 @@ int SliceAnalog::embrConnect(size_t id_ver, size_t id_hor, size_t pos,
   // Input argument validation
   if (id_ver >= _atomSet.size())                 return 20;
   if (id_hor >= _atomSet[id_ver].size())         return 21;
-  if (!_atomSet[id_ver][id_hor].embr_exist(pos)) return 22;
+  if (!_atomSet[id_ver][id_hor].embr_exist[pos]) return 22;
 
   int ans = 0;
   // Open mid gnd switches
@@ -990,10 +990,10 @@ int SliceAnalog::embrConnect(size_t id_ver, size_t id_hor, size_t pos,
 int SliceAnalog::embrDisconnect(size_t id_ver, size_t id_hor, size_t pos){
 
   // Input argument validation
-  if ( id_ver >= _atomSet.size() )                    return 20;
-  if ( id_hor >= _atomSet[id_ver].size() )            return 21;
+  if (id_ver >= _atomSet.size())                 return 20;
+  if (id_hor >= _atomSet[id_ver].size())         return 21;
   // Cannot modify an emulator hw branch that does not exist!
-  if (!_atomSet[id_ver][id_hor].embr_exist(pos))      return 22;
+  if (!_atomSet[id_ver][id_hor].embr_exist[pos]) return 22;
 
   int ans = 0;
   // Open short-circuiting switch

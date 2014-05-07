@@ -37,7 +37,6 @@ void FitterSliceWidget::paintEvent(QPaintEvent *event){
   // --- Draw widget ---
   vector<vector<QPointF> >
   nodeOrigin = vector<vector<QPointF> >( _rows,vector<QPointF>( _cols,QPointF()));
-  vector<bool> embr_exist;
   EmulatorBranch embr;
   QPointF embrP; // starting drawing point of the emulator branch
   QPointF embrQ; // ending drawing point of the emulator branch
@@ -53,58 +52,57 @@ void FitterSliceWidget::paintEvent(QPaintEvent *event){
 
       // Draw atom emulator branches
       Atom const* am = _slc->ana.getAtom(k,m);
-      embr_exist = am->embr_exist();
 
-      if ( embr_exist[EMBRPOS_U] ){
+      if ( am->embr_exist[EMBRPOS_U] ){
         embr = am->embr(EMBRPOS_U, _isShowingReal);
         embrP = nodeOrigin[k][m] + embrOffsetY;
         embrQ = nodeOrigin[k][m] + QPointF(0, -125);
 
         _drawFitterBranch( painter, embrP, embrQ, embr );
       }
-      if ( embr_exist[EMBRPOS_UR] ){
+      if ( am->embr_exist[EMBRPOS_UR] ){
         embr = am->embr(EMBRPOS_UR, _isShowingReal);
         embrP = nodeOrigin[k][m] + embrOffsetX + embrOffsetY;
         embrQ = nodeOrigin[k][m] + QPointF(125, -125);
 
         _drawFitterBranch( painter, embrP, embrQ, embr );
       }
-      if ( embr_exist[EMBRPOS_R] ){
+      if ( am->embr_exist[EMBRPOS_R] ){
         embr = am->embr(EMBRPOS_R, _isShowingReal);
         embrP = nodeOrigin[k][m] + embrOffsetX;
         embrQ = nodeOrigin[k][m] + QPointF(125, 0);
 
         _drawFitterBranch( painter, embrP, embrQ, embr );
       }
-      if ( embr_exist[EMBRPOS_DR] ){
+      if ( am->embr_exist[EMBRPOS_DR] ){
         embr = am->embr(EMBRPOS_DR, _isShowingReal);
         embrP = nodeOrigin[k][m] + embrOffsetX - embrOffsetY;
         embrQ = nodeOrigin[k][m] + QPointF(125, 125);
 
         _drawFitterBranch( painter, embrP, embrQ, embr );
       }
-      if ( embr_exist[EMBRPOS_D] ){
+      if ( am->embr_exist[EMBRPOS_D] ){
         embr = am->embr(EMBRPOS_D, _isShowingReal);
         embrP = nodeOrigin[k][m] - embrOffsetY;
         embrQ = nodeOrigin[k][m] + QPointF(0, 125);
 
         _drawFitterBranch( painter, embrP, embrQ, embr );
       }
-      if ( embr_exist[EMBRPOS_DL] ){
+      if ( am->embr_exist[EMBRPOS_DL] ){
         embr = am->embr(EMBRPOS_DL, _isShowingReal);
         embrP = nodeOrigin[k][m] - embrOffsetX - embrOffsetX;
         embrQ = nodeOrigin[k][m] + QPointF(-125, 125);
 
         _drawFitterBranch( painter, embrP, embrQ, embr );
       }
-      if ( embr_exist[EMBRPOS_L] ){
+      if ( am->embr_exist[EMBRPOS_L] ){
         embr = am->embr(EMBRPOS_L, _isShowingReal);
         embrP = nodeOrigin[k][m] - embrOffsetX;
         embrQ = nodeOrigin[k][m] + QPointF(-125, 0);
 
         _drawFitterBranch( painter, embrP, embrQ, embr );
       }
-      if ( embr_exist[EMBRPOS_UL] ){
+      if ( am->embr_exist[EMBRPOS_UL] ){
         embr = am->embr(EMBRPOS_UL, _isShowingReal);
         embrP = nodeOrigin[k][m] - embrOffsetX + embrOffsetX;
         embrQ = nodeOrigin[k][m] + QPointF(-125, -125);

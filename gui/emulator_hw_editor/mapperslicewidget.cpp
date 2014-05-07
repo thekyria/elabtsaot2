@@ -48,7 +48,6 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
   // --- Draw widget ---
   vector<vector<QPointF> >
   nodeOrigin = vector<vector<QPointF> >( _rows,vector<QPointF>( _cols,QPointF()));
-  vector<bool> embr_exist;
   QPointF embrP; // starting drawing point of the emulator branch
   QPointF embrQ; // ending drawing point of the emulator branch
   QPointF embrOffsetX = QPointF( 5, 0 );
@@ -116,9 +115,8 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
 
       // ----- Draw atom emulator branches -----
       Atom const* am = _slc->ana.getAtom(k,m);
-      embr_exist = am->embr_exist();
 
-      if ( embr_exist[EMBRPOS_U] ){
+      if ( am->embr_exist[EMBRPOS_U] ){
         embrP = nodeOrigin[k][m] + embrOffsetY;
         embrQ = nodeOrigin[k][m] + QPointF(0, -125);
 
@@ -184,7 +182,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
         }
       }
 
-      if ( embr_exist[EMBRPOS_UR] ){
+      if ( am->embr_exist[EMBRPOS_UR] ){
         embrP = nodeOrigin[k][m] + embrOffsetX + embrOffsetY;
         embrQ = nodeOrigin[k][m] + QPointF(125, -125);
 
@@ -286,7 +284,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
         }
       }
 
-      if ( embr_exist[EMBRPOS_R] ){
+      if ( am->embr_exist[EMBRPOS_R] ){
         embrP = nodeOrigin[k][m] + embrOffsetX;
         embrQ = nodeOrigin[k][m] + QPointF(125, 0);
 
@@ -357,7 +355,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
       }
 
       // Redundant! There are no EMBRPOS_DR branches in the current system!
-//      if ( embr_exist[EMBRPOS_DR] ){
+//      if ( am->embr_exist[EMBRPOS_DR] ){
 //        embrP = nodeOrigin[k][m] + embrOffsetX - embrOffsetY;
 //        embrQ = nodeOrigin[k][m] + QPointF(125, 125);
 
@@ -369,7 +367,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
 //                           hints[brm_tab][brm_row][brm_col] );
 //      }
 
-      if ( embr_exist[EMBRPOS_D] ){
+      if ( am->embr_exist[EMBRPOS_D] ){
         embrP = nodeOrigin[k][m] - embrOffsetY;
         embrQ = nodeOrigin[k][m] + QPointF(0, 125);
 
@@ -435,7 +433,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
       }
 
       // Redundant! There are no EMBRPOS_DL branches in the current system!
-//      if ( embr_exist[EMBRPOS_DL] ){
+//      if ( am->embr_exist[EMBRPOS_DL] ){
 //        embrP = nodeOrigin[k][m] - embrOffsetX - embrOffsetX;
 //        embrQ = nodeOrigin[k][m] + QPointF(-125, 125);
 
@@ -447,7 +445,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
 //                           hints[brm_tab][brm_row][brm_col] );
 //      }
 
-      if ( embr_exist[EMBRPOS_L] ){
+      if ( am->embr_exist[EMBRPOS_L] ){
         embrP = nodeOrigin[k][m] - embrOffsetX;
         embrQ = nodeOrigin[k][m] + QPointF(-125, 0);
 
@@ -512,7 +510,7 @@ void MapperSliceWidget::paintEvent(QPaintEvent *event){
       }
 
       // Redundant! There are no EMBRPOS_UL branches in the current system!
-//      if ( embr_exist[EMBRPOS_UL] ){
+//      if ( am->embr_exist[EMBRPOS_UL] ){
 //        embrP = nodeOrigin[k][m] - embrOffsetX + embrOffsetX;
 //        embrQ = nodeOrigin[k][m] + QPointF(-125, -125);
 

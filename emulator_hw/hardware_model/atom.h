@@ -80,18 +80,12 @@ class Atom{
   //! Get the minimum OVER the maximum achievable R of potentiometers in the atom (embrs and node)
   double getMinMaxAchievableR() const; // TODO: do that only for "used" resistors
 
-  void set_embr_exist(size_t pos, bool val);
-  std::vector<bool> embr_exist() const;
-  bool embr_exist(size_t pos) const;
-
   Node node; //!< node of the atom
   inline EmulatorBranch const& embr(size_t pos, bool real) const{return real ?embr_real[pos]:embr_imag[pos];}
   std::vector<EmulatorBranch> embr_real; //!< Branches of real part of the grid
   std::vector<EmulatorBranch> embr_imag; //!< Branches of imag part of the grid
+  std::vector<bool> embr_exist; //!< whether branches (real and im) physically exist
 
- private:
-
-  std::vector<bool> _embr_exist; //!< whether branches (real and im) physically exist
 };
 
 } // end of namespace elabtsaot
