@@ -45,14 +45,12 @@ size_t EmulatorHw::getEmbrCount() const{
 }
 
 void EmulatorHw::set_got_gain(double val){
-  for ( size_t k = 0 ; k != sliceSet.size() ; ++k )
-    sliceSet[k].ana.set_got_gain(val);
+  for (size_t k=0; k!=sliceSet.size(); ++k)
+    sliceSet[k].ana.ADCGain = val;
 }
-int EmulatorHw::set_got_offset(double val){
-  for ( size_t k = 0 ; k != sliceSet.size() ; ++k )
-    if ( int ans = sliceSet[k].ana.set_got_offset(val) )
-      return k | (ans << 3);
-  return 0;
+void EmulatorHw::set_got_offset(double val){
+  for (size_t k=0; k!=sliceSet.size(); ++k)
+    sliceSet[k].ana.ADCOffset = val;
 }
 
 int EmulatorHw::set_real_voltage_ref_val(double val){

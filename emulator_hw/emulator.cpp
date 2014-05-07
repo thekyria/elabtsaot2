@@ -383,7 +383,7 @@ int Emulator::nodeSetDCPF(size_t id_tab, size_t id_ver, size_t id_hor, Bus bus){
      *  Vdac_max - Vref = Ipu_max*ratioI * R
      *  R = (Vdac_max-Vref)/(Ipu_max*ratioI)
      * The latter value for R, respect limits for Vdac_max and Ipu_max */
-    double realVmax = NODEDAC_MAXOUT-slc->ana.real_voltage_ref_val();
+    double realVmax = NODE_DAC_MAXOUT-slc->ana.real_voltage_ref_val();
     double seriesR = realVmax /(_maxIpu*_ratioI);
     slc->dig.injectionTypes[id_ver][id_hor] = NODE_IINJECTION;
     slc->dig.IInjections[id_ver][id_hor] = bus.P; // Ideally i would like to have bus.P*_ratioI here

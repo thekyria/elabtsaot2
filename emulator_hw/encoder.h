@@ -67,12 +67,16 @@ namespace detail{
 
 // General encoding functions
 void encode_atomsGot(Slice const& sl, std::vector<uint32_t>& got_conf);
-int encode_vref( Slice const& sl, std::vector<uint32_t>& vref_conf );
-int encode_resistors( Slice const& sl, std::vector<uint32_t>& res_conf, std::vector<uint32_t>& res_tcon_conf );
-int encode_switches( Slice const& sl, std::vector<uint32_t>& switches_conf );
+int encode_vref(Slice const& sl, std::vector<uint32_t>& vref_conf);
+int encode_resistors(Slice const& sl, std::vector<uint32_t>& res_conf, std::vector<uint32_t>& res_tcon_conf);
+int encode_switches(Slice const& sl, std::vector<uint32_t>& switches_conf);
 
 // GPF specific encoding functions
-int encode_GPFgot(Slice const& sl, std::vector<uint32_t>& got_conf);
+int encode_GPFADCDACgot(Slice const& sl,
+                        std::vector<uint32_t>& adcGain_conf,
+                        std::vector<uint32_t>& adcOffset_conf,
+                        std::vector<uint32_t>& dacGain_conf,
+                        std::vector<uint32_t>& dacOffset_conf);
 int encode_GPFpositions(Slice const& sl, std::vector<uint32_t>& nodeCount_conf,
                         std::vector<uint32_t>& PQpos_conf,
                         std::vector<uint32_t>& slpos_conf);

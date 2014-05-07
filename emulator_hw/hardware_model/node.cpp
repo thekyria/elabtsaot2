@@ -2,20 +2,15 @@
 #include "node.h"
 using namespace elabtsaot;
 
-#define ADC_OFFSET_CORR_NOMINAL 0
-#define ADC_GAIN_CORR_NOMINAL 1
-#define DAC_OFFSET_CORR_NOMINAL 0
-#define DAC_GAIN_CORR_NOMINAL 1
-
 Node::Node() :
-    real_adc_offset_corr(ADC_OFFSET_CORR_NOMINAL), real_adc_gain_corr(ADC_GAIN_CORR_NOMINAL),
-    real_dac_offset_corr(DAC_OFFSET_CORR_NOMINAL), real_dac_gain_corr(DAC_GAIN_CORR_NOMINAL),
+    real_adc_offset_corr(NODE_ADC_OFFSET_CORR_NOMINAL), real_adc_gain_corr(NODE_ADC_GAIN_CORR_NOMINAL),
+    real_dac_offset_corr(NODE_DAC_OFFSET_CORR_NOMINAL), real_dac_gain_corr(NODE_DAC_GAIN_CORR_NOMINAL),
     real_sw_voltage(false),
     real_sw_current(false),
     real_sw_current_shunt(false),
     real_sw_resistance(false),
-    imag_adc_offset_corr(ADC_OFFSET_CORR_NOMINAL), imag_adc_gain_corr(ADC_GAIN_CORR_NOMINAL),
-    imag_dac_offset_corr(DAC_OFFSET_CORR_NOMINAL), imag_dac_gain_corr(DAC_GAIN_CORR_NOMINAL),
+    imag_adc_offset_corr(NODE_ADC_OFFSET_CORR_NOMINAL), imag_adc_gain_corr(NODE_ADC_GAIN_CORR_NOMINAL),
+    imag_dac_offset_corr(NODE_DAC_OFFSET_CORR_NOMINAL), imag_dac_gain_corr(NODE_DAC_GAIN_CORR_NOMINAL),
     imag_sw_voltage(false),
     imag_sw_current(false),
     imag_sw_current_shunt(false),
@@ -43,15 +38,15 @@ int Node::reset( bool complete ){
   ans |= _imag_pot_resistance.reset(complete);
 
   if (complete){
-    real_adc_offset_corr = ADC_OFFSET_CORR_NOMINAL;
-    real_adc_gain_corr = ADC_GAIN_CORR_NOMINAL;
-    real_dac_offset_corr = DAC_OFFSET_CORR_NOMINAL;
-    real_dac_gain_corr = DAC_GAIN_CORR_NOMINAL;
+    real_adc_offset_corr = NODE_ADC_OFFSET_CORR_NOMINAL;
+    real_adc_gain_corr = NODE_ADC_GAIN_CORR_NOMINAL;
+    real_dac_offset_corr = NODE_DAC_OFFSET_CORR_NOMINAL;
+    real_dac_gain_corr = NODE_DAC_GAIN_CORR_NOMINAL;
 
-    imag_adc_offset_corr = ADC_OFFSET_CORR_NOMINAL;
-    imag_adc_gain_corr = ADC_GAIN_CORR_NOMINAL;
-    imag_dac_offset_corr = DAC_OFFSET_CORR_NOMINAL;
-    imag_dac_gain_corr = DAC_GAIN_CORR_NOMINAL;
+    imag_adc_offset_corr = NODE_ADC_OFFSET_CORR_NOMINAL;
+    imag_adc_gain_corr = NODE_ADC_GAIN_CORR_NOMINAL;
+    imag_dac_offset_corr = NODE_DAC_OFFSET_CORR_NOMINAL;
+    imag_dac_gain_corr = NODE_DAC_GAIN_CORR_NOMINAL;
   }
 
   return ans;

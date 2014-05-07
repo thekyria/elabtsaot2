@@ -67,7 +67,7 @@ class EmulatorHw{
   double getMinMaxAchievableR() const;
   size_t getEmbrCount() const;
   void set_got_gain(double val);
-  int set_got_offset(double val);
+  void set_got_offset(double val);
   int set_real_voltage_ref_val(double val);
   int set_real_voltage_ref_tap(unsigned int tap);
   int set_imag_voltage_ref_val(double val);

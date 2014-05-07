@@ -72,8 +72,8 @@ void FitterSliceTab::updt(){
   _sliceCore->update();
 
   // ----------------- Update global slice parameters -----------------
-  gotGainForm->setValue( _slc->ana.got_gain() );
-  gotOffsetForm->setValue( _slc->ana.got_offset() );
+  gotGainForm->setValue( _slc->ana.ADCGain );
+  gotOffsetForm->setValue( _slc->ana.ADCOffset );
 //  realVrefValForm->setValue( _slc->real_voltage_ref_val() );
   realVrefTapForm->setValue( _slc->ana.real_voltage_ref_tap() ); // updates also realVrefValForm
 //  imagVrefValForm->setValue( _slc->imag_voltage_ref_val() );
@@ -151,8 +151,8 @@ void FitterSliceTab::updt(){
 }
 
 bool FitterSliceTab::isShowingReal() const{return _sliceCore->isShowingReal();}
-void FitterSliceTab::gotGainSlot(double val){ _slc->ana.set_got_gain( val ); }
-void FitterSliceTab::gotOffsetSlot(double val){ _slc->ana.set_got_offset( val ); }
+void FitterSliceTab::gotGainSlot(double val){ _slc->ana.ADCGain = val; }
+void FitterSliceTab::gotOffsetSlot(double val){ _slc->ana.ADCOffset = val; }
 
 void FitterSliceTab::realVrefValSlot(double val){
   // The following creates a cyclic dependency with the realVrefTapSlot slot

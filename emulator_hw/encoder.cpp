@@ -37,8 +37,11 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
 
   // Vector        | vec.add | cyp.add [num.of.words] corresponing func.
   //---------------|---------|-------------------------------------------------
-  // got_conf      |   0: 47 |   1: 48 [ 48] detail::encode_GPFgot
-  //  none         |  48:341 |  49:342 [294]  none
+  // adcGain_conf  |   0: 23 |   1: 24 [ 24] detail::encode_GPFADCDACgot
+  // adcOffset_conf|  24: 47 |  25: 48 [ 24] detail::encode_GPFADCDACgot
+  // dacGain_conf  |  48: 71 |  49: 72 [ 24] detail::encode_GPFADCDACgot
+  // dacOffset_conf|  72: 95 |  73: 96 [ 24] detail::encode_GPFADCDACgot
+  //  none         |  96:341 |  97:342 [246]  none
   // nodeCount_conf|     342 |     343 [  1] detail::encode_GPFpositions
   // PQpos_conf    | 343:346 | 344:347 [  4] detail::encode_GPFpositions
   //  none         | 347:350 | 348:351 [  4]  none
@@ -57,7 +60,10 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
   // nios_conf     |     607 |     608 [  1] detail::encode_GPFauxiliary
   //  none         |     608 |     609 [  1]  none
 
-  vector<uint32_t> got_conf;
+  vector<uint32_t> adcGain_conf;
+  vector<uint32_t> adcOffset_conf;
+  vector<uint32_t> dacGain_conf;
+  vector<uint32_t> dacOffset_conf;
   vector<uint32_t> none;
   vector<uint32_t> nodeCount_conf;
   vector<uint32_t> PQpos_conf;
@@ -72,7 +78,7 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
   vector<uint32_t> ipol_conf;
   vector<uint32_t> nios_conf;
 
-  ans |= detail::encode_GPFgot(sl, got_conf);
+  ans |= detail::encode_GPFADCDACgot(sl, adcGain_conf, adcOffset_conf, dacGain_conf, dacOffset_conf);
   ans |= detail::encode_GPFpositions(sl, nodeCount_conf, PQpos_conf, slpos_conf);
   detail::encode_GPFauxiliary(conf_conf, nios_conf);
   ans |= detail::encode_vref(sl, vref_conf);
@@ -82,8 +88,11 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
   detail::encode_GPFPQsetpoints(sl, pqset_conf);
   if (ans) return ans;
 
-  sliceConf.insert(sliceConf.end(), got_conf.begin(), got_conf.end() );
-  none.resize(294,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  sliceConf.insert(sliceConf.end(), adcGain_conf.begin(), adcGain_conf.end() );
+  sliceConf.insert(sliceConf.end(), adcOffset_conf.begin(), adcOffset_conf.end() );
+  sliceConf.insert(sliceConf.end(), dacGain_conf.begin(), dacGain_conf.end() );
+  sliceConf.insert(sliceConf.end(), dacOffset_conf.begin(), dacOffset_conf.end() );
+  none.resize(246,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
   sliceConf.insert(sliceConf.end(), nodeCount_conf.begin(), nodeCount_conf.end() );
   sliceConf.insert(sliceConf.end(), PQpos_conf.begin(), PQpos_conf.end() );
   none.resize(4,0); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
@@ -272,8 +281,8 @@ void encoder::detail::encode_atomsGot(Slice const& sl, vector<uint32_t>& got_con
   for (size_t k=0; k!=maxver; ++k){
     for (size_t m=0; m!=maxhor; ++m){
       Atom const* am = sl.ana.getAtom(k,m);
-      double imag_gain = sl.ana.got_gain() * am->node.imag_adc_gain_corr;
-      double real_gain = sl.ana.got_gain() * am->node.real_adc_gain_corr;
+      double imag_gain = sl.ana.ADCGain * am->node.imag_adc_gain_corr;
+      double real_gain = sl.ana.ADCGain * am->node.real_adc_gain_corr;
       int32_t tempMSB, tempLSB;
       detail::form_word(imag_gain, 13, 10, true, &tempMSB);
       detail::form_word(real_gain, 13, 10, true, &tempLSB);
@@ -291,8 +300,8 @@ void encoder::detail::encode_atomsGot(Slice const& sl, vector<uint32_t>& got_con
   for (size_t k=0; k!=maxver; ++k){
     for (size_t m=0; m!=maxhor; ++m){
       Atom const* am = sl.ana.getAtom(k,m);
-      double imag_offset = sl.ana.got_offset() + am->node.imag_adc_offset_corr;
-      double real_offset = sl.ana.got_offset() + am->node.real_adc_offset_corr;
+      double imag_offset = sl.ana.ADCOffset + am->node.imag_adc_offset_corr;
+      double real_offset = sl.ana.ADCOffset + am->node.real_adc_offset_corr;
       int32_t tempMSB = static_cast<int32_t>( auxiliary::round(imag_offset/DAC_DEF_OUTMAX*pow(2,12)) );
       tempMSB &= mask12;
       int32_t tempLSB = static_cast<int32_t>( auxiliary::round(real_offset/DAC_DEF_OUTMAX*pow(2,12)) );
@@ -1087,14 +1096,15 @@ int encoder::detail::encode_switches( Slice const& sl, vector<uint32_t>& switche
   return 0;
 }
 
-int encoder::detail::encode_GPFgot( Slice const& sl, vector<uint32_t>& got_conf ){
-  got_conf.clear();
+int encoder::detail::encode_GPFADCDACgot(Slice const& sl,
+                                         vector<uint32_t>& adcGain_conf,
+                                         vector<uint32_t>& adcOffset_conf,
+                                         vector<uint32_t>& dacGain_conf,
+                                         vector<uint32_t>& dacOffset_conf){
 
-  size_t k;
+  adcGain_conf.clear();
   int32_t tempMSB, tempLSB, temp;
-
-  // ***** got_conf *****
-  // ----------- GOT gain -----------
+  // ----------- ADC gain -----------
   // 31  26 25        13 12         0
   // 000000 [Q3.10 imag] [Q3.10 real]
   // 000000 [ tempMSB  ] [ tempLSB  ]
@@ -1105,25 +1115,26 @@ int encoder::detail::encode_GPFgot( Slice const& sl, vector<uint32_t>& got_conf 
   size_t atomCount = rows*cols;
   vector<pair<int,int> > pos = sl.dig.pipe_GPFPQ.position();
   double real_gain, imag_gain;
-  for (k=0 ; k!=atomCount; ++k){
+  for (size_t k=0 ; k!=atomCount; ++k){
 
     if (k < sl.dig.pipe_GPFPQ.element_count()){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-      imag_gain = sl.ana.got_gain() * am->node.imag_adc_gain_corr;
-      real_gain = sl.ana.got_gain() * am->node.real_adc_gain_corr;
+      imag_gain = sl.ana.ADCGain * am->node.imag_adc_gain_corr;
+      real_gain = sl.ana.ADCGain * am->node.real_adc_gain_corr;
     } else { // k >= sl.dig.pipe_GPFPQ.element_count()
-      imag_gain = sl.ana.got_gain();
-      real_gain = sl.ana.got_gain();
+      imag_gain = sl.ana.ADCGain;
+      real_gain = sl.ana.ADCGain;
     }
 
     temp = 0;
     detail::form_word(imag_gain, 13, 10, true, &tempMSB);
     detail::form_word(real_gain, 13, 10, true, &tempLSB);
     temp = (tempMSB << 13) | (tempLSB);
-    got_conf.push_back(static_cast<uint32_t>(temp));
+    adcGain_conf.push_back(static_cast<uint32_t>(temp));
   }
 
-  // --------- GOT offset ---------
+  adcOffset_conf.clear();
+  // --------- ADC offset ---------
   // 31    24 23      12 11       0
   // 00000000 [12b imag] [12b real]
   // 00000000 [tempMSB ] [tempLSB ]
@@ -1131,14 +1142,14 @@ int encoder::detail::encode_GPFgot( Slice const& sl, vector<uint32_t>& got_conf 
   // ------------------------------
   double real_offset, imag_offset;
   int32_t mask12 = (1 << 12) - 1;
-  for ( k = 0 ; k != atomCount ; ++k ){
+  for (size_t k=0; k!=atomCount; ++k){
     if ( k < sl.dig.pipe_GPFPQ.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-      imag_offset = sl.ana.got_offset() + am->node.imag_adc_offset_corr;
-      real_offset = sl.ana.got_offset() + am->node.real_adc_offset_corr;
+      imag_offset = sl.ana.ADCOffset + am->node.imag_adc_offset_corr;
+      real_offset = sl.ana.ADCOffset + am->node.real_adc_offset_corr;
     } else { // k >= sl.dig.pipe_GPFPQ.element_count()
-      imag_offset = sl.ana.got_offset();
-      real_offset = sl.ana.got_offset();
+      imag_offset = sl.ana.ADCOffset;
+      real_offset = sl.ana.ADCOffset;
     }
 
     temp = 0;
@@ -1147,7 +1158,50 @@ int encoder::detail::encode_GPFgot( Slice const& sl, vector<uint32_t>& got_conf 
     tempLSB = static_cast<int32_t>( auxiliary::round(real_offset/DAC_DEF_OUTMAX*pow(2,12)) );
     tempLSB &= mask12;
     temp = (tempMSB << 12) | (tempLSB);
-    got_conf.push_back( static_cast<uint32_t>(temp) );
+    adcOffset_conf.push_back( static_cast<uint32_t>(temp) );
+  }
+
+
+  dacGain_conf.clear();
+  // ----------- DAC gain -----------
+  // 31  24 23        12 11         0
+  // 000000 [Q2.10 imag] [Q2.10 real]
+  // 000000 [ tempMSB  ] [ tempLSB  ]
+  // 000000 [         temp          ]
+  // --------------------------------
+  for (size_t v(0); v!=cols; ++v){
+    for (size_t h(0); h!=rows; ++h){
+      Atom const* atom = sl.ana.getAtom(v,h);
+//      detail::form_word(atom->node.imag_dac_gain_corr, 12, 10, false, &tempMSB);
+      detail::form_word(NODE_DAC_GAIN_CORR_NOMINAL, 12, 10, false, &tempMSB);
+      tempMSB &= mask12;
+//      detail::form_word(atom->node.real_adc_gain_corr, 12, 10, false, &tempLSB);
+      detail::form_word(NODE_DAC_GAIN_CORR_NOMINAL, 12, 10, false, &tempLSB);
+      tempLSB &= mask12;
+      temp = (tempMSB << 12) | (tempLSB);
+      dacGain_conf.push_back( static_cast<uint32_t>(temp) );
+    }
+  }
+
+  dacOffset_conf.clear();
+  // ---------- DAC offset ----------
+  // 31  24 23        12 11         0
+  // 000000 [Q2.10 imag] [Q2.10 real]
+  // 000000 [ tempMSB  ] [ tempLSB  ]
+  // 000000 [         temp          ]
+  // --------------------------------
+  for (size_t v(0); v!=cols; ++v){
+    for (size_t h(0); h!=rows; ++h){
+      Atom const* atom = sl.ana.getAtom(v,h);
+//      tempMSB = static_cast<int32_t>(auxiliary::round(atom->node.imag_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));
+      tempMSB = static_cast<int32_t>(auxiliary::round(NODE_DAC_OFFSET_CORR_NOMINAL/NODE_DAC_MAXOUT*pow(2,12)));
+      tempMSB &= mask12;
+//      tempLSB = static_cast<int32_t>(auxiliary::round(atom->node.real_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));
+      tempLSB = static_cast<int32_t>(auxiliary::round(NODE_DAC_OFFSET_CORR_NOMINAL/NODE_DAC_MAXOUT*pow(2,12)));
+      tempLSB &= mask12;
+      temp = (tempMSB << 12) | (tempLSB);
+      dacOffset_conf.push_back(static_cast<uint32_t>(temp));
+    }
   }
 
   return 0;
@@ -1360,8 +1414,8 @@ int encoder::detail::encode_DCPFgot(Slice const& sl, vector<uint32_t>& got_conf)
         Atom const* am = sl.ana.getAtom(k,m);
 
         // gain
-        double imag_gain = sl.ana.got_gain() * am->node.imag_adc_gain_corr;
-        double real_gain = sl.ana.got_gain() * am->node.real_adc_gain_corr;
+        double imag_gain = sl.ana.ADCGain * am->node.imag_adc_gain_corr;
+        double real_gain = sl.ana.ADCGain * am->node.real_adc_gain_corr;
         temp = 0;
         detail::form_word(imag_gain, 13, 10, true, &tempMSB);
         detail::form_word(real_gain, 13, 10, true, &tempLSB);
@@ -1369,8 +1423,8 @@ int encoder::detail::encode_DCPFgot(Slice const& sl, vector<uint32_t>& got_conf)
         gain_conf.push_back(static_cast<uint32_t>(temp));
 
         // offset
-        double imag_offset = sl.ana.got_offset() + am->node.imag_adc_offset_corr;
-        double real_offset = sl.ana.got_offset() + am->node.real_adc_offset_corr;
+        double imag_offset = sl.ana.ADCOffset + am->node.imag_adc_offset_corr;
+        double real_offset = sl.ana.ADCOffset + am->node.real_adc_offset_corr;
         temp = 0;
         tempMSB = static_cast<int32_t>(auxiliary::round(imag_offset/DAC_DEF_OUTMAX*pow(2,12)));
         tempMSB &= mask12;
@@ -1385,14 +1439,14 @@ int encoder::detail::encode_DCPFgot(Slice const& sl, vector<uint32_t>& got_conf)
     }
   }
   // Resize gain_conf to the correct size
-  detail::form_word(sl.ana.got_gain(), 13, 10, true, &tempMSB);
-  detail::form_word(sl.ana.got_gain(), 13, 10, true, &tempLSB);
+  detail::form_word(sl.ana.ADCGain, 13, 10, true, &tempMSB);
+  detail::form_word(sl.ana.ADCGain, 13, 10, true, &tempLSB);
   temp = (tempMSB << 13) | (tempLSB);
   gain_conf.resize(MAX_VERATOMCOUNT*MAX_HORATOMCOUNT, temp);
   // Resize offset_conf to the correct size
-  tempMSB = static_cast<int32_t>(auxiliary::round(sl.ana.got_offset()/DAC_DEF_OUTMAX*pow(2,12)));
+  tempMSB = static_cast<int32_t>(auxiliary::round(sl.ana.ADCOffset/DAC_DEF_OUTMAX*pow(2,12)));
   tempMSB &= mask12;
-  tempLSB = static_cast<int32_t>(auxiliary::round(sl.ana.got_offset()/DAC_DEF_OUTMAX*pow(2,12)));
+  tempLSB = static_cast<int32_t>(auxiliary::round(sl.ana.ADCOffset/DAC_DEF_OUTMAX*pow(2,12)));
   tempLSB &= mask12;
   temp = (tempMSB << 12) | (tempLSB);
   offset_conf.resize(MAX_VERATOMCOUNT*MAX_HORATOMCOUNT, temp);
@@ -1515,13 +1569,13 @@ void encoder::detail::encode_DCPFI(Slice const& sl, vector<uint32_t>& i_conf){
         // The corrected DAC code has to be written in i_conf, if the node is a V injection
         double realV = sl.dig.VInjections[k][m]+sl.ana.real_voltage_ref_val();
         // Node DAC value 4095 is max tap setting, giving 5Volts * 4095/4096 as max V out
-        double Vmax = NODEDAC_MAXOUT*(pow(2,NODEDAC_RES)-1)/pow(2,NODEDAC_RES);
+        double Vmax = NODE_DAC_MAXOUT*(pow(2,NODE_DAC_RES)-1)/pow(2,NODE_DAC_RES);
         double normalizedRealV = realV/Vmax; // [0,1]
-        double VtapD = normalizedRealV*(pow(2,NODEDAC_RES)-1); // convert to tap (double)
+        double VtapD = normalizedRealV*(pow(2,NODE_DAC_RES)-1); // convert to tap (double)
         VtapD = auxiliary::round(VtapD); // round double
         temp = static_cast<int32_t>(VtapD); // cast into uint
-        temp -= - pow(2,NODEDAC_RES)/2; // subtract midrange (2048) Guillaume requires that!
-        if (temp<0) temp+=pow(2,NODEDAC_RES); // bring into [0,4095] range
+        temp -= - pow(2,NODE_DAC_RES)/2; // subtract midrange (2048) Guillaume requires that!
+        if (temp<0) temp+=pow(2,NODE_DAC_RES); // bring into [0,4095] range
         temp &= mask12bit;
         i_conf[nodeId] = static_cast<uint32_t>(temp);
       }
@@ -1590,11 +1644,11 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
 
     if ( k < sl.dig.pipe_TDgen.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-      imag_gain = sl.ana.got_gain() * am->node.imag_adc_gain_corr;
-      real_gain = sl.ana.got_gain() * am->node.real_adc_gain_corr;
+      imag_gain = sl.ana.ADCGain * am->node.imag_adc_gain_corr;
+      real_gain = sl.ana.ADCGain * am->node.real_adc_gain_corr;
     } else { // k >= sl.dig.pipe_TDgen.element_count()
-      imag_gain = sl.ana.got_gain();
-      real_gain = sl.ana.got_gain();
+      imag_gain = sl.ana.ADCGain;
+      real_gain = sl.ana.ADCGain;
     }
 
     temp = 0;
@@ -1616,11 +1670,11 @@ int encoder::detail::encode_TDgenerators( Slice const& sl,
 
     if ( k < sl.dig.pipe_TDgen.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-      imag_offset = sl.ana.got_offset() + am->node.imag_adc_offset_corr;
-      real_offset = sl.ana.got_offset() + am->node.real_adc_offset_corr;
+      imag_offset = sl.ana.ADCOffset + am->node.imag_adc_offset_corr;
+      real_offset = sl.ana.ADCOffset + am->node.real_adc_offset_corr;
     } else { // k >= sl.dig.pipe_TDgen.element_count()
-      imag_offset = sl.ana.got_offset();
-      real_offset = sl.ana.got_offset();
+      imag_offset = sl.ana.ADCOffset;
+      real_offset = sl.ana.ADCOffset;
     }
 
     temp = 0;
@@ -1783,11 +1837,11 @@ int encoder::detail::encode_TDzloads( Slice const& sl,
 
     if ( k < sl.dig.pipe_TDzload.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-      imag_gain = sl.ana.got_gain() * am->node.imag_adc_gain_corr;
-      real_gain = sl.ana.got_gain() * am->node.real_adc_gain_corr;
+      imag_gain = sl.ana.ADCGain * am->node.imag_adc_gain_corr;
+      real_gain = sl.ana.ADCGain * am->node.real_adc_gain_corr;
     } else { // k >= sl.dig.pipe_zload.element_count()
-      imag_gain = sl.ana.got_gain();
-      real_gain = sl.ana.got_gain();
+      imag_gain = sl.ana.ADCGain;
+      real_gain = sl.ana.ADCGain;
     }
 
     temp = 0;
@@ -1808,11 +1862,11 @@ int encoder::detail::encode_TDzloads( Slice const& sl,
 
     if ( k < sl.dig.pipe_TDzload.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-      imag_offset = sl.ana.got_offset() + am->node.imag_adc_offset_corr;
-      real_offset = sl.ana.got_offset() + am->node.real_adc_offset_corr;
+      imag_offset = sl.ana.ADCOffset + am->node.imag_adc_offset_corr;
+      real_offset = sl.ana.ADCOffset + am->node.real_adc_offset_corr;
     } else { // k >= sl.dig.pipe_zload.element_count()
-      imag_offset = sl.ana.got_offset();
-      real_offset = sl.ana.got_offset();
+      imag_offset = sl.ana.ADCOffset;
+      real_offset = sl.ana.ADCOffset;
     }
 
     temp = 0;
@@ -1850,8 +1904,8 @@ int encoder::detail::encode_TDzloads( Slice const& sl,
 }
 
 int encoder::detail::encode_TDiloads( Slice const& sl,
-                                    vector<uint32_t>& igot_conf,
-                                    vector<uint32_t>& iloads_conf ){
+                                      vector<uint32_t>& igot_conf,
+                                      vector<uint32_t>& iloads_conf ){
 
   igot_conf.clear();
   iloads_conf.clear();
@@ -1875,11 +1929,11 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
 
     if ( k < sl.dig.pipe_TDiload.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-      imag_gain = sl.ana.got_gain() * am->node.imag_adc_gain_corr;
-      real_gain = sl.ana.got_gain() * am->node.real_adc_gain_corr;
+      imag_gain = sl.ana.ADCGain * am->node.imag_adc_gain_corr;
+      real_gain = sl.ana.ADCGain * am->node.real_adc_gain_corr;
     } else { // k >= sl.dig.pipe_iload.element_count()
-      imag_gain = sl.ana.got_gain();
-      real_gain = sl.ana.got_gain();
+      imag_gain = sl.ana.ADCGain;
+      real_gain = sl.ana.ADCGain;
     }
 
     temp = 0;
@@ -1900,20 +1954,20 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
 
     if ( k < sl.dig.pipe_TDiload.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-      imag_offset = sl.ana.got_offset() + am->node.imag_adc_offset_corr;
-      real_offset = sl.ana.got_offset() + am->node.real_adc_offset_corr;
+      imag_offset = sl.ana.ADCOffset + am->node.imag_adc_offset_corr;
+      real_offset = sl.ana.ADCOffset + am->node.real_adc_offset_corr;
     } else { // k >= sl.dig.pipe_iload.element_count()
-      imag_offset = sl.ana.got_offset();
-      real_offset = sl.ana.got_offset();
+      imag_offset = sl.ana.ADCOffset;
+      real_offset = sl.ana.ADCOffset;
     }
 
     temp = 0;
-    tempMSB = static_cast<int32_t>( auxiliary::round(imag_offset/DAC_DEF_OUTMAX*pow(2,12)) );
+    tempMSB = static_cast<int32_t>(auxiliary::round(imag_offset/DAC_DEF_OUTMAX*pow(2,12)));
     tempMSB &= mask12;
-    tempLSB = static_cast<int32_t>( auxiliary::round(real_offset/DAC_DEF_OUTMAX*pow(2,12)) );
+    tempLSB = static_cast<int32_t>(auxiliary::round(real_offset/DAC_DEF_OUTMAX*pow(2,12)));
     tempLSB &= mask12;
     temp = (tempMSB << 12) | (tempLSB);
-    igot_conf.push_back( static_cast<uint32_t>(temp) );
+    igot_conf.push_back(static_cast<uint32_t>(temp));
   }
 
   // ***** iloads_conf *****
@@ -1925,7 +1979,7 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
   // iteration of the emulation. So, ideally this would be good to correspond to
   // the steady state current [pu] in the powersystem. This applies to ANY
   // element, be it an iload, a gen, or whatever
-  iloads_conf.resize( sl.dig.pipe_TDiload.element_count_max(), 0 );
+  iloads_conf.resize(sl.dig.pipe_TDiload.element_count_max(), 0);
 
   // Note 1: for xloads the pipe_xload convention is that there is a flow INTO
   // the loads, whereas for the real emulator DAC, the convention is that there
@@ -1970,6 +2024,7 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
     temp = (tempMSB << 12) | (tempLSB);
     iloads_conf[pseudo_id] = static_cast<uint32_t>(temp);
   }
+
   // --- Initial currents of the constant power loads (ploads) ---
   for ( k = 0 ; k != sl.dig.pipe_TDpload.element_count() ; ++k ){
     pseudo_id = static_cast<size_t>(sl.dig.pipe_TDpload.position()[k].first) *
@@ -1982,12 +2037,12 @@ int encoder::detail::encode_TDiloads( Slice const& sl,
   }
 
   // stamp NIOS confirmation on the last word of iloads_conf
-  stamp_NIOS_confirm( iloads_conf.back() );
+  stamp_NIOS_confirm(iloads_conf.back());
 
   return 0;
 }
 
-int encoder::detail::encode_TDploads( Slice const& sl, vector<uint32_t>& ploads_conf ){
+int encoder::detail::encode_TDploads(Slice const& sl, vector<uint32_t>& ploads_conf){
 
   ploads_conf.clear();
 

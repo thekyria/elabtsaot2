@@ -40,8 +40,8 @@ int SliceAnalog::reset(bool complete){
       ans |= _atomSet[k][m].reset( complete );
 
   // ----- Initialize private members -----
-  _got_gain = static_cast<double>(DEFGOTGAIN);
-  _got_offset = static_cast<double>(DEFGOTOFFSET);
+  ADCGain = static_cast<double>(DEFGOTGAIN);
+  ADCOffset = static_cast<double>(DEFGOTOFFSET);
   // Perform value-wise reset to the voltage reference DACs
   // (alternative is tap-wise reset)
   ans |= _real_voltage_ref.reset( false, complete );
@@ -1011,14 +1011,6 @@ int SliceAnalog::embrDisconnect(size_t id_ver, size_t id_hor, size_t pos){
   return ans;
 }
 
-void SliceAnalog::set_got_gain(double val){ _got_gain = val; }
-int SliceAnalog::set_got_offset(double val){
-  if ( (val < 0) || (val > DAC_DEF_OUTMAX ) )
-    // got_offset out of bounds [0 , DEFMAXVVOLT=5] Volt
-    return 1;
-  _got_offset = val;
-  return 0;
-}
 int SliceAnalog::set_real_voltage_ref_val(double val){return _real_voltage_ref.set_out(val);}
 int SliceAnalog::set_real_voltage_ref_tap(unsigned int tap){return _real_voltage_ref.set_tap(tap);}
 int SliceAnalog::set_real_voltage_ref_out_min(double val,bool updateTap){return _real_voltage_ref.set_out_min(val,updateTap);}
@@ -1038,8 +1030,6 @@ size_t SliceAnalog::getEmbrCount() const{
       ans += _atomSet[k][m].getEmbrCount();
   return ans;
 }
-double SliceAnalog::got_gain() const{ return _got_gain; }
-double SliceAnalog::got_offset() const{ return _got_offset; }
 double SliceAnalog::real_voltage_ref_val() const{ return _real_voltage_ref.out(); }
 unsigned int SliceAnalog::real_voltage_ref_tap() const{ return _real_voltage_ref.tap(); }
 double SliceAnalog::real_voltage_ref_val_min() const{ return _real_voltage_ref.out_min(); }

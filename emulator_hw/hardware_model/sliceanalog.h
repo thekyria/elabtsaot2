@@ -67,8 +67,6 @@ class SliceAnalog{
   int embrConnect(size_t id_ver, size_t id_hor, size_t pos, double r_near, double r_far);
   int embrDisconnect(size_t id_ver, size_t id_hor, size_t pos);
 
-  void set_got_gain(double val);
-  int set_got_offset(double val);
   int set_real_voltage_ref_val(double val);
   int set_real_voltage_ref_tap(unsigned int tap);
   int set_real_voltage_ref_out_min(double val, bool updateTap);
@@ -80,8 +78,6 @@ class SliceAnalog{
 
   Atom const* getAtom(size_t ver, size_t hor) const;
   size_t getEmbrCount() const; //!< emulator branches physically present on slice
-  double got_gain() const;
-  double got_offset() const;
   double real_voltage_ref_val() const;
   unsigned int real_voltage_ref_tap() const;
   double real_voltage_ref_val_min() const;
@@ -94,13 +90,12 @@ class SliceAnalog{
   unsigned int imag_voltage_ref_tap_max() const;
 
 
+  double ADCGain;   //!< ADC gain
+  double ADCOffset; //!< ADC offset in [V] (the "zero" corresponds to this value)
+
 private:
 
   std::vector<std::vector<Atom> > _atomSet;
-
-  double _got_gain;   //!< Gain for the voltage of the GOT module
-  double _got_offset; //!< Offset to compensate the ADC voltage; in [V]
-
   DAC _real_voltage_ref; //!< Real voltage reference in [Volt]
   DAC _imag_voltage_ref; //!< Imaginary voltage reference in [Volt]
 };

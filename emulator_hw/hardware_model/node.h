@@ -14,9 +14,13 @@ EPFL
 
 #include "potentiometer.h"
 
-#define NODEDAC_RES 12
-#define NODEDAC_MAXOUT 5.0
-#define NODEADC_RES 12
+#define NODE_ADC_RES 12
+#define NODE_ADC_OFFSET_CORR_NOMINAL 0.0
+#define NODE_ADC_GAIN_CORR_NOMINAL 1.0
+#define NODE_DAC_RES 12
+#define NODE_DAC_MAXOUT 5.0
+#define NODE_DAC_OFFSET_CORR_NOMINAL 0.0
+#define NODE_DAC_GAIN_CORR_NOMINAL 1.0
 
 namespace elabtsaot{
 
