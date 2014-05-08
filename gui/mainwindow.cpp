@@ -56,17 +56,17 @@ enum MWShowEditor{
   MWSHOW_AUX    = 9
 };
 
-MainWindow::MainWindow( Powersystem*& pws,
-                        Emulator* emu,
-                        SSEngine*& sse,
-                        MoteurRenard* sse_mrn,
-                        MoteurLapack* sse_mlp,
-                        MoteurFengtian* sse_fen,
-                        TDEngine*& tde,
-                        TDEmulator* tde_hwe,
-                        Simulator_sw*& tde_swe,
-                        ScenarioSet* scs,
-                        TDResultsBank* trb ) :
+MainWindow::MainWindow(Powersystem*& pws,
+                       Emulator* emu,
+                       SSEngine*& sse,
+                       MoteurRenard* sse_mrn,
+                       MoteurLapack* sse_mlp,
+                       MoteurFengtian* sse_fen,
+                       TDEngine*& tde,
+                       TDEmulator* tde_hwe,
+                       Simulator_sw*& tde_swe,
+                       ScenarioSet* scs,
+                       TDResultsBank* trb) :
     _pws(pws),
     _emu(emu),
     _scs(scs){

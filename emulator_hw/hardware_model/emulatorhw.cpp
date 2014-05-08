@@ -11,11 +11,11 @@ int EmulatorHw::init(size_t sliceCount){
 
   // init slices
   sliceSet.clear();
-  for (size_t k = 0 ; k != sliceCount ; ++k )
-    sliceSet.push_back( Slice() );
+  for (size_t k=0; k!=sliceCount; ++k)
+    sliceSet.push_back(Slice());
 
-  int exitCode = 0;
-  for ( size_t k = 0 ; k != sliceSet.size() ; ++k )
+  int exitCode(0);
+  for (size_t k=0; k!=sliceSet.size(); ++k)
     exitCode |= sliceSet[k].reset(k, true);
   return exitCode;
 }

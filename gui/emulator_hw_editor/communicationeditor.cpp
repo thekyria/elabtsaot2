@@ -58,12 +58,6 @@ CommunicationEditor::CommunicationEditor( Emulator* emu, QWidget* parent ) :
   connect( devicesViewBut, SIGNAL(clicked()),
            this, SLOT(devicesViewSlot()) );
 
-  QPushButton* devicesTestBut = new QPushButton( QIcon(),
-                                                 "Test device", devicesBox);
-  devicesLay->addWidget( devicesTestBut, 2, 1);
-  connect( devicesTestBut, SIGNAL(clicked()),
-           this, SLOT(devicesTestSlot()) );
-
   // ---------------------------------------------------------------------------
 
   slicesBox = new QGroupBox("Slices to use", this);
@@ -134,24 +128,15 @@ void CommunicationEditor::devicesUpdateSlot(){
   _updateDevicesList();
   emit usbChanged();
   slicesClearAssignSlot();
-
-  return;
 }
 
 void CommunicationEditor::devicesViewSlot(){
-
   if ( devicesList->currentRow() >= 0 ){
     USBDevice dev = _emu->getUSBDevices().at( devicesList->currentRow() );
     _deviceViewDialog( dev );
   }
-
-  return;
 }
 
-void CommunicationEditor::devicesTestSlot(){
-
-  return;
-}
 
 void CommunicationEditor::slicesSetSlot(){
   int sliceCount = _emu->getHwSliceCount();
@@ -194,19 +179,15 @@ void CommunicationEditor::slicesAssignSlot(){
 }
 
 void CommunicationEditor::slicesClearAssignSlot(){
-
   // Update _emu->sliceDeviceMap
   int ans = _emu->clearSliceDeviceMap();
   if ( ans )
     cout << "Clear slice<->device mapping failed with code " << ans << endl;
   else
     _updateSlicesList();
-
-  return;
 }
 
 void CommunicationEditor::slicesValidateSlot(){
-
   // validateSliceDeviceAssignement() validates the assignment and precalibrates
   // the voltage references of the slices based on hardcoded values from premade
   // tests
@@ -220,8 +201,6 @@ void CommunicationEditor::slicesValidateSlot(){
   // Update fitter editor (directly bound to emulator) - to incorporate Vref
   // precalibration results
   emit emuChanged(false);
-
-  return;
 }
 
 void CommunicationEditor::updateDevicesAndSlicesSlot(){
@@ -241,7 +220,7 @@ void CommunicationEditor::updateDevicesAndSlicesSlot(){
 
 void CommunicationEditor::autoAssignSlicesToDevicesSlot(){
   int ans = _emu->autoAssignSlicesToDevices();
-  if ( ans )
+  if (ans)
     cout << "Auto-assignment of slices to devices failed with code " << ans << endl;
   else
     cout << "Slices succesfully auto-assigned to devices!" << endl;
@@ -252,7 +231,6 @@ void CommunicationEditor::autoAssignSlicesToDevicesSlot(){
 }
 
 void CommunicationEditor::_updateDevicesList(){
-
   devicesList->clear();
   vector<USBDevice> devices = _emu->getUSBDevices();
   for ( size_t k = 0 ; k != devices.size() ; ++k ){
@@ -263,12 +241,9 @@ void CommunicationEditor::_updateDevicesList(){
           .arg(devices[k].USBAddress);
     new QListWidgetItem(itemLabel, devicesList);
   }
-
-  return;
 }
 
 void CommunicationEditor::_updateSlicesList(){
-
   map<size_t,int> sliceDeviceMap = _emu->sliceDeviceMap();
   slicesList->clear();
   for ( size_t k = 0; k != _emu->getHwSliceCount(); ++k ){
@@ -276,8 +251,6 @@ void CommunicationEditor::_updateSlicesList(){
     QString txt = QString("Slice %1 mapped to device %2").arg(k).arg(deviceId);
     new QListWidgetItem( txt, slicesList );
   }
-
-  return;
 }
 
 int CommunicationEditor::_deviceViewDialog( USBDevice const& dev ){
@@ -513,70 +486,6 @@ int CommunicationEditor::_deviceViewDialog( USBDevice const& dev ){
     epTable->setItem( k , 6, epTimeoutItem);
   }
   epTable->resizeColumnsToContents();
-
-  // Alternative display for the endpoints
-//  QGroupBox* epBox = new QGroupBox("Device endpoints", dialog);
-//  layMain->addWidget( epBox );
-//  QVBoxLayout* epLay = new QVBoxLayout();
-//  epBox->setLayout( epLay );
-
-//  for (size_t k = 0; k != dev.endpoints.size(); ++k ){
-//    QLabel* epLabel = new QLabel( QString("Endpoint %1").arg(k), epBox );
-//    epLay->addWidget( epLabel );
-
-//    QHBoxLayout* epAddressLay = new QHBoxLayout();
-//    epLay->addLayout( epAddressLay );
-//    QLabel* epAddressLabel = new QLabel("Address", epBox);
-//    epAddressLay->addWidget( epAddressLabel );
-//    QSpinBox* epAddressVal = new QSpinBox(epBox);
-//    epAddressLay->addWidget( epAddressVal );
-//    epAddressVal->setReadOnly( true );
-//    epAddressVal->setValue( dev.endpoints[k].address );
-
-//    QHBoxLayout* epAttributesLay = new QHBoxLayout();
-//    epLay->addLayout( epAttributesLay );
-//    QLabel* epAttributesLabel = new QLabel("Attributes", epBox);
-//    epAttributesLay->addWidget( epAttributesLabel );
-//    QSpinBox* epAttributesVal = new QSpinBox(epBox);
-//    epAttributesLay->addWidget( epAttributesVal );
-//    epAttributesVal->setReadOnly( true );
-//    epAttributesVal->setValue( dev.endpoints[k].attributes );
-
-//    QHBoxLayout* epIsInLay = new QHBoxLayout();
-//    epLay->addLayout( epIsInLay );
-//    QLabel* epIsInLabel = new QLabel("In in", epBox);
-//    epIsInLay->addWidget( epIsInLabel );
-//    QCheckBox* epIsInVal = new QCheckBox(epBox);
-//    epIsInLay->addWidget( epIsInVal );
-//    epIsInVal->setEnabled( true );
-//    epIsInVal->setChecked( dev.endpoints[k].isIn );
-
-//    QHBoxLayout* epMaxPacketSizeLay = new QHBoxLayout();
-//    epLay->addLayout( epMaxPacketSizeLay );
-//    QLabel* epMaxPacketSizeLabel = new QLabel("Max packet size", epBox);
-//    epMaxPacketSizeLay->addWidget( epMaxPacketSizeLabel );
-//    QSpinBox* epMaxPacketSizeVal = new QSpinBox(epBox);
-//    epMaxPacketSizeLay->addWidget( epMaxPacketSizeVal );
-//    epMaxPacketSizeVal->setReadOnly( true );
-//    epMaxPacketSizeVal->setValue( dev.endpoints[k].maxPacketSize );
-
-//    QHBoxLayout* epLastErrorCodeLay = new QHBoxLayout();
-//    epLay->addLayout( epLastErrorCodeLay );
-//    QLabel* epLastErrorCodeLabel = new QLabel("Last error code", epBox);
-//    epLastErrorCodeLay->addWidget( epLastErrorCodeLabel );
-//    QSpinBox* epLastErrorCodeVal = new QSpinBox(epBox);
-//    epLastErrorCodeLay->addWidget( epLastErrorCodeVal );
-//    epLastErrorCodeVal->setReadOnly( true );
-//    epLastErrorCodeVal->setValue( dev.endpoints[k].lastErrorCode );
-
-//    QHBoxLayout* epTimeoutLay = new QHBoxLayout();
-//    epLay->addLayout( epTimeoutLay );
-//    QLabel* epTimeoutLabel = new QLabel("Timeout", epBox);
-//    epTimeoutLay->addWidget( epTimeoutLabel );
-//    QSpinBox* epTimeoutVal = new QSpinBox(epBox);
-//    epTimeoutLay->addWidget( epTimeoutVal );
-//    epTimeoutVal->setValue( dev.endpoints[k].timeout );
-//  }
 
   // Horizonal button layout
   QHBoxLayout* layButtons = new QHBoxLayout();

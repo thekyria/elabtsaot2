@@ -47,9 +47,7 @@ class FitterSliceTab : public QSplitter {
   // Global slice parameters slots
   void gotGainSlot(double val);
   void gotOffsetSlot(double val);
-  void realVrefValSlot(double val);
   void realVrefTapSlot(int tap);
-  void imagVrefValSlot(double val);
   void imagVrefTapSlot(int tap);
 
   // Pipelines slots
@@ -67,10 +65,7 @@ class FitterSliceTab : public QSplitter {
 
  signals:
 
-  void fittingPositionClicked( int emulator_tab,
-                               int emulator_row,
-                               int emulator_col,
-                               int emulator_elm );
+  void fittingPositionClicked(int emulator_tab, int emulator_row, int emulator_col, int emulator_elm);
 
  private:
 

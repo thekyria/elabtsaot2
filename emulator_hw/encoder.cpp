@@ -277,8 +277,8 @@ int encoder::detail::encode_vref( Slice const& sl, vector<uint32_t>& vref_conf )
   int32_t tempVrefImag = sl.ana.imag_voltage_ref.tap();
 
   // Push back to conf vector
-  vref_conf.push_back( static_cast<uint32_t>(tempVrefReal) ); // Real Vref Q16.0 [0,5)
-  vref_conf.push_back( static_cast<uint32_t>(tempVrefImag) ); // Imag Vref Q16.0 [0,5)
+  vref_conf.push_back(static_cast<uint32_t>(tempVrefReal)); // Real Vref Q16.0 [0,5)
+  vref_conf.push_back(static_cast<uint32_t>(tempVrefImag)); // Imag Vref Q16.0 [0,5)
 
   return 0;
 }
@@ -1125,8 +1125,8 @@ int encoder::detail::encode_GPFADCDACgot(Slice const& sl,
   // 000000 [         temp          ]
   // --------------------------------
   dacGain_conf.clear();
-  for (size_t v(0); v!=cols; ++v){
-    for (size_t h(0); h!=rows; ++h){
+  for (size_t v(0); v!=rows; ++v){
+    for (size_t h(0); h!=cols; ++h){
       Atom const* atom = sl.ana.getAtom(v,h);
       if (sl.dig.pipe_GPFslack.search_element(v,h) < 0){
         detail::form_word(atom->node.imag_dac_gain_corr, 12, 10, false, &tempMSB);
@@ -1150,8 +1150,8 @@ int encoder::detail::encode_GPFADCDACgot(Slice const& sl,
   // 000000 [         temp          ]
   // --------------------------------
   dacOffset_conf.clear();
-  for (size_t v(0); v!=cols; ++v){
-    for (size_t h(0); h!=rows; ++h){
+  for (size_t v(0); v!=rows; ++v){
+    for (size_t h(0); h!=cols; ++h){
       Atom const* atom = sl.ana.getAtom(v,h);
       if (sl.dig.pipe_GPFslack.search_element(v,h) < 0){
         tempMSB = static_cast<int32_t>(auxiliary::round(atom->node.imag_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));

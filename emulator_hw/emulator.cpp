@@ -266,8 +266,8 @@ int Emulator::setSliceCount(size_t val, EmulatorOpType opType){
 
   // Update _sliceDeviceMap
   _sliceDeviceMap.clear();
-  for ( size_t k = 0; k != val; ++k )
-    _sliceDeviceMap.insert( pair<size_t,int>(k,-1) );
+  for (size_t k=0; k!=val; ++k)
+    _sliceDeviceMap.insert(pair<size_t,int>(k,-1));
 
   return 0;
 }
@@ -640,11 +640,11 @@ int Emulator::autoAssignSlicesToDevices(){
   if (ans) return 3;
 
   // Assign slices to devices according to expected device names
-  for ( size_t k = 0 ; k != sliceCount ; ++k ){
+  for (size_t k=0; k!=sliceCount; ++k){
     bool sliceAssigned = false;
-    for ( size_t m = 0 ; m != deviceCount ; ++m ){
+    for (size_t m=0; m!=deviceCount; ++m){
       // First 4 slices
-      if ( k < MAX_SLICE_COUNT ){
+      if (k<MAX_SLICE_COUNT){
         // OLD names/product labels ("Emulator 1-4")
         if ( !_usb->devices[m].deviceName.compare( SLICE_NAMES_OLD[k] ) ){
           // name of device m matches the expected name (OLD) for slice k
@@ -692,8 +692,7 @@ int Emulator::autoAssignSlicesToDevices(){
     }
 
     // If the slice is still unassigned then auto-assignement has failed!
-    if ( !sliceAssigned )
-      return 4;
+    if (!sliceAssigned) return 4;
   }
 
   // Validate assignemnt
@@ -725,7 +724,7 @@ int Emulator::validateSliceDeviceAssignement(){
   }
 
   // Precalibrate the slices according to premade measurements
-  for ( size_t k = 0 ; k != _emuhw->sliceSet.size() ; ++k ){
+  for (size_t k(0); k!=_emuhw->sliceSet.size(); ++k){
     _precalibrateSlice(k, true);
   }
 
@@ -1092,7 +1091,7 @@ int Emulator::_precalibrateSlice( size_t sliceId, bool toDefaultVoltage ){
       + (REAL_VOLTAGE_REF_MEASURED_VAL - sl->ana.real_voltage_ref.out_min())
       * ( (static_cast<double>(sl->ana.real_voltage_ref.tap_max()) + 1)
            / tapRealMeaserement );
-  int ans = sl->ana.real_voltage_ref.set_out_max( newOutMax, true );
+  int ans = sl->ana.real_voltage_ref.set_out_max(newOutMax, true);
   if (ans) return 4;
 
   // Imag voltage reference precalibration
@@ -1100,14 +1099,14 @@ int Emulator::_precalibrateSlice( size_t sliceId, bool toDefaultVoltage ){
       + (IMAG_VOLTAGE_REF_MEASURED_VAL - sl->ana.imag_voltage_ref.out_min())
       * ( (static_cast<double>(sl->ana.imag_voltage_ref.tap_max()) + 1)
            / tapImagMeasurement );
-  ans = sl->ana.imag_voltage_ref.set_out_max( newOutMax, true );
+  ans = sl->ana.imag_voltage_ref.set_out_max(newOutMax, true);
   if (ans) return 5;
 
   // Set voltage to default value if asked so
-  if ( toDefaultVoltage ){
+  if (toDefaultVoltage){
     ans = sl->ana.real_voltage_ref.set_out(REAL_VOLTAGE_REF_MEASURED_VAL);
     if (ans) return 6;
-    ans = sl->ana.imag_voltage_ref.set_out(REAL_VOLTAGE_REF_MEASURED_VAL);
+    ans = sl->ana.imag_voltage_ref.set_out(IMAG_VOLTAGE_REF_MEASURED_VAL);
     if (ans) return 7;
   }
 

@@ -36,7 +36,6 @@ class CommunicationEditor : public QSplitter{
 
   void devicesUpdateSlot();
   void devicesViewSlot();
-  void devicesTestSlot();
   void slicesSetSlot();
   void slicesAssignSlot();
   void slicesClearAssignSlot();

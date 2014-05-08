@@ -30,7 +30,7 @@ using std::complex;
 //#include <utility>
 using std::pair;
 
-FitterSliceTab::FitterSliceTab( Slice* slc, QWidget* parent) :
+FitterSliceTab::FitterSliceTab(Slice* slc, QWidget* parent) :
     QSplitter(Qt::Horizontal, parent), _slc(slc){
 
   // Global slice parameters box
@@ -58,13 +58,12 @@ FitterSliceTab::FitterSliceTab( Slice* slc, QWidget* parent) :
 
   // Core fitter slice widget
   _sliceCore = new FitterSliceWidget( _slc, this );
-  addWidget( _sliceCore );
+  addWidget(_sliceCore);
   connect( _sliceCore, SIGNAL(fittingPositionClicked(int,int,int,int)),
            this, SIGNAL(fittingPositionClicked(int,int,int,int)) );
 
   // Update view
   updt();
-
 }
 
 void FitterSliceTab::updt(){
@@ -74,9 +73,7 @@ void FitterSliceTab::updt(){
   // ----------------- Update global slice parameters -----------------
   gotGainForm->setValue( _slc->ana.ADCGain );
   gotOffsetForm->setValue( _slc->ana.ADCOffset );
-//  realVrefValForm->setValue( _slc->real_voltage_ref_val() );
   realVrefTapForm->setValue( _slc->ana.real_voltage_ref.tap() ); // updates also realVrefValForm
-//  imagVrefValForm->setValue( _slc->imag_voltage_ref_val() );
   imagVrefTapForm->setValue( _slc->ana.imag_voltage_ref.tap() ); // updates also imagVrefTapForm
 
   // ----------------- Update pipelines -----------------
@@ -154,23 +151,9 @@ bool FitterSliceTab::isShowingReal() const{return _sliceCore->isShowingReal();}
 void FitterSliceTab::gotGainSlot(double val){ _slc->ana.ADCGain = val; }
 void FitterSliceTab::gotOffsetSlot(double val){ _slc->ana.ADCOffset = val; }
 
-void FitterSliceTab::realVrefValSlot(double val){
-  // The following creates a cyclic dependency with the realVrefTapSlot slot
-//  _slc->set_real_voltage_ref_val( val );
-//  realVrefValForm->setValue( _slc->real_voltage_ref_val() );
-//  realVrefTapForm->setValue( _slc->ana.real_voltage_ref_tap() );
-}
-
 void FitterSliceTab::realVrefTapSlot(int tap){
   _slc->ana.real_voltage_ref.set_tap(static_cast<unsigned int>(tap));
   realVrefValForm->setValue(_slc->ana.real_voltage_ref.out());
-}
-
-void FitterSliceTab::imagVrefValSlot(double val){
-  // The following creates a cyclic dependency with the imagVrefTapSlot slot
-//  _slc->set_imag_voltage_ref_val( val );
-//  imagVrefValForm->setValue( _slc->imag_voltage_ref_val() );
-//  imagVrefTapForm->setValue( _slc->ana.imag_voltage_ref_tap() );
 }
 
 void FitterSliceTab::imagVrefTapSlot(int tap){
@@ -419,24 +402,14 @@ void FitterSliceTab::_init_globalParamsBox(){
   // Imag V ref tap
   QLabel* imagVrefTapLabel = new QLabel("Imag Vref tap");
   imagVrefTapForm = new QSpinBox();
-  imagVrefTapForm->setRange(0, _slc->ana.imag_voltage_ref.out_max());
+  imagVrefTapForm->setRange(0, _slc->ana.imag_voltage_ref.tap_max());
   globalParamsLay->addRow(imagVrefTapLabel, imagVrefTapForm);
 
   // ----------------- Connect signals -----------------
-  connect( gotGainForm, SIGNAL(valueChanged(double)),
-           this, SLOT(gotGainSlot(double)) );
-  connect( gotOffsetForm, SIGNAL(valueChanged(double)),
-           this, SLOT(gotOffsetSlot(double)) );
-  connect( realVrefValForm, SIGNAL(valueChanged(double)),
-           this, SLOT(realVrefValSlot(double)) );
-  connect( realVrefTapForm, SIGNAL(valueChanged(int)),
-           this, SLOT(realVrefTapSlot(int)) );
-  connect( imagVrefValForm, SIGNAL(valueChanged(double)),
-           this, SLOT(imagVrefValSlot(double)) );
-  connect( imagVrefTapForm, SIGNAL(valueChanged(int)),
-           this, SLOT(imagVrefTapSlot(int)) );
-
-  return;
+  connect(gotGainForm, SIGNAL(valueChanged(double)),   this, SLOT(gotGainSlot(double)));
+  connect(gotOffsetForm, SIGNAL(valueChanged(double)), this, SLOT(gotOffsetSlot(double)));
+  connect(realVrefTapForm, SIGNAL(valueChanged(int)),  this, SLOT(realVrefTapSlot(int)));
+  connect(imagVrefTapForm, SIGNAL(valueChanged(int)),  this, SLOT(imagVrefTapSlot(int)));
 }
 
 void FitterSliceTab::_init_pipeBox(){
@@ -511,14 +484,10 @@ void FitterSliceTab::_init_pipeBox(){
   ploadPipeTable->resizeRowsToContents();
 
   // ----------------- Connect signals -----------------
-  connect( genPipeTable, SIGNAL(cellChanged(int,int)),
-           this, SLOT(genPipeSlot(int,int)) );
-  connect( zloadPipeTable, SIGNAL(cellChanged(int,int)),
-           this, SLOT(zloadPipeSlot(int,int)) );
-  connect( iloadPipeTable, SIGNAL(cellChanged(int,int)),
-           this, SLOT(iloadPipeSlot(int,int)) );
-  connect( ploadPipeTable, SIGNAL(cellChanged(int,int)),
-           this, SLOT(ploadPipeSlot(int,int)) );
+  connect(genPipeTable, SIGNAL(cellChanged(int,int)),   this, SLOT(genPipeSlot(int,int)));
+  connect(zloadPipeTable, SIGNAL(cellChanged(int,int)), this, SLOT(zloadPipeSlot(int,int)));
+  connect(iloadPipeTable, SIGNAL(cellChanged(int,int)), this, SLOT(iloadPipeSlot(int,int)));
+  connect(ploadPipeTable, SIGNAL(cellChanged(int,int)), this, SLOT(ploadPipeSlot(int,int)));
 
   return;
 }

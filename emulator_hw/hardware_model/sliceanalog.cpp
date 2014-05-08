@@ -44,8 +44,8 @@ int SliceAnalog::reset(bool complete){
   ADCOffset = static_cast<double>(DEFGOTOFFSET);
   // Perform value-wise reset to the voltage reference DACs
   // (alternative is tap-wise reset)
-  ans |= real_voltage_ref.reset( false, complete );
-  ans |= imag_voltage_ref.reset( false, complete );
+  ans |= real_voltage_ref.reset(false, complete);
+  ans |= imag_voltage_ref.reset(false, complete);
   return ans;
 }
 
