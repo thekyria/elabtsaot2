@@ -1260,11 +1260,28 @@ void encoder::detail::encode_GPFauxiliary(vector<uint32_t>& conf_conf, vector<ui
   nios_conf.push_back(temp);
 }
 
-void encoder::detail::encode_GPFIinit(Slice const& sl,
-                                      vector<uint32_t>& icar_conf,
-                                      vector<uint32_t>& ipol_conf){
+// 09 Mar 2014, HARD-substract one "1" from the intermediate tempLSB/MSB results
+// Guillaume noticed that it give very better results because there is a
+// systematic overestimation of 1 bit. Do the above only for calibrated boards.
+void encoder::detail::encode_GPFIinit(Slice const& sl, vector<uint32_t>& icar_conf, vector<uint32_t>& ipol_conf){
+
+  // Try to detect whether the board has been calibrated
   size_t rows, cols;
   sl.ana.size(rows, cols);
+  bool calibrated(false);
+  for (size_t v(0); v!=rows; ++v){
+    for (size_t h(0); h!=cols; ++h){
+      Atom const* atom = sl.ana.getAtom(v,h);
+      if ( atom->node.real_dac_offset_corr != NODE_DAC_OFFSET_CORR_NOMINAL
+        || atom->node.real_dac_gain_corr   != NODE_DAC_GAIN_CORR_NOMINAL
+        || atom->node.imag_dac_offset_corr != NODE_DAC_OFFSET_CORR_NOMINAL
+        || atom->node.imag_dac_gain_corr   != NODE_DAC_GAIN_CORR_NOMINAL ){
+        calibrated = true;
+        break;
+      }
+    }
+  }
+
   size_t atomCount = rows*cols;
   int32_t tempMSB, tempLSB, temp;
   // --------- Icartesian ---------
@@ -1287,19 +1304,25 @@ void encoder::detail::encode_GPFIinit(Slice const& sl,
     double Ireal =  I0.real();
     double Iimag = -I0.imag();
 
-    // TEMPORARY: Guillaume asked to comment it out
-//    // Calibrate the current
-//    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
-//    // Vimag) network so it is to be calibrated with imag_ corrections.
-//    // Analogously for Iimag, to be calcibrated with real_ corrections.
-//    Ireal += atom->node.imag_dac_offset_corr; // TODO: verify
-//    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
-//    Iimag += atom->node.real_dac_offset_corr; // TODO: verify
-//    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
+    // Calibrate the current
+    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
+    // Vimag) network so it is to be calibrated with imag_ corrections.
+    // Analogously for Iimag, to be calcibrated with real_ corrections.
+    Ireal += atom->node.imag_dac_offset_corr; // TODO: verify
+    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
+    Iimag += atom->node.real_dac_offset_corr; // TODO: verify
+    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
 
     // Form the word
+    int32_t mask12 = (1<<12) - 1;
     detail::form_word(Ireal, 12, 7, true, &tempLSB);
     detail::form_word(Iimag, 12, 7, true, &tempMSB);
+    if (calibrated){ // Only if calibration data is available substract one "-1" from the intermediate results
+      tempLSB -= 1;      // 09 Mar 2014, HARD-substract one "1" from the intermediate result
+      tempLSB &= mask12; // masking the intermediate result to 12 bits
+      tempMSB -= 1;      // 09 Mar 2014, HARD-substract one "1" from the intermediate result
+      tempMSB &= mask12; // masking the intermediate result to 12 bits
+    }
     temp = (tempMSB<<12)|(tempLSB);
 
     // Write it to the _conf (using nodeId indexing)
@@ -1328,19 +1351,25 @@ void encoder::detail::encode_GPFIinit(Slice const& sl,
     double Ireal = -  I0.real() ;
     double Iimag = -(-I0.imag());
 
-    // TEMPORARY: Guillaume asked to comment it out
-//    // Calibrate the current
-//    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
-//    // Vimag) network so it is to be calibrated with imag_ corrections.
-//    // Analogously for Iimag, to be calcibrated with real_ corrections.
-//    Ireal += atom->node.imag_dac_offset_corr; // TODO!
-//    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
-//    Iimag += atom->node.real_dac_offset_corr; // TODO!
-//    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
+    // Calibrate the current
+    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
+    // Vimag) network so it is to be calibrated with imag_ corrections.
+    // Analogously for Iimag, to be calcibrated with real_ corrections.
+    Ireal += atom->node.imag_dac_offset_corr; // TODO!
+    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
+    Iimag += atom->node.real_dac_offset_corr; // TODO!
+    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
 
     // Form the word
+    int32_t mask12 = (1<<12) - 1;
     detail::form_word(Ireal, 12, 7, true, &tempLSB);
     detail::form_word(Iimag, 12, 7, true, &tempMSB);
+    if (calibrated){ // Only if calibration data is available substract one "-1" from the intermediate results
+      tempLSB -= 1;      // 09 Mar 2014, HARD-substract one "1" from the intermediate result
+      tempLSB &= mask12; // masking the intermediate result to 12 bits
+      tempMSB -= 1;      // 09 Mar 2014, HARD-substract one "1" from the intermediate result
+      tempMSB &= mask12; // masking the intermediate result to 12 bits
+    }
     temp = (tempMSB<<12)|(tempLSB);
 
     // Write it to the _conf (using nodeId indexing)
@@ -2238,11 +2267,11 @@ int encoder::detail::encode_TDauxiliary(vector<uint32_t>& pert_conf){
   return 0;
 }
 
-int encoder::detail::form_word( double val,
-                                size_t total_bits,
-                                size_t decimal_bits,
-                                bool isSigned,
-                                int32_t* pword ){
+int encoder::detail::form_word(double val,
+                               size_t total_bits,
+                               size_t decimal_bits,
+                               bool isSigned,
+                               int32_t* pword){
 
   if ( total_bits > 32)
     // call detail::form_word(..., int64_t* word) instead!
