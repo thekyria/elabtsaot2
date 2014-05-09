@@ -59,9 +59,9 @@ int encodeSliceDCPF(Slice const& sl, std::vector<uint32_t>& sliceConf);
 int encodeSliceTD(Slice const& sl, std::vector<uint32_t>& sliceConf );
 
 //! Stamps (bitwise OR) an unsigned 32 bit integer word with the confirm stamp
-void stamp_NIOS_confirm( uint32_t& word, uint32_t confirm_stamp = 0xC0000000 );
+void stamp_NIOS_confirm(uint32_t& word, uint32_t confirm_stamp = 0xC0000000);
 //! Stamps (bitwise OR) an signed 32 bit integer word with the confirm stamp
-void stamp_NIOS_confirm( int32_t& word, uint32_t confirm_stamp = 0xC0000000 );
+void stamp_NIOS_confirm(int32_t& word, uint32_t confirm_stamp = 0xC0000000);
 
 namespace detail{
 
@@ -79,8 +79,7 @@ int encode_GPFADCDACgot(Slice const& sl,
 int encode_GPFpositions(Slice const& sl, std::vector<uint32_t>& nodeCount_conf,
                         std::vector<uint32_t>& PQpos_conf,
                         std::vector<uint32_t>& slpos_conf);
-void encode_GPFauxiliary(std::vector<uint32_t>& conf_conf,
-                         std::vector<uint32_t>& nios_conf);
+void encode_GPFauxiliary(std::vector<uint32_t>& conf_conf, std::vector<uint32_t>& nios_conf);
 void encode_GPFIinit(Slice const& sl, std::vector<uint32_t>& icar_conf, std::vector<uint32_t>& ipol_conf);
 void encode_GPFPQsetpoints(Slice const& sl, std::vector<uint32_t>& pqset_conf);
 

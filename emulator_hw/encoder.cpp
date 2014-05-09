@@ -83,7 +83,7 @@ int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
   detail::encode_GPFauxiliary(conf_conf, nios_conf);
   ans |= detail::encode_vref(sl, vref_conf);
   detail::encode_GPFIinit(sl, icar_conf, ipol_conf);
-  ans |= detail::encode_resistors(sl, res_conf, res_tcon_conf );
+  ans |= detail::encode_resistors(sl, res_conf, res_tcon_conf);
   ans |= detail::encode_switches(sl, switches_conf);
   detail::encode_GPFPQsetpoints(sl, pqset_conf);
   if (ans) return ans;
@@ -1100,10 +1100,10 @@ int encoder::detail::encode_GPFADCDACgot(Slice const& sl,
   double real_offset, imag_offset;
   int32_t mask12 = (1<<12) - 1;
   for (size_t k=0; k!=atomCount; ++k){
-    if ( k < sl.dig.pipe_GPFPQ.element_count() ){
+    if (k < sl.dig.pipe_GPFPQ.element_count()){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-      imag_offset = sl.ana.ADCOffset + am->node.imag_adc_offset_corr;
-      real_offset = sl.ana.ADCOffset + am->node.real_adc_offset_corr;
+      imag_offset = sl.ana.ADCOffset - am->node.imag_adc_offset_corr; // TODO: 09 May, put a minus "-" instead of plus "+"
+      real_offset = sl.ana.ADCOffset - am->node.real_adc_offset_corr; // TODO: 09 May, put a minus "-" instead of plus "+"
     } else { // k >= sl.dig.pipe_GPFPQ.element_count()
       imag_offset = sl.ana.ADCOffset;
       real_offset = sl.ana.ADCOffset;
@@ -1287,14 +1287,15 @@ void encoder::detail::encode_GPFIinit(Slice const& sl,
     double Ireal =  I0.real();
     double Iimag = -I0.imag();
 
-    // Calibrate the current
-    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
-    // Vimag) network so it is to be calibrated with imag_ corrections.
-    // Analogously for Iimag, to be calcibrated with real_ corrections.
-    Ireal += atom->node.imag_dac_offset_corr; // TODO!
-    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
-    Iimag += atom->node.real_dac_offset_corr; // TODO!
-    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
+    // TEMPORARY: Guillaume asked to comment it out
+//    // Calibrate the current
+//    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
+//    // Vimag) network so it is to be calibrated with imag_ corrections.
+//    // Analogously for Iimag, to be calcibrated with real_ corrections.
+//    Ireal += atom->node.imag_dac_offset_corr; // TODO: verify
+//    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
+//    Iimag += atom->node.real_dac_offset_corr; // TODO: verify
+//    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
 
     // Form the word
     detail::form_word(Ireal, 12, 7, true, &tempLSB);
@@ -1327,14 +1328,15 @@ void encoder::detail::encode_GPFIinit(Slice const& sl,
     double Ireal = -  I0.real() ;
     double Iimag = -(-I0.imag());
 
-    // Calibrate the current
-    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
-    // Vimag) network so it is to be calibrated with imag_ corrections.
-    // Analogously for Iimag, to be calcibrated with real_ corrections.
-    Ireal += atom->node.imag_dac_offset_corr; // TODO!
-    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
-    Iimag += atom->node.real_dac_offset_corr; // TODO!
-    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
+    // TEMPORARY: Guillaume asked to comment it out
+//    // Calibrate the current
+//    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
+//    // Vimag) network so it is to be calibrated with imag_ corrections.
+//    // Analogously for Iimag, to be calcibrated with real_ corrections.
+//    Ireal += atom->node.imag_dac_offset_corr; // TODO!
+//    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
+//    Iimag += atom->node.real_dac_offset_corr; // TODO!
+//    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
 
     // Form the word
     detail::form_word(Ireal, 12, 7, true, &tempLSB);
