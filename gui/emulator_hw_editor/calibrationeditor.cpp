@@ -524,7 +524,6 @@ CalibrationEditor::CalibrationEditor(Emulator* emu, Logger* log, QWidget* parent
   _options[2]='6';
   _options[3]='6';
   _options[4]='6';
-  _options[5]='6';
 
   //Resistor code setter
   _resCode.append(49);
@@ -929,8 +928,6 @@ void CalibrationEditor::setOptionsSlot(){
   spin8.setValue(-1);
   spin8.setMaximum(256);
   spin8.setMaximumWidth(100);
-  QLabel label9("Overide ADC offset: ");
-  QCheckBox check9;
   QHBoxLayout layoutButtons;
   QPushButton ok("Ok");
   QPushButton cancel("Cancel");
@@ -953,8 +950,6 @@ void CalibrationEditor::setOptionsSlot(){
   dialoglayout.addWidget(&label8,10,0);
   dialoglayout.addWidget(&label8s,11,0);
   //----------------
-  dialoglayout.addWidget(&label9,13,0);
-  //----------------
   dialoglayout.addWidget(&check1,1,1);
   dialoglayout.addWidget(&check2,2,1);
   dialoglayout.addWidget(&check3,3,1);
@@ -968,8 +963,6 @@ void CalibrationEditor::setOptionsSlot(){
   dialoglayout.addWidget(&check8,10,1);
   dialoglayout.addWidget(&spin8,11,1);
   //----------------
-  dialoglayout.addWidget(&check9,13,1);
-  //----------------
   dialoglayout.addLayout(&layoutButtons,14,0,1,2);
   //6=default
   _options[0]='6';
@@ -977,7 +970,6 @@ void CalibrationEditor::setOptionsSlot(){
   _options[2]='6';
   _options[3]='6';
   _options[4]='6';
-  _options[5]='6';
   if( dialog.exec() ){
     if (check1.isChecked()){
       cout<<QString("Curve voltage of %0 kOhm ramp: ").arg(Potentiometer::r_from_tap(_resCode[0])/1000,0,'f',2).toStdString()<<endl;
@@ -1005,16 +997,11 @@ void CalibrationEditor::setOptionsSlot(){
       _options[3]='0';}
     if (spin8.value()!=-1){
       cout<<"Overinding tap value for convertion resistor in the grid resistors test"<<endl;
-      _options[5]='0';
+      _options[4]='0';
       _conversionResCodeReal=spin8.value();
       _conversionResCodeImag=spin8.value();
       cout<<"The new code is: "<<_conversionResCodeReal<<endl;
     }
-    if (check9.isChecked()){
-      cout<<"Overiding ADC offset: "<<endl;
-      _options[4]='0';}
-
-
   }
 }
 
@@ -2029,7 +2016,7 @@ int CalibrationEditor::_gridResistorCalibrationNew(int devId, int testid ){
   //Making the vectors with the tap for the grid resistor test
   vector<int> convertionrestapreal(24);
   vector<int> convertionrestapimag(24);
-  if (_options[5]!='6'){//Overriding...
+  if (_options[4]!='6'){//Overriding...
     for (size_t i=0;i<24;++i){
       convertionrestapreal[i]=_conversionResCodeReal;
       convertionrestapimag[i]=_conversionResCodeImag;
@@ -3421,8 +3408,6 @@ void CalibrationEditor::_resultsHandling(QVector<uint32_t> const& nodedata,
 void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
                                              int gainoroffset ){
 
-  //Caution manually overriding option 4, to avoid taking double offset
-  _options[4]='0';
   //typeoftest is an offset(multiple of 24) in the vector of
   //data results that point to the correct test,DAC,Internalresistor etc
   encodedinput->clear();
@@ -3434,17 +3419,11 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
   //Convert the doubles to unint32 words
   for (int i=0;i<24;++i){
     if (gainoroffset==0){//0 for gain
-      if (_options[4]!='6')
-        tempreal=_calibrationGainDataNew.at(0).at(i+24);//0 for real and +24 because the first 24 is the adc offset not the DAC/ADC test
-      else
-        tempreal=_calibrationGainDataNew.at(0).at(i+24)+_calibrationGainDataNew.at(0).at(i);
+      tempreal=_calibrationGainDataNew.at(0).at(i+24)+_calibrationGainDataNew.at(0).at(i);
       tempreal=1.25*(tempreal);//1.25 is the starting gain,now we have the absolut value to enter in the fpga memory
       tempreal=tempreal*(1<<10);
       uintreal=static_cast<uint32_t>(tempreal);
-      if (_options[4]!='6')
-        tempimag=_calibrationGainDataNew.at(1).at(i+24);//1 for imag and +24 because the first 24 is the adc offset not the DAC/ADC test
-      else
-        tempimag=_calibrationGainDataNew.at(1).at(i+24)+_calibrationGainDataNew.at(1).at(i);
+      tempimag=_calibrationGainDataNew.at(1).at(i+24)+_calibrationGainDataNew.at(1).at(i);
       tempimag=1.25*(tempimag);//1.25 is the starting gain,now we have the absolut value to enter in the fpga memory
       tempimag=tempimag*(1<<10);
       uintimag=static_cast<uint32_t>(tempimag);
@@ -3454,17 +3433,11 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
       encodedinput->push_back(combined);
     }
     else if (gainoroffset==1){//1 for offset, the offset accepts the exact 12bit value of the Vramp
-      if (_options[4]!='6')
-        tempreal=_calibrationOffsetDataNew.at(0).at(i+24);//0 for real and +24 because the first 24 is the adc offset not the DAC/ADC test
-      else
-        tempreal=_calibrationOffsetDataNew.at(0).at(i+24)+_calibrationOffsetDataNew.at(0).at(i);
+      tempreal=_calibrationOffsetDataNew.at(0).at(i+24)+_calibrationOffsetDataNew.at(0).at(i);
       tempreal=2.5-tempreal;
       tempreal=(tempreal*4096)/5;//convert the double to the 12bit value of the ramp
       uintreal=static_cast<uint32_t>(tempreal);
-      if (_options[4]!='6')
-        tempimag=_calibrationOffsetDataNew.at(1).at(i+24);//1 for imag and +24 because the first 24 is the adc offset not the DAC/ADC test
-      else
-        tempimag=_calibrationOffsetDataNew.at(1).at(i+24)+_calibrationOffsetDataNew.at(1).at(i);
+      tempimag=_calibrationOffsetDataNew.at(1).at(i+24)+_calibrationOffsetDataNew.at(1).at(i);
       tempimag=2.5-tempimag;
       tempimag=tempimag/5.0*4096;//convert the double to the 12bit value of the ramp
       uintimag=static_cast<uint32_t>(tempimag);
