@@ -3458,14 +3458,14 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
         tempreal=_calibrationOffsetDataNew.at(0).at(i+24);//0 for real and +24 because the first 24 is the adc offset not the DAC/ADC test
       else
         tempreal=_calibrationOffsetDataNew.at(0).at(i+24)+_calibrationOffsetDataNew.at(0).at(i);
-      tempreal=2.5+tempreal;
+      tempreal=2.5-tempreal;
       tempreal=(tempreal*4096)/5;//convert the double to the 12bit value of the ramp
       uintreal=static_cast<uint32_t>(tempreal);
       if (_options[4]!='6')
         tempimag=_calibrationOffsetDataNew.at(1).at(i+24);//1 for imag and +24 because the first 24 is the adc offset not the DAC/ADC test
       else
         tempimag=_calibrationOffsetDataNew.at(1).at(i+24)+_calibrationOffsetDataNew.at(1).at(i);
-      tempimag=2.5+tempimag;
+      tempimag=2.5-tempimag;
       tempimag=tempimag/5.0*4096;//convert the double to the 12bit value of the ramp
       uintimag=static_cast<uint32_t>(tempimag);
       uintimag=uintimag<<12;
@@ -3474,11 +3474,11 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
     }
     else if (gainoroffset==3){//3 for acquiring ADC offsets, the offset accepts the exact 12bit value of the Vramp
       tempreal=_calibrationOffsetDataNew.at(0).at(i);
-      tempreal=2.5+tempreal;
+      tempreal=2.5-tempreal;
       tempreal=(tempreal*4096)/5;//convert the double to the 12bit value of the ramp
       uintreal=static_cast<uint32_t>(tempreal);
       tempimag=_calibrationOffsetDataNew.at(1).at(i);
-      tempimag=2.5+tempimag;
+      tempimag=2.5-tempimag;
       tempimag=tempimag/5.0*4096;//convert the double to the 12bit value of the ramp
       uintimag=static_cast<uint32_t>(tempimag);
       uintimag=uintimag<<12;
