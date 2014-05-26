@@ -507,14 +507,14 @@ CalibrationEditor::CalibrationEditor(Emulator* emu, Logger* log, QWidget* parent
   //Initialize the calibration storage vectors
   //The first dimensions if for the real and imag part of emulator
   for(int i=0;i<2;++i){
-    _calibrationNameDataNew.append(QVector<QString>());
-    _calibrationOffsetDataNew.append(QVector<double>());
-    _calibrationGainDataNew.append(QVector<double>());
-    _calibrationIdNew.append(QVector<int>());
-    _calibrationRabNew.append(QVector<double>());
-    _calibrationRwNew.append(QVector<double>());
-    _rawResultsNew.append(QVector<QVector <double> >());
-    _lsqResultsNew.append(QVector<QVector <double> >());
+    _calibrationNameData.append(QVector<QString>());
+    _calibrationOffsetData.append(QVector<double>());
+    _calibrationGainData.append(QVector<double>());
+    _calibrationId.append(QVector<int>());
+    _calibrationRab.append(QVector<double>());
+    _calibrationRw.append(QVector<double>());
+    _rawResults.append(QVector<QVector <double> >());
+    _lsqResults.append(QVector<QVector <double> >());
   }
 
   //Options flag initialize
@@ -667,10 +667,10 @@ void CalibrationEditor::startCalibrationSlot(){
 
       if (chk2->isChecked()){
         cout<<"Running Conversion resistor calibration..."<<endl;
-        int ans = _conversionResistorCalibrationNew(devId);
+        int ans = _conversionResistorCalibration(devId);
         if (_options[3]!='6'){
           cout<<"Running debug Conversion resistor calibration..."<<endl;
-          ans = _conversionResistorCalibrationNew(devId);
+          ans = _conversionResistorCalibration(devId);
         }
 
         if (ans==3){
@@ -691,7 +691,7 @@ void CalibrationEditor::startCalibrationSlot(){
 
       if (chk3->isChecked()){
         cout<<"Running Internal resistor calibration..."<<endl;
-        int ans =_gridResistorCalibrationNew(devId,0);
+        int ans =_gridResistorCalibration(devId,0);
         if (ans==3)
           cout<<"I noticed some misbehaving Internal resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
       }
@@ -699,7 +699,7 @@ void CalibrationEditor::startCalibrationSlot(){
 
       if (chk4->isChecked()){
         cout<<"Running P0Chip1-2 resistor calibration..."<<endl;
-        int ans =_gridResistorCalibrationNew(devId,1);
+        int ans =_gridResistorCalibration(devId,1);
         if (ans==3)
           cout<<"I noticed some misbehaving P0Chip1-2 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
       }
@@ -707,7 +707,7 @@ void CalibrationEditor::startCalibrationSlot(){
 
       if (chk5->isChecked()){
         cout<<"Running P1Chip1-2 resistor calibration..."<<endl;
-        int ans =_gridResistorCalibrationNew(devId,2);
+        int ans =_gridResistorCalibration(devId,2);
         if (ans==3)
           cout<<"I noticed some misbehaving P1Chip1-2 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
       }
@@ -715,7 +715,7 @@ void CalibrationEditor::startCalibrationSlot(){
 
       if (chk6->isChecked()){
         cout<<"Running P2Chip1-2 resistor calibration..."<<endl;
-        int ans = _gridResistorCalibrationNew(devId,3);
+        int ans = _gridResistorCalibration(devId,3);
         if (ans==3)
           cout<<"I noticed some misbehaving P2Chip1-2 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
       }
@@ -723,7 +723,7 @@ void CalibrationEditor::startCalibrationSlot(){
 
       if (chk7->isChecked()){
         cout<<"Running P3Chip1-2 resistor calibration..."<<endl;
-        int ans =_gridResistorCalibrationNew(devId,4);
+        int ans =_gridResistorCalibration(devId,4);
         if (ans==3)
           cout<<"I noticed some misbehaving P3Chip1-2 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
       }
@@ -731,7 +731,7 @@ void CalibrationEditor::startCalibrationSlot(){
 
       if (chk8->isChecked()){
         cout<<"Running P0P2Chip3 resistor calibration..."<<endl;
-        int ans =_gridResistorCalibrationNew(devId,5);
+        int ans =_gridResistorCalibration(devId,5);
         if (ans==3)
           cout<<"I noticed some misbehaving P0P2Chip3 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
       }
@@ -739,7 +739,7 @@ void CalibrationEditor::startCalibrationSlot(){
 
       if (chk9->isChecked()){
         cout<<"Running P1P3Chip3 resistor calibration..."<<endl;
-        int ans =_gridResistorCalibrationNew(devId,6);
+        int ans =_gridResistorCalibration(devId,6);
         if (ans==3)
           cout<<"I noticed some misbehaving P1P3Chip3 resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
       }
@@ -747,7 +747,7 @@ void CalibrationEditor::startCalibrationSlot(){
 
       if (chk10->isChecked()){
         cout<<"Running P0P2EXT resistor calibration..."<<endl;
-        int ans =_gridResistorCalibrationNew(devId,7);
+        int ans =_gridResistorCalibration(devId,7);
         if (ans==3)
           cout<<"I noticed some misbehaving P0P2EXT resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
       }
@@ -755,20 +755,20 @@ void CalibrationEditor::startCalibrationSlot(){
 
       if (chk11->isChecked()){
         cout<<"Running P1P3EXT resistor calibration..."<<endl;
-        int ans =_gridResistorCalibrationNew(devId,8);
+        int ans =_gridResistorCalibration(devId,8);
         if (ans==3)
           cout<<"I noticed some misbehaving P1P3EXT resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
       }
 
       //Saving device data
-      _master_store.at(i)->nameDataNew=_calibrationNameDataNew;
-      _master_store.at(i)->offsetDataNew=_calibrationOffsetDataNew;
-      _master_store.at(i)->gainDataNew=_calibrationGainDataNew;
-      _master_store.at(i)->idNew=_calibrationIdNew;
-      _master_store.at(i)->rabNew=_calibrationRabNew;
-      _master_store.at(i)->rwNew=_calibrationRwNew;
-      _master_store.at(i)->rawResultsNew=_rawResultsNew;
-      _master_store.at(i)->lsqResultsNew=_lsqResultsNew;
+      _master_store.at(i)->nameData=_calibrationNameData;
+      _master_store.at(i)->offsetData=_calibrationOffsetData;
+      _master_store.at(i)->gainData=_calibrationGainData;
+      _master_store.at(i)->id=_calibrationId;
+      _master_store.at(i)->rab=_calibrationRab;
+      _master_store.at(i)->rw=_calibrationRw;
+      _master_store.at(i)->rawResults=_rawResults;
+      _master_store.at(i)->lsqResults=_lsqResults;
       _softReset();//erasing the temp vector of device
       _log->notifyProgress(100);
     }
@@ -818,7 +818,7 @@ void CalibrationEditor:: displayCurvesSlot(){
   if(_emu->getUSBDevicesCount()==0){
     cout<<"No device connected, connect at least one to display it's calibration data"<<endl;
     return;}
-  _displayCurveNew();
+  _displayCurve();
   return;
 }
 
@@ -1009,20 +1009,20 @@ void CalibrationEditor::checkCellSlot(){
   for (size_t devId=0;devId<_emu->getUSBDevicesCount();++devId){
     cout<<endl<<"Cell check of device "<<devId<<endl;
     //Reinitialize
-    QVector <QVector<QString> > calibrationnamedatanew = _master_store.at(devId)->nameDataNew;
-    QVector <QVector<double> > calibrationoffsetdatanew = _master_store.at(devId)->offsetDataNew;
-    QVector <QVector<double> > calibrationgaindatanew = _master_store.at(devId)->gainDataNew;
-    QVector <QVector<int> > calibrationidnew = _master_store.at(devId)->idNew;
-    QVector <QVector<double> > calibrationrabnew = _master_store.at(devId)->rabNew;
-    QVector <QVector<double> > calibrationrwnew = _master_store.at(devId)->rwNew;
-    QVector <QVector <QVector<double> > > rawresultsnew = _master_store.at(devId)->rawResultsNew;
-    QVector <QVector <QVector<double> > > lsqresultsnew = _master_store.at(devId)->lsqResultsNew;
+    QVector <QVector<QString> > calibrationnamedata = _master_store.at(devId)->nameData;
+    QVector <QVector<double> > calibrationoffsetdata = _master_store.at(devId)->offsetData;
+    QVector <QVector<double> > calibrationgaindata = _master_store.at(devId)->gainData;
+    QVector <QVector<int> > calibrationid = _master_store.at(devId)->id;
+    QVector <QVector<double> > calibrationrab = _master_store.at(devId)->rab;
+    QVector <QVector<double> > calibrationrw = _master_store.at(devId)->rw;
+    QVector <QVector <QVector<double> > > rawresults = _master_store.at(devId)->rawResults;
+    QVector <QVector <QVector<double> > > lsqresults = _master_store.at(devId)->lsqResults;
 
-    if (calibrationnamedatanew.size()==0){
+    if (calibrationnamedata.size()==0){
       cout<<"None test was run"<<endl;
       return;
     }
-    if (calibrationnamedatanew[0].size()<254){
+    if (calibrationnamedata[0].size()<254){
       cout<<"Run all calibration tests first"<<endl;
       return;
     }
@@ -1031,26 +1031,26 @@ void CalibrationEditor::checkCellSlot(){
     QVector<int> realfunctionalcells;
     QVector<int> imagfunctionalcells;
     for (int cell=0;cell<24;++cell){//It doesnt test the EXT res
-      if(calibrationrabnew[0][cell]<11000&&calibrationrabnew[0][cell]>9000&&!std::isnan(calibrationrabnew[0][cell]))
-        if(calibrationrabnew[0][cell+24]<11000&&calibrationrabnew[0][cell+24]>9000&&!std::isnan(calibrationrabnew[0][cell+24]))
-          if(calibrationrabnew[0][cell+48]<11000&&calibrationrabnew[0][cell+48]>9000&&!std::isnan(calibrationrabnew[0][cell+48]))
-            if(calibrationrabnew[0][cell+72]<11000&&calibrationrabnew[0][cell+72]>9000&&!std::isnan(calibrationrabnew[0][cell+72]))
-              if(calibrationrabnew[0][cell+96]<11000&&calibrationrabnew[0][cell+96]>9000&&!std::isnan(calibrationrabnew[0][cell+96]))
-                if(calibrationrabnew[0][cell+120]<11000&&calibrationrabnew[0][cell+120]>9000&&!std::isnan(calibrationrabnew[0][cell+120]))
-                  if(calibrationrabnew[0][cell+144]<11000&&calibrationrabnew[0][cell+144]>9000&&!std::isnan(calibrationrabnew[0][cell+144]))
-                    if(calibrationrabnew[0][cell+168]<11000&&calibrationrabnew[0][cell+168]>9000&&!std::isnan(calibrationrabnew[0][cell+168]))
+      if(calibrationrab[0][cell]<11000&&calibrationrab[0][cell]>9000&&!std::isnan(calibrationrab[0][cell]))
+        if(calibrationrab[0][cell+24]<11000&&calibrationrab[0][cell+24]>9000&&!std::isnan(calibrationrab[0][cell+24]))
+          if(calibrationrab[0][cell+48]<11000&&calibrationrab[0][cell+48]>9000&&!std::isnan(calibrationrab[0][cell+48]))
+            if(calibrationrab[0][cell+72]<11000&&calibrationrab[0][cell+72]>9000&&!std::isnan(calibrationrab[0][cell+72]))
+              if(calibrationrab[0][cell+96]<11000&&calibrationrab[0][cell+96]>9000&&!std::isnan(calibrationrab[0][cell+96]))
+                if(calibrationrab[0][cell+120]<11000&&calibrationrab[0][cell+120]>9000&&!std::isnan(calibrationrab[0][cell+120]))
+                  if(calibrationrab[0][cell+144]<11000&&calibrationrab[0][cell+144]>9000&&!std::isnan(calibrationrab[0][cell+144]))
+                    if(calibrationrab[0][cell+168]<11000&&calibrationrab[0][cell+168]>9000&&!std::isnan(calibrationrab[0][cell+168]))
                       realfunctionalcells.append(cell);
 
     }
     for (int cell=0;cell<24;++cell){//It doesnt test the EXT res
-      if(calibrationrabnew[1][cell]<11000&&calibrationrabnew[1][cell]>9000&&!std::isnan(calibrationrabnew[1][cell]))
-        if(calibrationrabnew[1][cell+24]<11000&&calibrationrabnew[1][cell+24]>9000&&!std::isnan(calibrationrabnew[1][cell+24]))
-          if(calibrationrabnew[1][cell+48]<11000&&calibrationrabnew[1][cell+48]>9000&&!std::isnan(calibrationrabnew[1][cell+48]))
-            if(calibrationrabnew[1][cell+72]<11000&&calibrationrabnew[1][cell+72]>9000&&!std::isnan(calibrationrabnew[1][cell+72]))
-              if(calibrationrabnew[1][cell+96]<11000&&calibrationrabnew[1][cell+96]>9000&&!std::isnan(calibrationrabnew[1][cell+96]))
-                if(calibrationrabnew[1][cell+120]<11000&&calibrationrabnew[1][cell+120]>9000&&!std::isnan(calibrationrabnew[1][cell+120]))
-                  if(calibrationrabnew[1][cell+144]<11000&&calibrationrabnew[1][cell+144]>9000&&!std::isnan(calibrationrabnew[1][cell+144]))
-                    if(calibrationrabnew[1][cell+168]<11000&&calibrationrabnew[1][cell+168]>9000&&!std::isnan(calibrationrabnew[1][cell+168]))
+      if(calibrationrab[1][cell]<11000&&calibrationrab[1][cell]>9000&&!std::isnan(calibrationrab[1][cell]))
+        if(calibrationrab[1][cell+24]<11000&&calibrationrab[1][cell+24]>9000&&!std::isnan(calibrationrab[1][cell+24]))
+          if(calibrationrab[1][cell+48]<11000&&calibrationrab[1][cell+48]>9000&&!std::isnan(calibrationrab[1][cell+48]))
+            if(calibrationrab[1][cell+72]<11000&&calibrationrab[1][cell+72]>9000&&!std::isnan(calibrationrab[1][cell+72]))
+              if(calibrationrab[1][cell+96]<11000&&calibrationrab[1][cell+96]>9000&&!std::isnan(calibrationrab[1][cell+96]))
+                if(calibrationrab[1][cell+120]<11000&&calibrationrab[1][cell+120]>9000&&!std::isnan(calibrationrab[1][cell+120]))
+                  if(calibrationrab[1][cell+144]<11000&&calibrationrab[1][cell+144]>9000&&!std::isnan(calibrationrab[1][cell+144]))
+                    if(calibrationrab[1][cell+168]<11000&&calibrationrab[1][cell+168]>9000&&!std::isnan(calibrationrab[1][cell+168]))
                       imagfunctionalcells.append(cell);
 
     }
@@ -1070,7 +1070,7 @@ void CalibrationEditor::checkCellSlot(){
 
     for (int cell=0;cell<24;++cell){//It doesnt test the EXT res
       for(int testid=0;testid<8;testid++)
-        if(calibrationrabnew[0][cell+(testid*24)]>11000||calibrationrabnew[0][cell+(testid*24)]<9000||std::isnan(calibrationrabnew[0][cell+(testid*24)]))
+        if(calibrationrab[0][cell+(testid*24)]>11000||calibrationrab[0][cell+(testid*24)]<9000||std::isnan(calibrationrab[0][cell+(testid*24)]))
           realfailedcells[testid].append(cell);
     }
     //Failed tests
@@ -1081,7 +1081,7 @@ void CalibrationEditor::checkCellSlot(){
 
     for (int cell=0;cell<24;++cell){//It doesnt test the EXT res
       for(int testid=0;testid<8;testid++)
-        if(calibrationrabnew[1][cell+(testid*24)]>11000||calibrationrabnew[1][cell+(testid*24)]<9000||std::isnan(calibrationrabnew[1][cell+(testid*24)]))
+        if(calibrationrab[1][cell+(testid*24)]>11000||calibrationrab[1][cell+(testid*24)]<9000||std::isnan(calibrationrab[1][cell+(testid*24)]))
           imagfailedcells[testid].append(cell);
     }
 
@@ -1175,27 +1175,27 @@ void CalibrationEditor::potTestSlot(){
   for (size_t devId=0;devId<_emu->getUSBDevicesCount();++devId){
     cout<<endl<<"Potentiometer test of dev "<<devId<<endl;
     //Reinitialize
-    QVector <QVector<QString> > calibrationnamedatanew = _master_store.at(devId)->nameDataNew;
-    QVector <QVector<double> > calibrationrabnew = _master_store.at(devId)->rabNew;
-    QVector <QVector<double> > calibrationrwnew = _master_store.at(devId)->rwNew;
-    if (calibrationnamedatanew.size()==0){
+    QVector <QVector<QString> > calibrationnamedata = _master_store.at(devId)->nameData;
+    QVector <QVector<double> > calibrationrab = _master_store.at(devId)->rab;
+    QVector <QVector<double> > calibrationrw = _master_store.at(devId)->rw;
+    if (calibrationnamedata.size()==0){
       cout<<"None test was run"<<endl;
       return;
     }
     cout<<"New calibration"<<endl;
     cout<<"----Real----"<<endl;
-    for (int i=0;i<calibrationrabnew[0].size();i++){
-      cout << calibrationnamedatanew[0][i+48].toStdString()
-          << " min value(ohm): "<<calibrationrwnew[0][i]
-             << " max value(kohm): "<<calibrationrabnew[0][i]/1000<<endl;
+    for (int i=0;i<calibrationrab[0].size();i++){
+      cout << calibrationnamedata[0][i+48].toStdString()
+          << " min value(ohm): "<<calibrationrw[0][i]
+             << " max value(kohm): "<<calibrationrab[0][i]/1000<<endl;
     }
     cout<<endl;
     cout<<endl;
     cout<<"----Imag----"<<endl;
-    for (int i=0;i<calibrationrabnew[0].size();i++){
-      cout << calibrationnamedatanew[1][i+48].toStdString()
-          << " min value(ohm): "<<calibrationrwnew[1][i]
-             << " max value(kohm): "<<calibrationrabnew[1][i]/1000<<endl;
+    for (int i=0;i<calibrationrab[0].size();i++){
+      cout << calibrationnamedata[1][i+48].toStdString()
+          << " min value(ohm): "<<calibrationrw[1][i]
+             << " max value(kohm): "<<calibrationrab[1][i]/1000<<endl;
     }
   }
 }
@@ -1204,10 +1204,10 @@ void CalibrationEditor::potTestErrorSlot(){
   for (size_t devId=0;devId<_emu->getUSBDevicesCount();++devId){
     cout<<endl<<"Potentiometer error of dev "<<devId<<endl;
     //Reinitialize
-    QVector <QVector<QString> > calibrationnamedatanew = _master_store.at(devId)->nameDataNew;
-    QVector <QVector<double> > calibrationrabnew = _master_store.at(devId)->rabNew;
-    QVector <QVector<double> > calibrationrwnew = _master_store.at(devId)->rwNew;
-    if (calibrationnamedatanew.size()==0){
+    QVector <QVector<QString> > calibrationnamedata = _master_store.at(devId)->nameData;
+    QVector <QVector<double> > calibrationrab = _master_store.at(devId)->rab;
+    QVector <QVector<double> > calibrationrw = _master_store.at(devId)->rw;
+    if (calibrationnamedata.size()==0){
       cout<<"None test was run"<<endl;
       return;
     }
@@ -1215,54 +1215,54 @@ void CalibrationEditor::potTestErrorSlot(){
     //Relative error at rw
     double tempres;
     double sumtempres=0;
-    for (int k=0;k!=calibrationrwnew[0].size();++k){
+    for (int k=0;k!=calibrationrw[0].size();++k){
       //Real
-      cout<<calibrationnamedatanew[0][k+48].toStdString()<<" relative error at rw: ";
-      tempres=(calibrationrwnew[0][k]-Potentiometer::r_from_tap(0))/calibrationrwnew[0][k]*100;
+      cout<<calibrationnamedata[0][k+48].toStdString()<<" relative error at rw: ";
+      tempres=(calibrationrw[0][k]-Potentiometer::r_from_tap(0))/calibrationrw[0][k]*100;
       sumtempres=sumtempres+abs(tempres);
       cout<<tempres<<"%"<<endl;
     }
-    sumtempres=sumtempres/calibrationrwnew[0].size();
+    sumtempres=sumtempres/calibrationrw[0].size();
     cout<<endl;
     cout<<"The avarage relative error of real Rwiper is: "<<sumtempres<<"%"<<endl;
     cout<<endl<<endl;
 
     sumtempres=0;
-    for (int k=0;k!=calibrationrwnew[1].size();++k){
+    for (int k=0;k!=calibrationrw[1].size();++k){
       //imag
-      cout<<calibrationnamedatanew[1][k+48].toStdString()<<" relative error at rw: ";
-      tempres=(calibrationrwnew[1][k]-Potentiometer::r_from_tap(0))/calibrationrwnew[1][k]*100;
+      cout<<calibrationnamedata[1][k+48].toStdString()<<" relative error at rw: ";
+      tempres=(calibrationrw[1][k]-Potentiometer::r_from_tap(0))/calibrationrw[1][k]*100;
       sumtempres=sumtempres+abs(tempres);
       cout<<tempres<<"%"<<endl;
     }
-    sumtempres=sumtempres/calibrationrwnew[1].size();
+    sumtempres=sumtempres/calibrationrw[1].size();
     cout<<endl;
     cout<<"The avarage relative error of imag Rwiper is: "<<sumtempres<<"%"<<endl;
     cout<<endl<<endl<<endl;
 
     //Relative error at rab
     sumtempres=0;
-    for (int k=0;k!=calibrationrabnew[0].size();++k){
+    for (int k=0;k!=calibrationrab[0].size();++k){
       //Real
-      cout<<calibrationnamedatanew[0][k+48].toStdString()<<" relative error at rab: ";
-      tempres=(calibrationrabnew[0][k]-Potentiometer::r_from_tap(256))/calibrationrabnew[0][k]*100;
+      cout<<calibrationnamedata[0][k+48].toStdString()<<" relative error at rab: ";
+      tempres=(calibrationrab[0][k]-Potentiometer::r_from_tap(256))/calibrationrab[0][k]*100;
       sumtempres=sumtempres+abs(tempres);
       cout<<tempres<<"%"<<endl;
     }
-    sumtempres=sumtempres/calibrationrabnew[0].size();
+    sumtempres=sumtempres/calibrationrab[0].size();
     cout<<endl;
     cout<<"The avarage relative error of real Rab is: "<<sumtempres<<"%"<<endl;
     cout<<endl<<endl;
 
     sumtempres=0;
-    for (int k=0;k!=calibrationrabnew[1].size();++k){
+    for (int k=0;k!=calibrationrab[1].size();++k){
       //imag
-      cout<<calibrationnamedatanew[1][k+48].toStdString()<<" relative error at rab: ";
-      tempres=(calibrationrabnew[1][k]-Potentiometer::r_from_tap(256))/calibrationrabnew[1][k]*100;
+      cout<<calibrationnamedata[1][k+48].toStdString()<<" relative error at rab: ";
+      tempres=(calibrationrab[1][k]-Potentiometer::r_from_tap(256))/calibrationrab[1][k]*100;
       sumtempres=sumtempres+abs(tempres);
       cout<<tempres<<"%"<<endl;
     }
-    sumtempres=sumtempres/calibrationrabnew[1].size();
+    sumtempres=sumtempres/calibrationrab[1].size();
     cout<<endl;
     cout<<"The avarage relative error of imag Rab is: "<<sumtempres<<"%"<<endl;
   }
@@ -1334,8 +1334,8 @@ int CalibrationEditor::_ADCOffsetConverterCalibration(int devId){
   //Nios code
   _confVector.append(static_cast<uint32_t>(3221225472u));
   //Initial gian offset...dont care here
-  _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(10487040));
-  _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(8390656));
+  _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(10487040)); // 0 01,01 0000 0000 = 1280 = 1.25x Signed Ni=13 Npi=3
+  _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(8390656));  // 1000 0000 0000 = 2048 = 2.5V unSigned Ni=12
   //Steps
   _confVector.append(static_cast<uint32_t>(15));
   //First and second code...dont care
@@ -1394,8 +1394,8 @@ int CalibrationEditor::_ADCOffsetConverterCalibration(int devId){
   double meanimag;
   for (int i=0;i<24;++i){
     //Store the raw results before calculating gain/offset
-    _rawResultsNew[0].append(decodedresultsreal[i]);
-    _rawResultsNew[1].append(decodedresultsimag[i]);
+    _rawResults[0].append(decodedresultsreal[i]);
+    _rawResults[1].append(decodedresultsimag[i]);
 
     meanreal=0;
     meanimag=0;
@@ -1408,25 +1408,25 @@ int CalibrationEditor::_ADCOffsetConverterCalibration(int devId){
     meanimag=meanimag/15;
     //Now we have the mean value for both the real and imag
     //Store first the real part
-    _calibrationNameDataNew[0].push_back(QString("ADC offset real of node %0").arg(i+1));
-    _calibrationIdNew[0].push_back(11);
+    _calibrationNameData[0].push_back(QString("ADC offset real of node %0").arg(i+1));
+    _calibrationId[0].push_back(11);
 
     double offsetvalue;
     offsetvalue=2.5-meanreal;
 
 
-    _calibrationOffsetDataNew[0].push_back(offsetvalue);
-    _calibrationGainDataNew[0].push_back(0);
+    _calibrationOffsetData[0].push_back(offsetvalue);
+    _calibrationGainData[0].push_back(0);
 
 
     //Then the imag part
-    _calibrationNameDataNew[1].push_back(QString("ADC offset imag of node %0").arg(i+1));
-    _calibrationIdNew[1].push_back(11);
+    _calibrationNameData[1].push_back(QString("ADC offset imag of node %0").arg(i+1));
+    _calibrationId[1].push_back(11);
 
     offsetvalue=2.5-meanimag;
 
-    _calibrationOffsetDataNew[1].push_back(offsetvalue);
-    _calibrationGainDataNew[1].push_back(0);
+    _calibrationOffsetData[1].push_back(offsetvalue);
+    _calibrationGainData[1].push_back(0);
   }
   return 0; //Succeed
 }
@@ -1554,8 +1554,8 @@ int CalibrationEditor::_convertersCalibration(int devId){
   for (int i=0;i<24;++i){
     //Store the raw results before calculating gain/offset
 
-    _rawResultsNew[0].append(decodedresultsreal[i]);
-    _rawResultsNew[1].append(decodedresultsimag[i]);
+    _rawResults[0].append(decodedresultsreal[i]);
+    _rawResults[1].append(decodedresultsimag[i]);
 
     //First for the real part
     alpha=0.0;
@@ -1571,15 +1571,15 @@ int CalibrationEditor::_convertersCalibration(int devId){
     }
     //At this point we have both the Expected and the least squares line,
     //so we can calculate the gain an offset
-    _calibrationNameDataNew[0].push_back(QString("DAC/ADC real of node %0").arg(i+1));
-    _calibrationIdNew[0].push_back(10);
+    _calibrationNameData[0].push_back(QString("DAC/ADC real of node %0").arg(i+1));
+    _calibrationId[0].push_back(10);
     double offsetvalue;
     double gainvalue;
     offsetvalue=normdata[7]-lsqdata[7];
     gainvalue=(normdata[7]-normdata[8]) / (lsqdata[7]-lsqdata[8]);
-    _calibrationOffsetDataNew[0].push_back(offsetvalue);
-    _calibrationGainDataNew[0].push_back(gainvalue);
-    _lsqResultsNew[0].push_back(lsqdata);
+    _calibrationOffsetData[0].push_back(offsetvalue);
+    _calibrationGainData[0].push_back(gainvalue);
+    _lsqResults[0].push_back(lsqdata);
     //Then for the imag part
     alpha=0.0;
     beta=0.0;
@@ -1592,14 +1592,14 @@ int CalibrationEditor::_convertersCalibration(int devId){
       lsqdata.push_back(alpha*lsqxdata.at(k)+beta);
     //At this point we have both the Expected and the least squares line,
     //so we can calculate the gain an offset
-    _calibrationNameDataNew[1].push_back(QString("DAC/ADC imag of node %0").arg(i+1));
-    _calibrationIdNew[1].push_back(10);
+    _calibrationNameData[1].push_back(QString("DAC/ADC imag of node %0").arg(i+1));
+    _calibrationId[1].push_back(10);
     offsetvalue=normdata[7]-lsqdata[7];
     gainvalue=(normdata[7]-normdata[8]) / (lsqdata[7]-lsqdata[8]);
 
-    _calibrationOffsetDataNew[1].push_back(offsetvalue);
-    _calibrationGainDataNew[1].push_back(gainvalue);
-    _lsqResultsNew[1].push_back(lsqdata);
+    _calibrationOffsetData[1].push_back(offsetvalue);
+    _calibrationGainData[1].push_back(gainvalue);
+    _lsqResults[1].push_back(lsqdata);
 
 
   }
@@ -1608,7 +1608,7 @@ int CalibrationEditor::_convertersCalibration(int devId){
 }
 
 
-int CalibrationEditor::_conversionResistorCalibrationNew(int devId){
+int CalibrationEditor::_conversionResistorCalibration(int devId){
   vector<uint32_t> tempvector;
   //Reset Prior the test
   tempvector.clear();
@@ -1647,8 +1647,8 @@ int CalibrationEditor::_conversionResistorCalibrationNew(int devId){
         _confVector.insert(_confVector.size(),1,static_cast<uint32_t>(_resCode[1]<<24|0<<16|_resCode[1]<<8|0));//default code 126
       }
       else if (_options[3]=='1'){//Second run with the previous corrected values
-        tempresP3=Potentiometer::tap_from_r(Potentiometer::r_from_tap(_resCode[1]),_calibrationRabNew[0][i],_calibrationRwNew[0][i]);
-        tempresP1=Potentiometer::tap_from_r(Potentiometer::r_from_tap(_resCode[1]),_calibrationRabNew[1][i],_calibrationRwNew[1][i]);
+        tempresP3=Potentiometer::tap_from_r(Potentiometer::r_from_tap(_resCode[1]),_calibrationRab[0][i],_calibrationRw[0][i]);
+        tempresP1=Potentiometer::tap_from_r(Potentiometer::r_from_tap(_resCode[1]),_calibrationRab[1][i],_calibrationRw[1][i]);
         _confVector.insert(_confVector.size(),1,static_cast<uint32_t>(tempresP3<<24|0<<16|tempresP1<<8|0));//corrected code
       }
     }
@@ -1767,12 +1767,12 @@ int CalibrationEditor::_conversionResistorCalibrationNew(int devId){
   idealresistorramp.append(Potentiometer::r_from_tap(_resCode[0]));
   idealresistorramp.append(Potentiometer::r_from_tap(_resCode[1]));
   idealresistorramp.append(Potentiometer::r_from_tap(_resCode[2]));
-  _P3ResNew.clear();
-  _P1ResNew.clear();
+  _P3Res.clear();
+  _P1Res.clear();
   //Initialize the resistor vectors,2rows(real,imag)x24nodes=48inside vectors
   for (int i=0;i<24;++i){
-    _P3ResNew.append(QVector<double>(3));
-    _P1ResNew.append(QVector<double>(3));
+    _P3Res.append(QVector<double>(3));
+    _P1Res.append(QVector<double>(3));
   }
   QVector<uint32_t> tempnodedata;
   QVector<uint32_t> tempnodesdata = QVector<uint32_t>::fromStdVector(data);
@@ -1803,18 +1803,18 @@ int CalibrationEditor::_conversionResistorCalibrationNew(int devId){
 
       if (_options[0]=='0'){
         if (j==0){//store only the 0.9kohm values
-          _rawResultsNew[0].append(decodedresultsreal[i]);
-          _rawResultsNew[1].append(decodedresultsimag[i]);
+          _rawResults[0].append(decodedresultsreal[i]);
+          _rawResults[1].append(decodedresultsimag[i]);
         }}
       if (_options[0]=='1'){
         if (j==1){//store only the 1kohm values
-          _rawResultsNew[0].append(decodedresultsreal[i]);
-          _rawResultsNew[1].append(decodedresultsimag[i]);
+          _rawResults[0].append(decodedresultsreal[i]);
+          _rawResults[1].append(decodedresultsimag[i]);
         }}
       if (_options[0]=='2'){
         if (j==2){//store only the 1.1kohm values
-          _rawResultsNew[0].append(decodedresultsreal[i]);
-          _rawResultsNew[1].append(decodedresultsimag[i]);
+          _rawResults[0].append(decodedresultsreal[i]);
+          _rawResults[1].append(decodedresultsimag[i]);
         }}
 
     }
@@ -1863,23 +1863,23 @@ int CalibrationEditor::_conversionResistorCalibrationNew(int devId){
       secondmeanimag=secondmeanimag/10;
 
 
-      _P3ResNew[i][j]=(firstmeanreal+secondmeanreal)/2;
-      _P1ResNew[i][j]=(firstmeanimag+secondmeanimag)/2;
+      _P3Res[i][j]=(firstmeanreal+secondmeanreal)/2;
+      _P1Res[i][j]=(firstmeanimag+secondmeanimag)/2;
 
       if (_options[1]=='0'){
         if (j==0){//store only the 0.9kohm values
-          _rawResultsNew[0].append(decodedresultsreal[i]);
-          _rawResultsNew[1].append(decodedresultsimag[i]);
+          _rawResults[0].append(decodedresultsreal[i]);
+          _rawResults[1].append(decodedresultsimag[i]);
         }}
       if (_options[1]=='1'){
         if (j==1){//store only the 1kohm values
-          _rawResultsNew[0].append(decodedresultsreal[i]);
-          _rawResultsNew[1].append(decodedresultsimag[i]);
+          _rawResults[0].append(decodedresultsreal[i]);
+          _rawResults[1].append(decodedresultsimag[i]);
         }}
       if (_options[1]=='2'){
         if (j==2){//store only the 1.1kohm values
-          _rawResultsNew[0].append(decodedresultsreal[i]);
-          _rawResultsNew[1].append(decodedresultsimag[i]);
+          _rawResults[0].append(decodedresultsreal[i]);
+          _rawResults[1].append(decodedresultsimag[i]);
         }}
 
     }
@@ -1887,8 +1887,8 @@ int CalibrationEditor::_conversionResistorCalibrationNew(int devId){
   if (_options[0]=='6'&&_options[1]=='6'){
     for (int i=0;i<24;++i)
     {
-      _rawResultsNew[0].append(_P3ResNew[i]);
-      _rawResultsNew[1].append(_P1ResNew[i]);
+      _rawResults[0].append(_P3Res[i]);
+      _rawResults[1].append(_P1Res[i]);
 
     }
   }
@@ -1907,8 +1907,8 @@ int CalibrationEditor::_conversionResistorCalibrationNew(int devId){
     tempresreal.clear();
     tempresimag.clear();
     for (int j=0;j<3;++j){
-      tempresreal.append(_P3ResNew.at(i).at(j));
-      tempresimag.append(_P1ResNew.at(i).at(j));
+      tempresreal.append(_P3Res.at(i).at(j));
+      tempresimag.append(_P1Res.at(i).at(j));
     }
     //First for the real part
     alpha=0.0;
@@ -1927,24 +1927,24 @@ int CalibrationEditor::_conversionResistorCalibrationNew(int devId){
     //At this point we have both the ideal and the least squares line,
     //so we can calculate the gain an offset
     if (_options[3]=='6')
-      _calibrationNameDataNew[0].push_back(QString("Conversion resistor real of node %0").arg(i+1));
+      _calibrationNameData[0].push_back(QString("Conversion resistor real of node %0").arg(i+1));
     else{
       if (_options[3]=='0')
-        _calibrationNameDataNew[0].push_back(QString("Conversion resistor real of node %0").arg(i+1));
+        _calibrationNameData[0].push_back(QString("Conversion resistor real of node %0").arg(i+1));
       else if(_options[3]=='1'){
-        _calibrationNameDataNew[0].push_back(QString("Debug Conversion resistor real of node %0").arg(i+1));
+        _calibrationNameData[0].push_back(QString("Debug Conversion resistor real of node %0").arg(i+1));
       }
     }
-    _calibrationIdNew[0].push_back(9);
+    _calibrationId[0].push_back(9);
     double offsetvalue;
     double gainvalue;
     offsetvalue=idealresistorramp[0]-lsqdata[_resCode[0]];
     gainvalue=(idealresistorramp[1]-idealresistorramp[0])/(xidealresistorramp[1]-xidealresistorramp[0]) - (lsqdata[_resCode[1]]-lsqdata[_resCode[0]])/(lsqxdata[_resCode[1]]-lsqxdata[_resCode[0]]);
-    _calibrationOffsetDataNew[0].push_back(offsetvalue);
-    _calibrationGainDataNew[0].push_back(gainvalue);
-    _calibrationRwNew[0].push_back(beta);//0kohm equivalent
-    _calibrationRabNew[0].push_back(alpha*256+beta-beta);//10kohm equivalent   //remove the measurement of rw from max value to have the rab
-    _lsqResultsNew[0].push_back(lsqdata);
+    _calibrationOffsetData[0].push_back(offsetvalue);
+    _calibrationGainData[0].push_back(gainvalue);
+    _calibrationRw[0].push_back(beta);//0kohm equivalent
+    _calibrationRab[0].push_back(alpha*256+beta-beta);//10kohm equivalent   //remove the measurement of rw from max value to have the rab
+    _lsqResults[0].push_back(lsqdata);
     //Then for the imag part
     alpha=0.0;
     beta=0.0;
@@ -1962,30 +1962,30 @@ int CalibrationEditor::_conversionResistorCalibrationNew(int devId){
     //At this point we have both the ideal and the least squares line,
     //so we can calculate the gain an offset
     if (_options[3]=='6')
-      _calibrationNameDataNew[1].push_back(QString("Conversion resistor imag of node %0").arg(i+1));
+      _calibrationNameData[1].push_back(QString("Conversion resistor imag of node %0").arg(i+1));
     else
       if (_options[3]=='0')
-        _calibrationNameDataNew[1].push_back(QString("Conversion resistor imag of node %0").arg(i+1));
+        _calibrationNameData[1].push_back(QString("Conversion resistor imag of node %0").arg(i+1));
       else if(_options[3]=='1'){
-        _calibrationNameDataNew[1].push_back(QString("Debug Conversion resistor imag of node %0").arg(i+1));
+        _calibrationNameData[1].push_back(QString("Debug Conversion resistor imag of node %0").arg(i+1));
       }
-    _calibrationIdNew[1].push_back(9);
+    _calibrationId[1].push_back(9);
     offsetvalue=idealresistorramp[0]-lsqdata[_resCode[0]];
     gainvalue=(idealresistorramp[1]-idealresistorramp[0])/(xidealresistorramp[1]-xidealresistorramp[0]) - (lsqdata[_resCode[1]]-lsqdata[_resCode[0]])/(lsqxdata[_resCode[1]]-lsqxdata[_resCode[0]]);
-    _calibrationOffsetDataNew[1].push_back(offsetvalue);
-    _calibrationGainDataNew[1].push_back(gainvalue);
-    _calibrationRwNew[1].push_back(beta);//0kohm equivalent
-    _calibrationRabNew[1].push_back(alpha*256+beta-beta);//10kohm equivalent, we remove the rw value
-    _lsqResultsNew[1].push_back(lsqdata);
+    _calibrationOffsetData[1].push_back(offsetvalue);
+    _calibrationGainData[1].push_back(gainvalue);
+    _calibrationRw[1].push_back(beta);//0kohm equivalent
+    _calibrationRab[1].push_back(alpha*256+beta-beta);//10kohm equivalent, we remove the rw value
+    _lsqResults[1].push_back(lsqdata);
   }
 
   bool error_found=0;
   for(int i=0;i<24;++i){
-    if(_calibrationRabNew[0][i]<9000 || _calibrationRabNew[0][i]>11000 || std::isnan(_calibrationRabNew[0][i])){
+    if(_calibrationRab[0][i]<9000 || _calibrationRab[0][i]>11000 || std::isnan(_calibrationRab[0][i])){
       error_found=1;
       cout<<"Conversion resistor (real): "<<i+1<<" of device: "<< devId <<" exhibits a problem"<<endl;
     }
-    if(_calibrationRabNew[1][i]<9000 || _calibrationRabNew[1][i]>11000 || std::isnan(_calibrationRabNew[1][i])){
+    if(_calibrationRab[1][i]<9000 || _calibrationRab[1][i]>11000 || std::isnan(_calibrationRab[1][i])){
       error_found=1;
       cout<<"Conversion resistor (imag): "<<i+1<<" of device: "<< devId <<" exhibits a problem"<<endl;
     }
@@ -2003,7 +2003,7 @@ int CalibrationEditor::_conversionResistorCalibrationNew(int devId){
   }
 }
 
-int CalibrationEditor::_gridResistorCalibrationNew(int devId, int testid ){
+int CalibrationEditor::_gridResistorCalibration(int devId, int testid ){
   vector<uint32_t> tempvector;
   //Reset Prior the test
   tempvector.clear();
@@ -2025,8 +2025,8 @@ int CalibrationEditor::_gridResistorCalibrationNew(int devId, int testid ){
   }
   else{
     for (size_t i=0;i<24;++i){
-      convertionrestapreal[i]=Potentiometer::tap_from_r(Potentiometer::r_from_tap(_resCode[2]),_calibrationRabNew[0][i],_calibrationRwNew[0][i]);//rescode[2] because we want the 8kohm
-      convertionrestapimag[i]=Potentiometer::tap_from_r(Potentiometer::r_from_tap(_resCode[2]),_calibrationRabNew[1][i],_calibrationRwNew[1][i]);
+      convertionrestapreal[i]=Potentiometer::tap_from_r(Potentiometer::r_from_tap(_resCode[2]),_calibrationRab[0][i],_calibrationRw[0][i]);//rescode[2] because we want the 8kohm
+      convertionrestapimag[i]=Potentiometer::tap_from_r(Potentiometer::r_from_tap(_resCode[2]),_calibrationRab[1][i],_calibrationRw[1][i]);
     }
   }
 
@@ -2564,18 +2564,18 @@ int CalibrationEditor::_gridResistorCalibrationNew(int devId, int testid ){
 
       if (_options[0]=='0'){
         if (j==0){//store only the 5kohm values
-          _rawResultsNew[0].append(decodedresultsreal[i]);
-          _rawResultsNew[1].append(decodedresultsimag[i]);
+          _rawResults[0].append(decodedresultsreal[i]);
+          _rawResults[1].append(decodedresultsimag[i]);
         }}
       if (_options[0]=='1'){
         if (j==1){//store only the 6kohm values
-          _rawResultsNew[0].append(decodedresultsreal[i]);
-          _rawResultsNew[1].append(decodedresultsimag[i]);
+          _rawResults[0].append(decodedresultsreal[i]);
+          _rawResults[1].append(decodedresultsimag[i]);
         }}
       if (_options[0]=='2'){
         if (j==2){//store only the 7kohm values
-          _rawResultsNew[0].append(decodedresultsreal[i]);
-          _rawResultsNew[1].append(decodedresultsimag[i]);
+          _rawResults[0].append(decodedresultsreal[i]);
+          _rawResults[1].append(decodedresultsimag[i]);
         }}
 
     }
@@ -2604,18 +2604,18 @@ int CalibrationEditor::_gridResistorCalibrationNew(int devId, int testid ){
 
         voltage=decodedresultsreal[i][k];
         if(_options[3]=='6') // If we are running with the default options
-          Itemp=(firstvoltage[j]-2.5)/((_lsqResultsNew[0][i+24][rescodet]));//The first 24 is the adc
+          Itemp=(firstvoltage[j]-2.5)/((_lsqResults[0][i+24][rescodet]));//The first 24 is the adc
         else //a conversion resistor test was rerun, and we use its onwn raw measured results istead the ones of leastsquares
-          Itemp=(firstvoltage[j]-2.5)/((_rawResultsNew[0][i+72][2]));
+          Itemp=(firstvoltage[j]-2.5)/((_rawResults[0][i+72][2]));
         decodedresultsreal[i][k]=(decodedresultsreal[i][k]-2.5)/Itemp;
         firstmeanreal=firstmeanreal+decodedresultsreal[i][k];
 
         //imag
         rescodet=convertionrestapimag[i];
         if(_options[3]=='6')
-          Itemp=(firstvoltage[j]-2.5)/((_lsqResultsNew[1][i+24][rescodet]));
+          Itemp=(firstvoltage[j]-2.5)/((_lsqResults[1][i+24][rescodet]));
         else
-          Itemp=(firstvoltage[j]-2.5)/((_rawResultsNew[1][i+72][2]));
+          Itemp=(firstvoltage[j]-2.5)/((_rawResults[1][i+72][2]));
         decodedresultsimag[i][k]=(decodedresultsimag[i][k]-2.5)/Itemp;
         firstmeanimag=firstmeanimag+decodedresultsimag[i][k];
       }
@@ -2628,18 +2628,18 @@ int CalibrationEditor::_gridResistorCalibrationNew(int devId, int testid ){
         voltage=decodedresultsreal[i][k];
         rescodet=convertionrestapreal[i];
         if(_options[3]=='6')
-          Itemp=(secondvoltage[j]-2.5)/((_lsqResultsNew[0][i+24][rescodet]));
+          Itemp=(secondvoltage[j]-2.5)/((_lsqResults[0][i+24][rescodet]));
         else
-          Itemp=(secondvoltage[j]-2.5)/((_rawResultsNew[0][i+72][2]));
+          Itemp=(secondvoltage[j]-2.5)/((_rawResults[0][i+72][2]));
         decodedresultsreal[i][k]=(decodedresultsreal[i][k]-2.5)/Itemp;
         secondmeanreal=secondmeanreal+decodedresultsreal[i][k];
 
         //imag
         rescodet=convertionrestapimag[i];
         if(_options[3]=='6')
-          Itemp=(secondvoltage[j]-2.5)/((_lsqResultsNew[1][i+24][rescodet]));
+          Itemp=(secondvoltage[j]-2.5)/((_lsqResults[1][i+24][rescodet]));
         else
-          Itemp=(secondvoltage[j]-2.5)/((_rawResultsNew[1][i+72][2]));
+          Itemp=(secondvoltage[j]-2.5)/((_rawResults[1][i+72][2]));
         decodedresultsimag[i][k]=(decodedresultsimag[i][k]-2.5)/Itemp;
         secondmeanimag=secondmeanimag+decodedresultsimag[i][k];
       }
@@ -2652,18 +2652,18 @@ int CalibrationEditor::_gridResistorCalibrationNew(int devId, int testid ){
       //cout<<"code  "<<rescodet<<endl;
       if (_options[1]=='0'){
         if (j==0){//store only the 5kohm values
-          _rawResultsNew[0].append(decodedresultsreal[i]);
-          _rawResultsNew[1].append(decodedresultsimag[i]);
+          _rawResults[0].append(decodedresultsreal[i]);
+          _rawResults[1].append(decodedresultsimag[i]);
         }}
       if (_options[1]=='1'){
         if (j==1){//store only the 6kohm values
-          _rawResultsNew[0].append(decodedresultsreal[i]);
-          _rawResultsNew[1].append(decodedresultsimag[i]);
+          _rawResults[0].append(decodedresultsreal[i]);
+          _rawResults[1].append(decodedresultsimag[i]);
         }}
       if (_options[1]=='2'){
         if (j==2){//store only the 7kohm values
-          _rawResultsNew[0].append(decodedresultsreal[i]);
-          _rawResultsNew[1].append(decodedresultsimag[i]);
+          _rawResults[0].append(decodedresultsreal[i]);
+          _rawResults[1].append(decodedresultsimag[i]);
         }}
     }
 
@@ -2671,8 +2671,8 @@ int CalibrationEditor::_gridResistorCalibrationNew(int devId, int testid ){
   if (_options[0]=='6'&&_options[1]=='6'){
     for (int i=0;i<24;++i)
     {
-      _rawResultsNew[0].append(P0res[i]);
-      _rawResultsNew[1].append(P2res[i]);
+      _rawResults[0].append(P0res[i]);
+      _rawResults[1].append(P2res[i]);
     }
   }
 
@@ -2713,33 +2713,33 @@ int CalibrationEditor::_gridResistorCalibrationNew(int devId, int testid ){
       continue;
 
     if (testid==0)
-      _calibrationNameDataNew[0].push_back(QString("Internal resistor real of node %0").arg(i+1));
+      _calibrationNameData[0].push_back(QString("Internal resistor real of node %0").arg(i+1));
     else if (testid==1)
-      _calibrationNameDataNew[0].push_back(QString("P0CHIP1-2 resistor real of node %0").arg(i+1));
+      _calibrationNameData[0].push_back(QString("P0CHIP1-2 resistor real of node %0").arg(i+1));
     else if (testid==2)
-      _calibrationNameDataNew[0].push_back(QString("P1CHIP1-2 resistor real of node %0").arg(i+1));
+      _calibrationNameData[0].push_back(QString("P1CHIP1-2 resistor real of node %0").arg(i+1));
     else if (testid==3)
-      _calibrationNameDataNew[0].push_back(QString("P2CHIP1-2 resistor real of node %0").arg(i+1));
+      _calibrationNameData[0].push_back(QString("P2CHIP1-2 resistor real of node %0").arg(i+1));
     else if (testid==4)
-      _calibrationNameDataNew[0].push_back(QString("P3CHIP1-2 resistor real of node %0").arg(i+1));
+      _calibrationNameData[0].push_back(QString("P3CHIP1-2 resistor real of node %0").arg(i+1));
     else if (testid==5)
-      _calibrationNameDataNew[0].push_back(QString("P0P2CHIP3 resistor real of node %0").arg(i+1));
+      _calibrationNameData[0].push_back(QString("P0P2CHIP3 resistor real of node %0").arg(i+1));
     else if (testid==6)
-      _calibrationNameDataNew[0].push_back(QString("P1P3CHIP3 resistor real of node %0").arg(i+1));
+      _calibrationNameData[0].push_back(QString("P1P3CHIP3 resistor real of node %0").arg(i+1));
     else if (testid==7)
-      _calibrationNameDataNew[0].push_back(QString("P0P2EXT resistor real of node %0").arg(i+1));
+      _calibrationNameData[0].push_back(QString("P0P2EXT resistor real of node %0").arg(i+1));
     else if (testid==8)
-      _calibrationNameDataNew[0].push_back(QString("P1P3EXT resistor real of node %0").arg(i+1));
-    _calibrationIdNew[0].push_back(testid);
+      _calibrationNameData[0].push_back(QString("P1P3EXT resistor real of node %0").arg(i+1));
+    _calibrationId[0].push_back(testid);
     double offsetvalue;
     double gainvalue;
     offsetvalue=idealresistorramp[0]-lsqdata[_resCode[3]];
     gainvalue=(idealresistorramp[1]-idealresistorramp[0])/(xidealresistorramp[1]-xidealresistorramp[0]) - (lsqdata[_resCode[4]]-lsqdata[_resCode[3]])/(lsqxdata[_resCode[4]]-lsqxdata[_resCode[3]]);
-    _calibrationOffsetDataNew[0].push_back(offsetvalue);
-    _calibrationGainDataNew[0].push_back(gainvalue);
-    _calibrationRwNew[0].push_back(beta);//0kohm equivalent
-    _calibrationRabNew[0].push_back(alpha*256+beta-beta);//10kohm equivalent
-    _lsqResultsNew[0].push_back(lsqdata);
+    _calibrationOffsetData[0].push_back(offsetvalue);
+    _calibrationGainData[0].push_back(gainvalue);
+    _calibrationRw[0].push_back(beta);//0kohm equivalent
+    _calibrationRab[0].push_back(alpha*256+beta-beta);//10kohm equivalent
+    _lsqResults[0].push_back(lsqdata);
     //Then for the imag part
     alpha=0.0;
     beta=0.0;
@@ -2757,42 +2757,42 @@ int CalibrationEditor::_gridResistorCalibrationNew(int devId, int testid ){
     //At this point we have both the ideal and the least squares line,
     //so we can calculate the gain an offset
     if (testid==0)
-      _calibrationNameDataNew[1].push_back(QString("Internal resistor imag of node %0").arg(i+1));
+      _calibrationNameData[1].push_back(QString("Internal resistor imag of node %0").arg(i+1));
     else if (testid==1)
-      _calibrationNameDataNew[1].push_back(QString("P0CHIP1-2 resistor imag of node %0").arg(i+1));
+      _calibrationNameData[1].push_back(QString("P0CHIP1-2 resistor imag of node %0").arg(i+1));
     else if (testid==2)
-      _calibrationNameDataNew[1].push_back(QString("P1CHIP1-2 resistor imag of node %0").arg(i+1));
+      _calibrationNameData[1].push_back(QString("P1CHIP1-2 resistor imag of node %0").arg(i+1));
     else if (testid==3)
-      _calibrationNameDataNew[1].push_back(QString("P2CHIP1-2 resistor imag of node %0").arg(i+1));
+      _calibrationNameData[1].push_back(QString("P2CHIP1-2 resistor imag of node %0").arg(i+1));
     else if (testid==4)
-      _calibrationNameDataNew[1].push_back(QString("P3CHIP1-2 resistor imag of node %0").arg(i+1));
+      _calibrationNameData[1].push_back(QString("P3CHIP1-2 resistor imag of node %0").arg(i+1));
     else if (testid==5)
-      _calibrationNameDataNew[1].push_back(QString("P0P2CHIP3 resistor imag of node %0").arg(i+1));
+      _calibrationNameData[1].push_back(QString("P0P2CHIP3 resistor imag of node %0").arg(i+1));
     else if (testid==6)
-      _calibrationNameDataNew[1].push_back(QString("P1P3CHIP3 resistor imag of node %0").arg(i+1));
+      _calibrationNameData[1].push_back(QString("P1P3CHIP3 resistor imag of node %0").arg(i+1));
     else if (testid==7)
-      _calibrationNameDataNew[1].push_back(QString("P0P2EXT resistor imag of node %0").arg(i+1));
+      _calibrationNameData[1].push_back(QString("P0P2EXT resistor imag of node %0").arg(i+1));
     else if (testid==8)
-      _calibrationNameDataNew[1].push_back(QString("P1P3EXT resistor imag of node %0").arg(i+1));
+      _calibrationNameData[1].push_back(QString("P1P3EXT resistor imag of node %0").arg(i+1));
 
-    _calibrationIdNew[1].push_back(testid);
+    _calibrationId[1].push_back(testid);
     offsetvalue=idealresistorramp[0]-lsqdata[_resCode[3]];
     gainvalue=(idealresistorramp[1]-idealresistorramp[0])/(xidealresistorramp[1]-xidealresistorramp[0]) - (lsqdata[_resCode[4]]-lsqdata[_resCode[3]])/(lsqxdata[_resCode[4]]-lsqxdata[_resCode[3]]);
-    _calibrationOffsetDataNew[1].push_back(offsetvalue);
-    _calibrationGainDataNew[1].push_back(gainvalue);
-    _calibrationRwNew[1].push_back(beta);//0kohm equivalent
-    _calibrationRabNew[1].push_back(alpha*256+beta-beta);//10kohm equivalent
-    _lsqResultsNew[1].push_back(lsqdata);
+    _calibrationOffsetData[1].push_back(offsetvalue);
+    _calibrationGainData[1].push_back(gainvalue);
+    _calibrationRw[1].push_back(beta);//0kohm equivalent
+    _calibrationRab[1].push_back(alpha*256+beta-beta);//10kohm equivalent
+    _lsqResults[1].push_back(lsqdata);
   }
 
   bool error_found=0;
   for(int i=0;i<24;++i){//+((testid+1)*24) in order to access the next results in the huge vector with the data of the next resistors depending on the test
     if ((testid==7||testid==8))
       continue;
-    if(_calibrationRabNew[0][i+((testid+1)*24)]<9000 || _calibrationRabNew[0][i+((testid+1)*24)]>11000 || std::isnan(_calibrationRabNew[0][i+((testid+1)*24)])){
+    if(_calibrationRab[0][i+((testid+1)*24)]<9000 || _calibrationRab[0][i+((testid+1)*24)]>11000 || std::isnan(_calibrationRab[0][i+((testid+1)*24)])){
       error_found=1;
     }
-    if(_calibrationRabNew[1][i+((testid+1)*24)]<9000 || _calibrationRabNew[1][i+((testid+1)*24)]>11000 || std::isnan(_calibrationRabNew[1][i+((testid+1)*24)])){
+    if(_calibrationRab[1][i+((testid+1)*24)]<9000 || _calibrationRab[1][i+((testid+1)*24)]>11000 || std::isnan(_calibrationRab[1][i+((testid+1)*24)])){
       error_found=1;
     }
   }
@@ -2805,7 +2805,7 @@ int CalibrationEditor::_gridResistorCalibrationNew(int devId, int testid ){
 }
 
 
-void CalibrationEditor::_displayCurveNew(){
+void CalibrationEditor::_displayCurve(){
   QDialog predialog;
   predialog.setWindowTitle("Real or Imaginary values");
   QVBoxLayout predoptions;
@@ -2838,15 +2838,15 @@ void CalibrationEditor::_displayCurveNew(){
   if( predialog.exec() ){
     cout<<endl;
     //Reinitialize with the correct for the selected device
-    QVector <QVector<QString> > calibrationnamedatanew = _master_store.at(dev->value())->nameDataNew;
-    QVector <QVector<double> > calibrationoffsetdatanew = _master_store.at(dev->value())->offsetDataNew;
-    QVector <QVector<double> > calibrationgaindatanew = _master_store.at(dev->value())->gainDataNew;
-    QVector <QVector<int> > calibrationidnew = _master_store.at(dev->value())->idNew;
-    QVector <QVector<double> > calibrationrabnew = _master_store.at(dev->value())->rabNew;
-    QVector <QVector<double> > calibrationrwnew = _master_store.at(dev->value())->rwNew;
-    QVector <QVector <QVector<double> > > rawresultsnew = _master_store.at(dev->value())->rawResultsNew;
-    QVector <QVector <QVector<double> > > lsqresultsnew = _master_store.at(dev->value())->lsqResultsNew;
-    if (calibrationnamedatanew.size()==0)
+    QVector <QVector<QString> > calibrationnamedata = _master_store.at(dev->value())->nameData;
+    QVector <QVector<double> > calibrationoffsetdata = _master_store.at(dev->value())->offsetData;
+    QVector <QVector<double> > calibrationgaindata = _master_store.at(dev->value())->gainData;
+    QVector <QVector<int> > calibrationid = _master_store.at(dev->value())->id;
+    QVector <QVector<double> > calibrationrab = _master_store.at(dev->value())->rab;
+    QVector <QVector<double> > calibrationrw = _master_store.at(dev->value())->rw;
+    QVector <QVector <QVector<double> > > rawresults = _master_store.at(dev->value())->rawResults;
+    QVector <QVector <QVector<double> > > lsqresults = _master_store.at(dev->value())->lsqResults;
+    if (calibrationnamedata.size()==0)
       return;
     cout<<"Curves of device "<<dev->value()<<endl;
     QDialog dialog;
@@ -2863,13 +2863,13 @@ void CalibrationEditor::_displayCurveNew(){
       realorimag=0;
       curvtitle.setText("Choose debug curve of real part to display");
       curvs.addItem("None Selected");
-      curvs.addItems(calibrationnamedatanew.at(0).toList());
+      curvs.addItems(calibrationnamedata.at(0).toList());
     }
     else if (op2.isChecked()){
       realorimag=1;
       curvtitle.setText("Choose debug curve of imaginary part to display");
       curvs.addItem("None Selected");
-      curvs.addItems(calibrationnamedatanew.at(1).toList());
+      curvs.addItems(calibrationnamedata.at(1).toList());
     }
     curvlayout.addWidget(&curvtitle);
     curvlayout.addWidget(&curvs);
@@ -2888,13 +2888,13 @@ void CalibrationEditor::_displayCurveNew(){
         return;}
       selection=curvs.currentIndex()-1;
       cout<<"Curving finnished..."<<endl;
-      cout<<calibrationnamedatanew[realorimag][selection].toStdString()<<endl;
+      cout<<calibrationnamedata[realorimag][selection].toStdString()<<endl;
 
       QVector<double> normxdata;
       QVector<double> normdata;
       QVector<double> lsqxdata;
       QVector<double> lsqdata;
-      QVector<double> temprawresultsnew;
+      QVector<double> temprawresults;
       QVector<double> temprawxresults;
       plot->detachItems(QwtPlotItem::Rtti_PlotItem);
       plot->setAxisAutoScale(QwtPlot::xBottom,true);
@@ -2902,12 +2902,12 @@ void CalibrationEditor::_displayCurveNew(){
       plot->repaint();
       plot->replot();
       int id;
-      id=calibrationidnew.at(realorimag).at(selection);
+      id=calibrationid.at(realorimag).at(selection);
       if (id==11){//ADC offset
         for (int i=0;i<15;++i){
           temprawxresults.append(i);
         }
-        temprawresultsnew=rawresultsnew[realorimag][selection];
+        temprawresults=rawresults[realorimag][selection];
       }
       else if(id==10){//DAC ADC data
         double tempvoltage;
@@ -2923,8 +2923,8 @@ void CalibrationEditor::_displayCurveNew(){
           tempvoltage=startvoltage+i*voltagestep;
           normdata.append(tempvoltage);
         }
-        lsqdata=lsqresultsnew[realorimag][selection-24];//ADC offset doesnt have lsq so 24 less
-        temprawresultsnew=rawresultsnew[realorimag][selection];
+        lsqdata=lsqresults[realorimag][selection-24];//ADC offset doesnt have lsq so 24 less
+        temprawresults=rawresults[realorimag][selection];
       }
       else if (id==9||id==0||id==1||id==2||id==3
                ||id==4||id==5||id==6||id==7||id==8){//rest types of data (resistors)
@@ -2935,7 +2935,7 @@ void CalibrationEditor::_displayCurveNew(){
             normxdata.append(_resCode[k]);
             lsqxdata.append(_resCode[k]);
             temprawxresults.append(_resCode[k]);
-            lsqdata.append(lsqresultsnew[realorimag][selection-24][_resCode[k]]);
+            lsqdata.append(lsqresults[realorimag][selection-24][_resCode[k]]);
           }
           normdata.append(Potentiometer::r_from_tap(_resCode[0]));
           normdata.append(Potentiometer::r_from_tap(_resCode[1]));
@@ -2948,14 +2948,14 @@ void CalibrationEditor::_displayCurveNew(){
             normxdata.append(_resCode[k]);
             lsqxdata.append(_resCode[k]);
             temprawxresults.append(_resCode[k]);
-            lsqdata.append(lsqresultsnew[realorimag][selection-24][_resCode[k]]);
+            lsqdata.append(lsqresults[realorimag][selection-24][_resCode[k]]);
           }
           normdata.append(Potentiometer::r_from_tap(_resCode[3]));
           normdata.append(Potentiometer::r_from_tap(_resCode[4]));
           normdata.append(Potentiometer::r_from_tap(_resCode[5]));
         }
 
-        temprawresultsnew=rawresultsnew[realorimag][selection];
+        temprawresults=rawresults[realorimag][selection];
 
       }
 
@@ -2966,26 +2966,26 @@ void CalibrationEditor::_displayCurveNew(){
         }
         if (_options[2]!='6'){
 
-          for(int i=rawresultsnew[realorimag].size()-24;i<rawresultsnew[realorimag].size()  ;i++){
-            temprawresultsnew=rawresultsnew[realorimag][i];
+          for(int i=rawresults[realorimag].size()-24;i<rawresults[realorimag].size()  ;i++){
+            temprawresults=rawresults[realorimag][i];
             QwtPlotCurve *curve = new QwtPlotCurve;
-            QwtPointArrayData *res1 = new QwtPointArrayData(temprawxresults,temprawresultsnew);
+            QwtPointArrayData *res1 = new QwtPointArrayData(temprawxresults,temprawresults);
             curve->setData(res1);
-            curve->setTitle(calibrationnamedatanew[realorimag][i]);
+            curve->setTitle(calibrationnamedata[realorimag][i]);
             curve->setPen(QPen(Qt::darkMagenta,1.5));
             curve->attach(plot);
           }
 
         }
         if (_options[2]=='6'){
-          temprawresultsnew=rawresultsnew[realorimag][selection];
+          temprawresults=rawresults[realorimag][selection];
           QwtPlotCurve *curve = new QwtPlotCurve;
-          QwtPointArrayData *res1 = new QwtPointArrayData(temprawxresults,temprawresultsnew);
+          QwtPointArrayData *res1 = new QwtPointArrayData(temprawxresults,temprawresults);
           curve->setData(res1);
-          curve->setTitle(calibrationnamedatanew[realorimag][selection]);
+          curve->setTitle(calibrationnamedata[realorimag][selection]);
           curve->setPen(QPen(Qt::darkMagenta,1.5));
           curve->attach(plot);
-          plot->setTitle(calibrationnamedatanew[realorimag][selection]);
+          plot->setTitle(calibrationnamedata[realorimag][selection]);
         }
 
 
@@ -2994,7 +2994,7 @@ void CalibrationEditor::_displayCurveNew(){
         return;}
 
       //Set title of plot
-      plot->setTitle(calibrationnamedatanew[realorimag][selection]);
+      plot->setTitle(calibrationnamedata[realorimag][selection]);
 
       //The expected curve
       QwtPointArrayData *res1;
@@ -3016,7 +3016,7 @@ void CalibrationEditor::_displayCurveNew(){
         curve2->attach(plot);}
 
       //The raw results curve
-      res1 = new QwtPointArrayData( temprawxresults,temprawresultsnew);
+      res1 = new QwtPointArrayData( temprawxresults,temprawresults);
       QwtPlotCurve *curve3 = new QwtPlotCurve;
       curve3->setData(res1);
       curve3->setTitle("Raw Data");
@@ -3024,33 +3024,33 @@ void CalibrationEditor::_displayCurveNew(){
       curve3->attach(plot);
       plot->replot();
       if (id==11){
-        offsetlabel->setText(QString ("Offset: %0").arg(calibrationoffsetdatanew[realorimag][selection]));
-        gainlabel->setText(QString ("Gain: %0").arg(calibrationgaindatanew[realorimag][selection]));
+        offsetlabel->setText(QString ("Offset: %0").arg(calibrationoffsetdata[realorimag][selection]));
+        gainlabel->setText(QString ("Gain: %0").arg(calibrationgaindata[realorimag][selection]));
         resistorlabel->clear();
       }
       else if (id==10){
-        offsetlabel->setText(QString ("Offset: %0").arg(calibrationoffsetdatanew[realorimag][selection]));
-        gainlabel->setText(QString ("Gain: %0").arg(calibrationgaindatanew[realorimag][selection]));
+        offsetlabel->setText(QString ("Offset: %0").arg(calibrationoffsetdata[realorimag][selection]));
+        gainlabel->setText(QString ("Gain: %0").arg(calibrationgaindata[realorimag][selection]));
         resistorlabel->clear();
       }
 
       else{
-        offsetlabel->setText(QString ("Offset: %0").arg(calibrationoffsetdatanew[realorimag][selection]));
-        gainlabel->setText(QString ("Gain: %0").arg(calibrationgaindatanew[realorimag][selection]));
+        offsetlabel->setText(QString ("Offset: %0").arg(calibrationoffsetdata[realorimag][selection]));
+        gainlabel->setText(QString ("Gain: %0").arg(calibrationgaindata[realorimag][selection]));
         if (id==9){resistorlabel->setText(QString ("Resistor(0|%0|%1|%2|10kohm) values: %3 | %4 | %5 | %6 | %7")
                                           .arg(Potentiometer::r_from_tap(_resCode[0])/1000,0,'f',2)
               .arg(Potentiometer::r_from_tap(_resCode[1])/1000,0,'f',2)
               .arg(Potentiometer::r_from_tap(_resCode[2])/1000,0,'f',2)
-              .arg(calibrationrwnew[realorimag][selection-48])
-              .arg(lsqresultsnew[realorimag][selection-24][_resCode[0]]).arg(lsqresultsnew[realorimag][selection-24][_resCode[1]])
-              .arg(lsqresultsnew[realorimag][selection-24][_resCode[2]]).arg(calibrationrabnew[realorimag][selection-48]));}
+              .arg(calibrationrw[realorimag][selection-48])
+              .arg(lsqresults[realorimag][selection-24][_resCode[0]]).arg(lsqresults[realorimag][selection-24][_resCode[1]])
+              .arg(lsqresults[realorimag][selection-24][_resCode[2]]).arg(calibrationrab[realorimag][selection-48]));}
         else {resistorlabel->setText(QString ("Resistor(0|%0|%1|%2|10kohm) values: %3 | %4 | %5 | %6 | %7")
                                      .arg(Potentiometer::r_from_tap(_resCode[3])/1000,0,'f',2)
               .arg(Potentiometer::r_from_tap(_resCode[4])/1000,0,'f',2)
               .arg(Potentiometer::r_from_tap(_resCode[5])/1000,0,'f',2)
-              .arg(calibrationrwnew[realorimag][selection-48])
-              .arg(lsqresultsnew[realorimag][selection-24][_resCode[3]]).arg(lsqresultsnew[realorimag][selection-24][_resCode[4]])
-              .arg(lsqresultsnew[realorimag][selection-24][_resCode[5]]).arg(calibrationrabnew[realorimag][selection-48]));}
+              .arg(calibrationrw[realorimag][selection-48])
+              .arg(lsqresults[realorimag][selection-24][_resCode[3]]).arg(lsqresults[realorimag][selection-24][_resCode[4]])
+              .arg(lsqresults[realorimag][selection-24][_resCode[5]]).arg(calibrationrab[realorimag][selection-48]));}
 
       }
     }
@@ -3064,16 +3064,16 @@ int CalibrationEditor::_parseRawResults( size_t sliceindex ){
   if (devId<0) return 2;
 
   // Reinitialize with the correct for the selected device corresponding to the selected slice
-  QVector <QVector<QString> > calibrationnamedatanew = _master_store.at(devId)->nameDataNew;
-  QVector <QVector<double> > calibrationoffsetdatanew = _master_store.at(devId)->offsetDataNew;
-  QVector <QVector<double> > calibrationgaindatanew = _master_store.at(devId)->gainDataNew;
-  QVector <QVector<double> > calibrationrabnew = _master_store.at(devId)->rabNew;
-  QVector <QVector<double> > calibrationrwnew = _master_store.at(devId)->rwNew;
-  if (calibrationnamedatanew.size()==0){
+  QVector <QVector<QString> > calibrationnamedata = _master_store.at(devId)->nameData;
+  QVector <QVector<double> > calibrationoffsetdata = _master_store.at(devId)->offsetData;
+  QVector <QVector<double> > calibrationgaindata = _master_store.at(devId)->gainData;
+  QVector <QVector<double> > calibrationrab = _master_store.at(devId)->rab;
+  QVector <QVector<double> > calibrationrw = _master_store.at(devId)->rw;
+  if (calibrationnamedata.size()==0){
     cout<<"None test was run for this device"<<endl;
     return 3;
   }
-  if (calibrationnamedatanew[0].size()!=254)
+  if (calibrationnamedata[0].size()!=254)
     return 1;
   // We have one slice for now
   Slice *sl = &_cal_emuhw->sliceSet[sliceindex];
@@ -3086,104 +3086,104 @@ int CalibrationEditor::_parseRawResults( size_t sliceindex ){
     for (size_t h = 0 ; h != hor ; ++h){
       at = &sl->ana._atomSet[v][h];
       // ADC
-      at->node.real_adc_offset_corr = calibrationoffsetdatanew[0][i];  // First 24 is the ADCs offsets
-      at->node.imag_adc_offset_corr = calibrationoffsetdatanew[1][i];
+      at->node.real_adc_offset_corr = calibrationoffsetdata[0][i];  // First 24 is the ADCs offsets
+      at->node.imag_adc_offset_corr = calibrationoffsetdata[1][i];
 
       // DAC
-      at->node.real_dac_offset_corr = calibrationoffsetdatanew[0][i+24]; // +24 because the first 24 is the adc offset not the DAC/ADC test
-      at->node.imag_dac_offset_corr = calibrationoffsetdatanew[1][i+24]; // +24 because the first 24 is the adc offset not the DAC/ADC test
-      at->node.real_dac_gain_corr = calibrationgaindatanew[0][i+24];     // +24 because the first 24 is the adc offset not the DAC/ADC test
-      at->node.imag_dac_gain_corr = calibrationgaindatanew[1][i+24];     // +24 because the first 24 is the adc offset not the DAC/ADC test
+      at->node.real_dac_offset_corr = calibrationoffsetdata[0][i+24]; // +24 because the first 24 is the adc offset not the DAC/ADC test
+      at->node.imag_dac_offset_corr = calibrationoffsetdata[1][i+24]; // +24 because the first 24 is the adc offset not the DAC/ADC test
+      at->node.real_dac_gain_corr = calibrationgaindata[0][i+24];     // +24 because the first 24 is the adc offset not the DAC/ADC test
+      at->node.imag_dac_gain_corr = calibrationgaindata[1][i+24];     // +24 because the first 24 is the adc offset not the DAC/ADC test
 
       // Convertion Resistor
-      at->node.set_real_pot_current_rab(calibrationrabnew[0][i],updateTap);
-      at->node.set_imag_pot_current_rab(calibrationrabnew[1][i],updateTap);
-      at->node.set_real_pot_current_rw(calibrationrwnew[0][i],updateTap);
-      at->node.set_imag_pot_current_rw(calibrationrwnew[1][i],updateTap);
+      at->node.set_real_pot_current_rab(calibrationrab[0][i],updateTap);
+      at->node.set_imag_pot_current_rab(calibrationrab[1][i],updateTap);
+      at->node.set_real_pot_current_rw(calibrationrw[0][i],updateTap);
+      at->node.set_imag_pot_current_rw(calibrationrw[1][i],updateTap);
 
       // Internal resistor
-      at->node.set_real_pot_resistance_rab(calibrationrabnew[0][i+24],updateTap);
-      at->node.set_imag_pot_resistance_rab(calibrationrabnew[1][i+24],updateTap);
-      at->node.set_real_pot_resistance_rw(calibrationrwnew[0][i+24],updateTap);
-      at->node.set_imag_pot_resistance_rw(calibrationrwnew[1][i+24],updateTap);
+      at->node.set_real_pot_resistance_rab(calibrationrab[0][i+24],updateTap);
+      at->node.set_imag_pot_resistance_rab(calibrationrab[1][i+24],updateTap);
+      at->node.set_real_pot_resistance_rw(calibrationrw[0][i+24],updateTap);
+      at->node.set_imag_pot_resistance_rw(calibrationrw[1][i+24],updateTap);
 
       // P0Chip1-2 and P1Chip1-2
-      at->embr_real[EMBRPOS_R].set_pot_far_rab(calibrationrabnew[0][i+48],updateTap);
-      at->embr_imag[EMBRPOS_R].set_pot_far_rab(calibrationrabnew[1][i+48],updateTap);
-      at->embr_real[EMBRPOS_R].set_pot_near_rab(calibrationrabnew[0][i+72],updateTap);
-      at->embr_imag[EMBRPOS_R].set_pot_near_rab(calibrationrabnew[1][i+72],updateTap);
+      at->embr_real[EMBRPOS_R].set_pot_far_rab(calibrationrab[0][i+48],updateTap);
+      at->embr_imag[EMBRPOS_R].set_pot_far_rab(calibrationrab[1][i+48],updateTap);
+      at->embr_real[EMBRPOS_R].set_pot_near_rab(calibrationrab[0][i+72],updateTap);
+      at->embr_imag[EMBRPOS_R].set_pot_near_rab(calibrationrab[1][i+72],updateTap);
 
-      at->embr_real[EMBRPOS_R].set_pot_far_rw(calibrationrwnew[0][i+48],updateTap);
-      at->embr_imag[EMBRPOS_R].set_pot_far_rw(calibrationrwnew[1][i+48],updateTap);
-      at->embr_real[EMBRPOS_R].set_pot_near_rw(calibrationrwnew[0][i+72],updateTap);
-      at->embr_imag[EMBRPOS_R].set_pot_near_rw(calibrationrwnew[1][i+72],updateTap);
+      at->embr_real[EMBRPOS_R].set_pot_far_rw(calibrationrw[0][i+48],updateTap);
+      at->embr_imag[EMBRPOS_R].set_pot_far_rw(calibrationrw[1][i+48],updateTap);
+      at->embr_real[EMBRPOS_R].set_pot_near_rw(calibrationrw[0][i+72],updateTap);
+      at->embr_imag[EMBRPOS_R].set_pot_near_rw(calibrationrw[1][i+72],updateTap);
 
       // P2Chip1-2 and P3Chip1-2
-      at->embr_real[EMBRPOS_U].set_pot_near_rab(calibrationrabnew[0][i+96],updateTap);
-      at->embr_imag[EMBRPOS_U].set_pot_near_rab(calibrationrabnew[1][i+96],updateTap);
-      at->embr_real[EMBRPOS_U].set_pot_far_rab(calibrationrabnew[0][i+120],updateTap);
-      at->embr_imag[EMBRPOS_U].set_pot_far_rab(calibrationrabnew[1][i+120],updateTap);
+      at->embr_real[EMBRPOS_U].set_pot_near_rab(calibrationrab[0][i+96],updateTap);
+      at->embr_imag[EMBRPOS_U].set_pot_near_rab(calibrationrab[1][i+96],updateTap);
+      at->embr_real[EMBRPOS_U].set_pot_far_rab(calibrationrab[0][i+120],updateTap);
+      at->embr_imag[EMBRPOS_U].set_pot_far_rab(calibrationrab[1][i+120],updateTap);
 
-      at->embr_real[EMBRPOS_U].set_pot_near_rw(calibrationrwnew[0][i+96],updateTap);
-      at->embr_imag[EMBRPOS_U].set_pot_near_rw(calibrationrwnew[1][i+96],updateTap);
-      at->embr_real[EMBRPOS_U].set_pot_far_rw(calibrationrwnew[0][i+120],updateTap);
-      at->embr_imag[EMBRPOS_U].set_pot_far_rw(calibrationrwnew[1][i+120],updateTap);
+      at->embr_real[EMBRPOS_U].set_pot_near_rw(calibrationrw[0][i+96],updateTap);
+      at->embr_imag[EMBRPOS_U].set_pot_near_rw(calibrationrw[1][i+96],updateTap);
+      at->embr_real[EMBRPOS_U].set_pot_far_rw(calibrationrw[0][i+120],updateTap);
+      at->embr_imag[EMBRPOS_U].set_pot_far_rw(calibrationrw[1][i+120],updateTap);
 
       // P0P2Chip3 and P1P3Chip3
-      at->embr_real[EMBRPOS_UR].set_pot_near_rab(calibrationrabnew[0][i+144],updateTap);
-      at->embr_imag[EMBRPOS_UR].set_pot_near_rab(calibrationrabnew[1][i+144],updateTap);
-      at->embr_real[EMBRPOS_UR].set_pot_far_rab(calibrationrabnew[0][i+168],updateTap);
-      at->embr_imag[EMBRPOS_UR].set_pot_far_rab(calibrationrabnew[1][i+168],updateTap);
+      at->embr_real[EMBRPOS_UR].set_pot_near_rab(calibrationrab[0][i+144],updateTap);
+      at->embr_imag[EMBRPOS_UR].set_pot_near_rab(calibrationrab[1][i+144],updateTap);
+      at->embr_real[EMBRPOS_UR].set_pot_far_rab(calibrationrab[0][i+168],updateTap);
+      at->embr_imag[EMBRPOS_UR].set_pot_far_rab(calibrationrab[1][i+168],updateTap);
 
-      at->embr_real[EMBRPOS_UR].set_pot_near_rw(calibrationrwnew[0][i+144],updateTap);
-      at->embr_imag[EMBRPOS_UR].set_pot_near_rw(calibrationrwnew[1][i+144],updateTap);
-      at->embr_real[EMBRPOS_UR].set_pot_far_rw(calibrationrwnew[0][i+168],updateTap);
-      at->embr_imag[EMBRPOS_UR].set_pot_far_rw(calibrationrwnew[1][i+168],updateTap);
+      at->embr_real[EMBRPOS_UR].set_pot_near_rw(calibrationrw[0][i+144],updateTap);
+      at->embr_imag[EMBRPOS_UR].set_pot_near_rw(calibrationrw[1][i+144],updateTap);
+      at->embr_real[EMBRPOS_UR].set_pot_far_rw(calibrationrw[0][i+168],updateTap);
+      at->embr_imag[EMBRPOS_UR].set_pot_far_rw(calibrationrw[1][i+168],updateTap);
 
       // P0P2EXT and P1P3EXT
       if (i==1||i==2||i==3||i==4){
-        at->embr_real[EMBRPOS_D].set_pot_near_rab(calibrationrabnew[0][i+192],updateTap);
-        at->embr_imag[EMBRPOS_D].set_pot_near_rab(calibrationrabnew[1][i+192],updateTap);
-        at->embr_real[EMBRPOS_D].set_pot_far_rab(calibrationrabnew[0][i+199],updateTap);
-        at->embr_imag[EMBRPOS_D].set_pot_far_rab(calibrationrabnew[1][i+199],updateTap);
+        at->embr_real[EMBRPOS_D].set_pot_near_rab(calibrationrab[0][i+192],updateTap);
+        at->embr_imag[EMBRPOS_D].set_pot_near_rab(calibrationrab[1][i+192],updateTap);
+        at->embr_real[EMBRPOS_D].set_pot_far_rab(calibrationrab[0][i+199],updateTap);
+        at->embr_imag[EMBRPOS_D].set_pot_far_rab(calibrationrab[1][i+199],updateTap);
 
-        at->embr_real[EMBRPOS_D].set_pot_near_rw(calibrationrwnew[0][i+192],updateTap);
-        at->embr_imag[EMBRPOS_D].set_pot_near_rw(calibrationrwnew[1][i+192],updateTap);
-        at->embr_real[EMBRPOS_D].set_pot_far_rw(calibrationrwnew[0][i+199],updateTap);
-        at->embr_imag[EMBRPOS_D].set_pot_far_rw(calibrationrwnew[1][i+199],updateTap);
+        at->embr_real[EMBRPOS_D].set_pot_near_rw(calibrationrw[0][i+192],updateTap);
+        at->embr_imag[EMBRPOS_D].set_pot_near_rw(calibrationrw[1][i+192],updateTap);
+        at->embr_real[EMBRPOS_D].set_pot_far_rw(calibrationrw[0][i+199],updateTap);
+        at->embr_imag[EMBRPOS_D].set_pot_far_rw(calibrationrw[1][i+199],updateTap);
       }
       if (i==0){
-        at->embr_real[EMBRPOS_L].set_pot_near_rab(calibrationrabnew[0][i+192],updateTap);
-        at->embr_imag[EMBRPOS_L].set_pot_near_rab(calibrationrabnew[1][i+192],updateTap);
-        at->embr_real[EMBRPOS_L].set_pot_far_rab(calibrationrabnew[0][i+199],updateTap);
-        at->embr_imag[EMBRPOS_L].set_pot_far_rab(calibrationrabnew[1][i+199],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_near_rab(calibrationrab[0][i+192],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_near_rab(calibrationrab[1][i+192],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_far_rab(calibrationrab[0][i+199],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_far_rab(calibrationrab[1][i+199],updateTap);
 
-        at->embr_real[EMBRPOS_L].set_pot_near_rw(calibrationrwnew[0][i+192],updateTap);
-        at->embr_imag[EMBRPOS_L].set_pot_near_rw(calibrationrwnew[1][i+192],updateTap);
-        at->embr_real[EMBRPOS_L].set_pot_far_rw(calibrationrwnew[0][i+199],updateTap);
-        at->embr_imag[EMBRPOS_L].set_pot_far_rw(calibrationrwnew[1][i+199],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_near_rw(calibrationrw[0][i+192],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_near_rw(calibrationrw[1][i+192],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_far_rw(calibrationrw[0][i+199],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_far_rw(calibrationrw[1][i+199],updateTap);
       }
       if (i==6){ // Have to take right position because EXT doesnt have 24 nodes
-        at->embr_real[EMBRPOS_L].set_pot_near_rab(calibrationrabnew[0][5+192],updateTap);
-        at->embr_imag[EMBRPOS_L].set_pot_near_rab(calibrationrabnew[1][5+192],updateTap);
-        at->embr_real[EMBRPOS_L].set_pot_far_rab(calibrationrabnew[0][5+199],updateTap);
-        at->embr_imag[EMBRPOS_L].set_pot_far_rab(calibrationrabnew[1][5+199],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_near_rab(calibrationrab[0][5+192],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_near_rab(calibrationrab[1][5+192],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_far_rab(calibrationrab[0][5+199],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_far_rab(calibrationrab[1][5+199],updateTap);
 
-        at->embr_real[EMBRPOS_L].set_pot_near_rw(calibrationrwnew[0][5+192],updateTap);
-        at->embr_imag[EMBRPOS_L].set_pot_near_rw(calibrationrwnew[1][5+192],updateTap);
-        at->embr_real[EMBRPOS_L].set_pot_far_rw(calibrationrwnew[0][5+199],updateTap);
-        at->embr_imag[EMBRPOS_L].set_pot_far_rw(calibrationrwnew[1][5+199],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_near_rw(calibrationrw[0][5+192],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_near_rw(calibrationrw[1][5+192],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_far_rw(calibrationrw[0][5+199],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_far_rw(calibrationrw[1][5+199],updateTap);
       }
       if (i==12){ // Have to take right position because EXT doesnt have 24 nodes
-        at->embr_real[EMBRPOS_L].set_pot_near_rab(calibrationrabnew[0][6+192],updateTap);
-        at->embr_imag[EMBRPOS_L].set_pot_near_rab(calibrationrabnew[1][6+192],updateTap);
-        at->embr_real[EMBRPOS_L].set_pot_far_rab(calibrationrabnew[0][6+199],updateTap);
-        at->embr_imag[EMBRPOS_L].set_pot_far_rab(calibrationrabnew[1][6+199],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_near_rab(calibrationrab[0][6+192],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_near_rab(calibrationrab[1][6+192],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_far_rab(calibrationrab[0][6+199],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_far_rab(calibrationrab[1][6+199],updateTap);
 
-        at->embr_real[EMBRPOS_L].set_pot_near_rw(calibrationrwnew[0][6+192],updateTap);
-        at->embr_imag[EMBRPOS_L].set_pot_near_rw(calibrationrwnew[1][6+192],updateTap);
-        at->embr_real[EMBRPOS_L].set_pot_far_rw(calibrationrwnew[0][6+199],updateTap);
-        at->embr_imag[EMBRPOS_L].set_pot_far_rw(calibrationrwnew[1][6+199],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_near_rw(calibrationrw[0][6+192],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_near_rw(calibrationrw[1][6+192],updateTap);
+        at->embr_real[EMBRPOS_L].set_pot_far_rw(calibrationrw[0][6+199],updateTap);
+        at->embr_imag[EMBRPOS_L].set_pot_far_rw(calibrationrw[1][6+199],updateTap);
       }
       ++i;
     }
@@ -3195,85 +3195,75 @@ int CalibrationEditor::_parseRawResults( size_t sliceindex ){
 void CalibrationEditor::_displayCalibrationData(QVector<bool> dialogoptions, int devId){
   cout<<endl<<endl;
   //Reinitialize with the correct for the selected device
-  QVector <QVector<QString> > calibrationnamedatanew = _master_store.at(devId)->nameDataNew;
-  QVector <QVector<double> > calibrationoffsetdatanew = _master_store.at(devId)->offsetDataNew;
-  QVector <QVector<double> > calibrationgaindatanew = _master_store.at(devId)->gainDataNew;
-  QVector <QVector<int> > calibrationidnew = _master_store.at(devId)->idNew;
-  QVector <QVector<double> > calibrationrabnew = _master_store.at(devId)->rabNew;
-  QVector <QVector<double> > calibrationrwnew = _master_store.at(devId)->rwNew;
-  QVector <QVector <QVector<double> > > rawresultsnew = _master_store.at(devId)->rawResultsNew;
-  QVector <QVector <QVector<double> > > lsqresultsnew = _master_store.at(devId)->lsqResultsNew;
-  if (calibrationnamedatanew.size()==0)
+  QVector <QVector<QString> > calibrationnamedata = _master_store.at(devId)->nameData;
+  QVector <QVector<double> > calibrationoffsetdata = _master_store.at(devId)->offsetData;
+  QVector <QVector<double> > calibrationgaindata = _master_store.at(devId)->gainData;
+  QVector <QVector<int> > calibrationid = _master_store.at(devId)->id;
+  QVector <QVector<double> > calibrationrab = _master_store.at(devId)->rab;
+  QVector <QVector<double> > calibrationrw = _master_store.at(devId)->rw;
+  QVector <QVector <QVector<double> > > rawresults = _master_store.at(devId)->rawResults;
+  QVector <QVector <QVector<double> > > lsqresults = _master_store.at(devId)->lsqResults;
+  if (calibrationnamedata.size()==0)
     return;
 
   cout<<"Calibration type results for device "<<devId<<endl;
 
   cout<<"---------------------------"<<endl;
   cout<<"------Real-----"<<endl;
-  cout<<"Titles storage real: "<<calibrationnamedatanew[0].size()<<endl;
-  cout<<"Offset storage real: "<<calibrationoffsetdatanew[0].size()<<endl;
-  cout<<"Gain storage real: "<<calibrationgaindatanew[0].size()<<endl;
-  cout<<"Id storage real: "<<calibrationidnew[0].size()<<endl;
-  cout<<"rab storage real: "<<calibrationrabnew[0].size()<<endl;
-  cout<<"Lowtap storage real: "<<calibrationrwnew[0].size()<<endl;
-  cout<<"Least squares real: "<<lsqresultsnew[0].size()<<endl;
-  cout<<"Raw results real: "<<rawresultsnew[0].size()<<endl;
+  cout<<"Titles storage real: "<<calibrationnamedata[0].size()<<endl;
+  cout<<"Offset storage real: "<<calibrationoffsetdata[0].size()<<endl;
+  cout<<"Gain storage real: "<<calibrationgaindata[0].size()<<endl;
+  cout<<"Id storage real: "<<calibrationid[0].size()<<endl;
+  cout<<"rab storage real: "<<calibrationrab[0].size()<<endl;
+  cout<<"Lowtap storage real: "<<calibrationrw[0].size()<<endl;
+  cout<<"Least squares real: "<<lsqresults[0].size()<<endl;
+  cout<<"Raw results real: "<<rawresults[0].size()<<endl;
   cout<<endl;
   cout<<"------Imag-----"<<endl;
-  cout<<"Titles storage imag: "<<calibrationnamedatanew[1].size()<<endl;
-  cout<<"Offset storage imag: "<<calibrationoffsetdatanew[1].size()<<endl;
-  cout<<"Gain storage imag: "<<calibrationgaindatanew[1].size()<<endl;
-  cout<<"Id storage imag: "<<calibrationidnew[1].size()<<endl;
-  cout<<"rab storage imag: "<<calibrationrabnew[1].size()<<endl;
-  cout<<"Lowtap storage imag: "<<calibrationrwnew[0].size()<<endl;
-  cout<<"Least squares imag: "<<lsqresultsnew[1].size()<<endl;
-  cout<<"Raw results imag: "<<rawresultsnew[1].size()<<endl;
+  cout<<"Titles storage imag: "<<calibrationnamedata[1].size()<<endl;
+  cout<<"Offset storage imag: "<<calibrationoffsetdata[1].size()<<endl;
+  cout<<"Gain storage imag: "<<calibrationgaindata[1].size()<<endl;
+  cout<<"Id storage imag: "<<calibrationid[1].size()<<endl;
+  cout<<"rab storage imag: "<<calibrationrab[1].size()<<endl;
+  cout<<"Lowtap storage imag: "<<calibrationrw[0].size()<<endl;
+  cout<<"Least squares imag: "<<lsqresults[1].size()<<endl;
+  cout<<"Raw results imag: "<<rawresults[1].size()<<endl;
   cout<<endl<<endl;
   _log->notifyProgress(10);
-  if (calibrationnamedatanew[0].size()==0){
+  if (calibrationnamedata[0].size()==0){
     cout<<"Empty...Run all calibration tests first"<<endl;
     return;
   }
   if (dialogoptions[0]==true&&dialogoptions[1]==true){
     for (int i=0;i<24;++i)
-      cout<<"Offset real of ADC of ramp of node "<<i+1<<" is "<<calibrationoffsetdatanew[0][i]<<endl;
+      cout<<"Offset real of ADC of ramp of node "<<i+1<<" is "<<calibrationoffsetdata[0][i]<<endl;
     cout<<endl<<endl;
   }
   else if (dialogoptions[0]==false&&dialogoptions[1]==true){
     for (int i=0;i<24;++i)
-      cout<<"Offset imag of ADC of ramp of node "<<i+1<<" is "<<calibrationoffsetdatanew[1][i]<<endl;
+      cout<<"Offset imag of ADC of ramp of node "<<i+1<<" is "<<calibrationoffsetdata[1][i]<<endl;
     cout<<endl<<endl;
 
   }
 
   if (dialogoptions[0]==true&&dialogoptions[2]==true){
     for (int i=0;i<24;++i)
-      cout<<"Offset real of ADC/DAC test of node "<<i+1<<" is "<<calibrationoffsetdatanew[0][i+24]<<endl;
+      cout<<"Offset real of ADC/DAC test of node "<<i+1<<" is "<<calibrationoffsetdata[0][i+24]<<endl;
     cout<<endl<<endl;
     for (int i=0;i<24;++i)
-      cout<<"Gain real of ADC/DAC test of node "<<i+1<<" is "<<calibrationgaindatanew[0][i+24]<<endl;
+      cout<<"Gain real of ADC/DAC test of node "<<i+1<<" is "<<calibrationgaindata[0][i+24]<<endl;
     cout<<endl<<endl;
   }
   else if (dialogoptions[0]==false&&dialogoptions[2]==true){
     for (int i=0;i<24;++i)
-      cout<<"Offset imag of ADC/DAC test of node "<<i+1<<" is "<<calibrationoffsetdatanew[1][i+24]<<endl;
+      cout<<"Offset imag of ADC/DAC test of node "<<i+1<<" is "<<calibrationoffsetdata[1][i+24]<<endl;
     cout<<endl<<endl;
     for (int i=0;i<24;++i)
-      cout<<"Gain imag of ADC/DAC test of node "<<i+1<<" is "<<calibrationgaindatanew[1][i+24]<<endl;
+      cout<<"Gain imag of ADC/DAC test of node "<<i+1<<" is "<<calibrationgaindata[1][i+24]<<endl;
     cout<<endl<<endl;
   }
-  //  if (dialogoptions[0]==true&&dialogoptions[2]==true){
-  //    cout<<"Offset"<<endl;
-  //    for (int i=0;i<24;++i)
-  //      cout<<calibrationoffsetdatanew[0][i+24]<<endl;
-  //    cout<<endl<<"Gain"<<endl;
-  //    for (int i=0;i<24;++i)
-  //      cout<<calibrationgaindatanew[0][i+24]<<endl;
-  //    cout<<endl;
-  //  }
 
-
-  if (calibrationnamedatanew[0].size()<72){
+  if (calibrationnamedata[0].size()<72){
     _log->notifyProgress(100);
     return;
   }
@@ -3281,27 +3271,27 @@ void CalibrationEditor::_displayCalibrationData(QVector<bool> dialogoptions, int
   if (dialogoptions[0]==true&&dialogoptions[3]==true){//The individual three values of resistor is displayed by this
     cout<<"--------Real--------"<<endl;
     for (int i=0;i<24;++i){
-      cout<<"Conversion res real resistor of node "<<i+1<<" values: "<<lsqresultsnew[0][i+24][_resCode[0]]<<" ||  "<<lsqresultsnew[0][i+24][_resCode[1]]<<" ||  "<<lsqresultsnew[0][i+24][_resCode[2]]<<endl;
+      cout<<"Conversion res real resistor of node "<<i+1<<" values: "<<lsqresults[0][i+24][_resCode[0]]<<" ||  "<<lsqresults[0][i+24][_resCode[1]]<<" ||  "<<lsqresults[0][i+24][_resCode[2]]<<endl;
     }
   }
   else if (dialogoptions[0]==false&&dialogoptions[3]==true){
     cout<<"--------Imag--------"<<endl;
     for (int i=0;i<24;++i){
-      cout<<"Conversion res imag resistor of node "<<i+1<<" values: "<<lsqresultsnew[1][i+24][_resCode[0]]<<" ||  "<<lsqresultsnew[1][i+24][_resCode[1]]<<" ||  "<<lsqresultsnew[1][i+24][_resCode[2]]<<endl;
+      cout<<"Conversion res imag resistor of node "<<i+1<<" values: "<<lsqresults[1][i+24][_resCode[0]]<<" ||  "<<lsqresults[1][i+24][_resCode[1]]<<" ||  "<<lsqresults[1][i+24][_resCode[2]]<<endl;
     }
   }
 
   if (dialogoptions[0]==true&&dialogoptions[3]==true){
 
-    for (int i=48;i<calibrationnamedatanew[0].size()-24;++i){
-      cout<<calibrationnamedatanew[0][i+24].toStdString()<<" values: "<<lsqresultsnew[0][i][_resCode[3]]<<" ||  "<<lsqresultsnew[0][i][_resCode[4]]<<" ||  "<<lsqresultsnew[0][i][_resCode[5]]<<endl;
+    for (int i=48;i<calibrationnamedata[0].size()-24;++i){
+      cout<<calibrationnamedata[0][i+24].toStdString()<<" values: "<<lsqresults[0][i][_resCode[3]]<<" ||  "<<lsqresults[0][i][_resCode[4]]<<" ||  "<<lsqresults[0][i][_resCode[5]]<<endl;
     }
     cout<<endl<<endl;
   }
   else if (dialogoptions[0]==false&&dialogoptions[3]==true){
 
-    for (int i=48;i<calibrationnamedatanew[1].size()-24;++i){
-      cout<<calibrationnamedatanew[1][i+24].toStdString()<<" values: "<<lsqresultsnew[1][i][_resCode[3]]<<" ||  "<<lsqresultsnew[1][i][_resCode[4]]<<" ||  "<<lsqresultsnew[1][i][_resCode[5]]<<endl;
+    for (int i=48;i<calibrationnamedata[1].size()-24;++i){
+      cout<<calibrationnamedata[1][i+24].toStdString()<<" values: "<<lsqresults[1][i][_resCode[3]]<<" ||  "<<lsqresults[1][i][_resCode[4]]<<" ||  "<<lsqresults[1][i][_resCode[5]]<<endl;
     }
     cout<<endl<<endl;
   }
@@ -3309,16 +3299,16 @@ void CalibrationEditor::_displayCalibrationData(QVector<bool> dialogoptions, int
   if (dialogoptions[0]==true&&dialogoptions[5]==true){
     cout<<"   Rab values   "<<endl<<endl;
     cout<<"--------Real--------"<<endl;
-    for (int p=0;p<calibrationrabnew[0].size();++p){
-      cout<<calibrationnamedatanew[0][p+48].toStdString()<<"  calibrated rab= "<<calibrationrabnew[0][p]<<endl;
+    for (int p=0;p<calibrationrab[0].size();++p){
+      cout<<calibrationnamedata[0][p+48].toStdString()<<"  calibrated rab= "<<calibrationrab[0][p]<<endl;
     }
     cout<<endl;
   }
   else if (dialogoptions[0]==false&&dialogoptions[5]==true){
     cout<<"   Rab values   "<<endl<<endl;
     cout<<"--------Imag--------"<<endl;
-    for (int p=0;p<calibrationrabnew[1].size();++p){
-      cout<<calibrationnamedatanew[1][p+48].toStdString()<<"  calibrated rab= "<<calibrationrabnew[1][p]<<endl;
+    for (int p=0;p<calibrationrab[1].size();++p){
+      cout<<calibrationnamedata[1][p+48].toStdString()<<"  calibrated rab= "<<calibrationrab[1][p]<<endl;
     }
     cout<<endl;
   }
@@ -3326,16 +3316,16 @@ void CalibrationEditor::_displayCalibrationData(QVector<bool> dialogoptions, int
   if (dialogoptions[0]==true&&dialogoptions[4]==true){
     cout<<"   Lowtap values   "<<endl<<endl;
     cout<<"--------Real--------"<<endl;
-    for (int p=0;p<calibrationrwnew[0].size();++p){
-      cout<<calibrationnamedatanew[0][p+48].toStdString()<<"  calibrated rw= "<<calibrationrwnew[0][p]<<endl;
+    for (int p=0;p<calibrationrw[0].size();++p){
+      cout<<calibrationnamedata[0][p+48].toStdString()<<"  calibrated rw= "<<calibrationrw[0][p]<<endl;
     }
     cout<<endl;
   }
   else if (dialogoptions[0]==false&&dialogoptions[4]==true){
     cout<<"   Lowtap values   "<<endl<<endl;
     cout<<"--------Imag--------"<<endl;
-    for (int p=0;p<calibrationrwnew[1].size();++p){
-      cout<<calibrationnamedatanew[1][p+48].toStdString()<<"  calibrated rw= "<<calibrationrwnew[1][p]<<endl;
+    for (int p=0;p<calibrationrw[1].size();++p){
+      cout<<calibrationnamedata[1][p+48].toStdString()<<"  calibrated rw= "<<calibrationrw[1][p]<<endl;
     }
     cout<<endl;
   }
@@ -3407,6 +3397,9 @@ void CalibrationEditor::_resultsHandling(QVector<uint32_t> const& nodedata,
 
 void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
                                              int gainoroffset ){
+  /* This function accepts the pointer of the vector and fills it with gain or offeset values for the 24 nodes,
+    according to what is the option in gainoroffset. Different calibration steps require different calculation
+    of offsets which are handled here.*/
 
   //typeoftest is an offset(multiple of 24) in the vector of
   //data results that point to the correct test,DAC,Internalresistor etc
@@ -3419,11 +3412,11 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
   //Convert the doubles to unint32 words
   for (int i=0;i<24;++i){
     if (gainoroffset==0){//0 for gain
-      tempreal=_calibrationGainDataNew.at(0).at(i+24)+_calibrationGainDataNew.at(0).at(i);
+      tempreal=_calibrationGainData.at(0).at(i+24)+_calibrationGainData.at(0).at(i);
       tempreal=1.25*(tempreal);//1.25 is the starting gain,now we have the absolut value to enter in the fpga memory
       tempreal=tempreal*(1<<10);
       uintreal=static_cast<uint32_t>(tempreal);
-      tempimag=_calibrationGainDataNew.at(1).at(i+24)+_calibrationGainDataNew.at(1).at(i);
+      tempimag=_calibrationGainData.at(1).at(i+24)+_calibrationGainData.at(1).at(i);
       tempimag=1.25*(tempimag);//1.25 is the starting gain,now we have the absolut value to enter in the fpga memory
       tempimag=tempimag*(1<<10);
       uintimag=static_cast<uint32_t>(tempimag);
@@ -3432,12 +3425,12 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
 
       encodedinput->push_back(combined);
     }
-    else if (gainoroffset==1){//1 for offset, the offset accepts the exact 12bit value of the Vramp
-      tempreal=_calibrationOffsetDataNew.at(0).at(i+24)+_calibrationOffsetDataNew.at(0).at(i);
+    else if (gainoroffset==1){//1 for offset, the offset accepts the exact 12bit value of the Vramp, IT ADDS BOTH OFFSETS(ADC+DAC)!
+      tempreal=_calibrationOffsetData.at(0).at(i+24)+_calibrationOffsetData.at(0).at(i);
       tempreal=2.5-tempreal;
       tempreal=(tempreal*4096)/5;//convert the double to the 12bit value of the ramp
       uintreal=static_cast<uint32_t>(tempreal);
-      tempimag=_calibrationOffsetDataNew.at(1).at(i+24)+_calibrationOffsetDataNew.at(1).at(i);
+      tempimag=_calibrationOffsetData.at(1).at(i+24)+_calibrationOffsetData.at(1).at(i);
       tempimag=2.5-tempimag;
       tempimag=tempimag/5.0*4096;//convert the double to the 12bit value of the ramp
       uintimag=static_cast<uint32_t>(tempimag);
@@ -3445,12 +3438,12 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
       combined=uintimag | uintreal;
       encodedinput->push_back(combined);
     }
-    else if (gainoroffset==3){//3 for acquiring ADC offsets, the offset accepts the exact 12bit value of the Vramp
-      tempreal=_calibrationOffsetDataNew.at(0).at(i);
+    else if (gainoroffset==3){//3 for acquiring ADC offsets, the offset accepts the exact 12bit value of the Vramp, ONLY ADC OFFSET
+      tempreal=_calibrationOffsetData.at(0).at(i);
       tempreal=2.5-tempreal;
       tempreal=(tempreal*4096)/5;//convert the double to the 12bit value of the ramp
       uintreal=static_cast<uint32_t>(tempreal);
-      tempimag=_calibrationOffsetDataNew.at(1).at(i);
+      tempimag=_calibrationOffsetData.at(1).at(i);
       tempimag=2.5-tempimag;
       tempimag=tempimag/5.0*4096;//convert the double to the 12bit value of the ramp
       uintimag=static_cast<uint32_t>(tempimag);
@@ -3464,30 +3457,30 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
 
 void CalibrationEditor::_softReset(){
 
-  _calibrationNameDataNew.clear();
-  _calibrationOffsetDataNew.clear();
-  _calibrationGainDataNew.clear();
-  _calibrationRabNew.clear();
-  _calibrationRwNew.clear();
-  _calibrationIdNew.clear();
-  _rawResultsNew.clear();
-  _lsqResultsNew.clear();
-  _P3ResNew.clear();
-  _P1ResNew.clear();
+  _calibrationNameData.clear();
+  _calibrationOffsetData.clear();
+  _calibrationGainData.clear();
+  _calibrationRab.clear();
+  _calibrationRw.clear();
+  _calibrationId.clear();
+  _rawResults.clear();
+  _lsqResults.clear();
+  _P3Res.clear();
+  _P1Res.clear();
   gainlabel->clear();
   offsetlabel->clear();
   resistorlabel->clear();
   //Initialize the calibration storage vectors
   //The first dimensions if for the real and imag part of emulator
   for(int i=0;i<2;++i){
-    _calibrationNameDataNew.append(QVector<QString>());
-    _calibrationOffsetDataNew.append(QVector<double>());
-    _calibrationGainDataNew.append(QVector<double>());
-    _calibrationIdNew.append(QVector<int>());
-    _calibrationRabNew.append(QVector <double>());
-    _calibrationRwNew.append(QVector<double>());
-    _rawResultsNew.append(QVector<QVector <double> >());
-    _lsqResultsNew.append(QVector<QVector <double> >());
+    _calibrationNameData.append(QVector<QString>());
+    _calibrationOffsetData.append(QVector<double>());
+    _calibrationGainData.append(QVector<double>());
+    _calibrationId.append(QVector<int>());
+    _calibrationRab.append(QVector <double>());
+    _calibrationRw.append(QVector<double>());
+    _rawResults.append(QVector<QVector <double> >());
+    _lsqResults.append(QVector<QVector <double> >());
   }
   _log->notifyProgress(0);
   //Resetting

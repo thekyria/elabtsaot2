@@ -70,11 +70,11 @@ class CalibrationEditor : public QSplitter{
   // --- Calibration components functions-----
   int _ADCOffsetConverterCalibration(int devId);
   int _convertersCalibration(int devId);
-  int _conversionResistorCalibrationNew(int devId);
-  int _gridResistorCalibrationNew(int devId,int testid);
+  int _conversionResistorCalibration(int devId);
+  int _gridResistorCalibration(int devId,int testid);
 
   // --- Other essential functions-------------
-  void _displayCurveNew();
+  void _displayCurve();
   int _parseRawResults(size_t sliceindex);
   void _displayCalibrationData(QVector<bool> dialogoptions,int devId);
   void _leastSquares(QVector<double> const& data,
@@ -100,18 +100,18 @@ class CalibrationEditor : public QSplitter{
   int _conversionResCodeImag;
 
   // 24 first positions are the ADC/DAC values
-  QVector<QVector<QString> > _calibrationNameDataNew;
-  QVector<QVector<double> > _calibrationOffsetDataNew;
-  QVector<QVector<double> > _calibrationGainDataNew;
-  QVector<QVector<int> > _calibrationIdNew;
-  QVector<QVector<double> > _calibrationRabNew;
-  QVector<QVector<double> > _calibrationRwNew;
-  QVector<QVector<QVector<double> > > _rawResultsNew;
-  QVector<QVector<QVector<double> > > _lsqResultsNew;
+  QVector<QVector<QString> > _calibrationNameData;
+  QVector<QVector<double> > _calibrationOffsetData;
+  QVector<QVector<double> > _calibrationGainData;
+  QVector<QVector<int> > _calibrationId;
+  QVector<QVector<double> > _calibrationRab;
+  QVector<QVector<double> > _calibrationRw;
+  QVector<QVector<QVector<double> > > _rawResults;
+  QVector<QVector<QVector<double> > > _lsqResults;
 
   //Some extra
-  QVector<QVector<double> > _P3ResNew;
-  QVector<QVector<double> > _P1ResNew;
+  QVector<QVector<double> > _P3Res;
+  QVector<QVector<double> > _P1Res;
 
   // ----- GUI widgets -----
   QCheckBox *chk0, *chk1, *chk2, *chk3;
@@ -137,14 +137,14 @@ class CalibrationEditor : public QSplitter{
 struct deviceCalibrationData{
   int devId;
   QString deviceName;
-  QVector<QVector<QString> > nameDataNew;
-  QVector<QVector<double> > offsetDataNew;
-  QVector<QVector<double> > gainDataNew;
-  QVector<QVector<int> > idNew;
-  QVector<QVector<double> > rabNew;
-  QVector<QVector<double> > rwNew;
-  QVector<QVector<QVector<double> > > rawResultsNew;
-  QVector<QVector<QVector<double> > > lsqResultsNew;
+  QVector<QVector<QString> > nameData;
+  QVector<QVector<double> > offsetData;
+  QVector<QVector<double> > gainData;
+  QVector<QVector<int> > id;
+  QVector<QVector<double> > rab;
+  QVector<QVector<double> > rw;
+  QVector<QVector<QVector<double> > > rawResults;
+  QVector<QVector<QVector<double> > > lsqResults;
 };
 
 } // end of namespace elabtsaot

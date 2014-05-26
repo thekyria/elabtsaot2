@@ -67,11 +67,11 @@ int CalibrationXMLHandler::importXML(){
     }
 
     //Resize to accept both real and imag
-    _cal->_master_store[devid]->nameDataNew.resize(2);
-    _cal->_master_store[devid]->offsetDataNew.resize(2);
-    _cal->_master_store[devid]->gainDataNew.resize(2);
-    _cal->_master_store[devid]->rabNew.resize(2);
-    _cal->_master_store[devid]->rwNew.resize(2);
+    _cal->_master_store[devid]->nameData.resize(2);
+    _cal->_master_store[devid]->offsetData.resize(2);
+    _cal->_master_store[devid]->gainData.resize(2);
+    _cal->_master_store[devid]->rab.resize(2);
+    _cal->_master_store[devid]->rw.resize(2);
 
 
     cout << "Importing device: " << devid << " with name " <<  name << endl;
@@ -113,24 +113,24 @@ int CalibrationXMLHandler::importXML(){
             QString testname(TEST_NAMES[i]);
             data = test.namedItem("Offset");
             if (!data.isNull()){
-              _cal->_master_store[devid]->nameDataNew[ri].append(testname.append(" ").append(REAL_IMAG[ri]).append(" ").append(" of node ").append(nodeid));
-              _cal->_master_store[devid]->offsetDataNew[ri].append(data.toElement().text().toDouble());
+              _cal->_master_store[devid]->nameData[ri].append(testname.append(" ").append(REAL_IMAG[ri]).append(" ").append(" of node ").append(nodeid));
+              _cal->_master_store[devid]->offsetData[ri].append(data.toElement().text().toDouble());
             }
             data = test.namedItem("Gain");
             if (!data.isNull()){//Only second has gain, the first is just 0
-              _cal->_master_store[devid]->gainDataNew[ri].append(data.toElement().text().toDouble());
+              _cal->_master_store[devid]->gainData[ri].append(data.toElement().text().toDouble());
             }else if(data.isNull() && i ==0){
-              _cal->_master_store[devid]->gainDataNew[ri].append(0); //Zero for the first test
+              _cal->_master_store[devid]->gainData[ri].append(0); //Zero for the first test
             }
 
             data = test.namedItem("rab");
             if (!data.isNull()){
-              _cal->_master_store[devid]->nameDataNew[ri].append(testname.append(" ").append(REAL_IMAG[ri]).append(" ").append(" of node ").append(nodeid));
-              _cal->_master_store[devid]->rabNew[ri].append(data.toElement().text().toDouble());
+              _cal->_master_store[devid]->nameData[ri].append(testname.append(" ").append(REAL_IMAG[ri]).append(" ").append(" of node ").append(nodeid));
+              _cal->_master_store[devid]->rab[ri].append(data.toElement().text().toDouble());
             }
             data = test.namedItem("rw");
             if (!data.isNull()){
-              _cal->_master_store[devid]->rwNew[ri].append(data.toElement().text().toDouble());
+              _cal->_master_store[devid]->rw[ri].append(data.toElement().text().toDouble());
             }
           }
         }

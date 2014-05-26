@@ -1088,13 +1088,13 @@ int io::exportCalibrationValues(std::string filename_, CalibrationEditor* cal){
 
   for(size_t devid = 0; devid != cal->emu()->getUSBDevicesCount(); ++devid){
     //Check the names' vector for existence of data
-    if (cal->_master_store.at(devid)->nameDataNew.size()==0){
+    if (cal->_master_store.at(devid)->nameData.size()==0){
       cout<<"None test was run, aborting..."<<endl;
       fclose(f);
       remove(cstr);
       return 2;
     }
-    if (cal->_master_store.at(devid)->nameDataNew[0].size()!=254){
+    if (cal->_master_store.at(devid)->nameData[0].size()!=254){
       cout<<"Run all tests before exporting, aborting..."<<endl;
       fclose(f);
       remove(cstr);
@@ -1109,10 +1109,10 @@ int io::exportCalibrationValues(std::string filename_, CalibrationEditor* cal){
     // As well as the gain offset vector are only 48 size long since they have only two test
     // The resistor tests should they are full, they have 254 values for each(real/imag)
 
-    QVector <QVector<double> > offsets = cal->_master_store.at(devid)->offsetDataNew;
-    QVector <QVector<double> > gains = cal->_master_store.at(devid)->gainDataNew;
-    QVector <QVector<double> > rab = cal->_master_store.at(devid)->rabNew;
-    QVector <QVector<double> > rw = cal->_master_store.at(devid)->rwNew;
+    QVector <QVector<double> > offsets = cal->_master_store.at(devid)->offsetData;
+    QVector <QVector<double> > gains = cal->_master_store.at(devid)->gainData;
+    QVector <QVector<double> > rab = cal->_master_store.at(devid)->rab;
+    QVector <QVector<double> > rw = cal->_master_store.at(devid)->rw;
     QString devName = cal->_master_store.at(devid)->deviceName;
 
     QVector <QString> TestNames;
