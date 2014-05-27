@@ -29,6 +29,12 @@ using std::pair;
 
 //#define VERBOSE_ENC
 
+// 27 May 2014
+// {HARDSUBSTRACTR, HARDSUBSTRACTI} = {2, 1} works well for laurent18pq
+// {HARDSUBSTRACTR, HARDSUBSTRACTI} = {2, 2} works well for guillaume20pq
+#define HARDSUBSTRACTR 2
+#define HARDSUBSTRACTI 1
+
 int encoder::encodeSliceGPF(Slice const& sl, vector<uint32_t>& sliceConf){
 
   sliceConf.clear();
@@ -1118,6 +1124,7 @@ int encoder::detail::encode_GPFADCDACgot(Slice const& sl,
     adcOffset_conf.push_back( static_cast<uint32_t>(temp) );
   }
 
+
   // ----------- DAC gain -----------
   // 31  24 23        12 11         0
   // 000000 [Q2.10 imag] [Q2.10 real]
@@ -1150,12 +1157,32 @@ int encoder::detail::encode_GPFADCDACgot(Slice const& sl,
   // 000000 [         temp          ]
   // --------------------------------
   dacOffset_conf.clear();
+
+  // Try to detect whether the board has been calibrated
+  bool calibrated(false);
+  for (size_t v(0); v!=rows; ++v){
+    for (size_t h(0); h!=cols; ++h){
+      Atom const* atom = sl.ana.getAtom(v,h);
+      if ( atom->node.real_dac_offset_corr != NODE_DAC_OFFSET_CORR_NOMINAL
+        || atom->node.real_dac_gain_corr   != NODE_DAC_GAIN_CORR_NOMINAL
+        || atom->node.imag_dac_offset_corr != NODE_DAC_OFFSET_CORR_NOMINAL
+        || atom->node.imag_dac_gain_corr   != NODE_DAC_GAIN_CORR_NOMINAL ){
+        calibrated = true;
+        break;
+      }
+    }
+  }
+
   for (size_t v(0); v!=rows; ++v){
     for (size_t h(0); h!=cols; ++h){
       Atom const* atom = sl.ana.getAtom(v,h);
       if (sl.dig.pipe_GPFslack.search_element(v,h) < 0){
         tempMSB = static_cast<int32_t>(auxiliary::round(atom->node.imag_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));
         tempLSB = static_cast<int32_t>(auxiliary::round(atom->node.real_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));
+        if (calibrated){
+          tempMSB -= HARDSUBSTRACTI; // 27 May 2014, HARD-substract "HARDSUBSTRACT" from the intermediate result
+          tempLSB -= HARDSUBSTRACTR; // 27 May 2014, HARD-substract "HARDSUBSTRACT" from the intermediate result
+        }
       } else {
         // If the node contains a slack element, the nominal values are entered!
         tempMSB = static_cast<int32_t>(auxiliary::round(NODE_DAC_OFFSET_CORR_NOMINAL/NODE_DAC_MAXOUT*pow(2,12)));
@@ -1317,10 +1344,10 @@ void encoder::detail::encode_GPFIinit(Slice const& sl, vector<uint32_t>& icar_co
     int32_t mask12 = (1<<12) - 1;
     detail::form_word(Ireal, 12, 7, true, &tempLSB);
     detail::form_word(Iimag, 12, 7, true, &tempMSB);
-    if (calibrated){ // Only if calibration data is available substract one "-1" from the intermediate results
-      tempLSB -= 1;      // 09 Mar 2014, HARD-substract one "1" from the intermediate result
+    if (calibrated){ // Only if calibration data is available substract one "HARDSUBSTRACT" from the intermediate results
+      tempLSB -= HARDSUBSTRACTR; // 09 Mar 2014, HARD-substract HARDSUBSTRACT from the intermediate result
       tempLSB &= mask12; // masking the intermediate result to 12 bits
-      tempMSB -= 1;      // 09 Mar 2014, HARD-substract one "1" from the intermediate result
+      tempMSB -= HARDSUBSTRACTI; // 09 Mar 2014, HARD-substract HARDSUBSTRACT from the intermediate result
       tempMSB &= mask12; // masking the intermediate result to 12 bits
     }
     temp = (tempMSB<<12)|(tempLSB);
@@ -1364,10 +1391,10 @@ void encoder::detail::encode_GPFIinit(Slice const& sl, vector<uint32_t>& icar_co
     int32_t mask12 = (1<<12) - 1;
     detail::form_word(Ireal, 12, 7, true, &tempLSB);
     detail::form_word(Iimag, 12, 7, true, &tempMSB);
-    if (calibrated){ // Only if calibration data is available substract one "-1" from the intermediate results
-      tempLSB -= 1;      // 09 Mar 2014, HARD-substract one "1" from the intermediate result
+    if (calibrated){ // Only if calibration data is available substract "HARDSUBSTRACT" from the intermediate results
+      tempLSB -= HARDSUBSTRACTR; // 09 Mar 2014, HARD-substract HARDSUBSTRACT from the intermediate result
       tempLSB &= mask12; // masking the intermediate result to 12 bits
-      tempMSB -= 1;      // 09 Mar 2014, HARD-substract one "1" from the intermediate result
+      tempMSB -= HARDSUBSTRACTI; // 09 Mar 2014, HARD-substract HARDSUBSTRACT from the intermediate result
       tempMSB &= mask12; // masking the intermediate result to 12 bits
     }
     temp = (tempMSB<<12)|(tempLSB);
