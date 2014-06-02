@@ -51,6 +51,8 @@ using std::vector;
 #include <direct.h>
 
 #define CONSTRES 2200.0
+#define START_RESET_LOCATION 334
+#define STOP_LOCATION 335
 
 CalibrationEditor::CalibrationEditor(Emulator* emu, Logger* log, QWidget* parent) :
     QSplitter(Qt::Vertical, parent), _emu(emu), _log(log), _cal_emuhw(new EmulatorHw()) {
@@ -642,7 +644,7 @@ void CalibrationEditor::startCalibrationSlot(){
       //Reseting before test
       tempvector.clear();
       tempvector.push_back(2222);
-      _emu->usbWrite( devId, 286,tempvector);
+      _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
       if (chk0->isChecked()){
         cout<<"Running ADC offset calibration..."<<endl;
         int ans = _ADCOffsetConverterCalibration(devId);
@@ -1303,7 +1305,7 @@ int CalibrationEditor::_ADCOffsetConverterCalibration(int devId){
   //Reset Prior the test
   tempvector.clear();
   tempvector.push_back(2222);
-  _emu->usbWrite( devId, 286,tempvector);
+  _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
 
   //Setting the configuration file of calibration
   _confVector.clear();
@@ -1339,8 +1341,8 @@ int CalibrationEditor::_ADCOffsetConverterCalibration(int devId){
   _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(10487040)); // 0 01.01 0000 0000 = 1280 = 1.25 Signed Ni=13 Npi=3
   _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(8390656));  // 1000 0000 0000 = 2048 = 2.5V unSigned Ni=12
   //Initial gain & offset correction - DAC...
-  //_confVector.insert(_confVector.size(),24,static_cast<uint32_t>(4195328)); // 01.00 0000 0000 = 1 Signed Ni=12 Npi=2
-  //_confVector.insert(_confVector.size(),24,static_cast<uint32_t>(0));  // 0000 0000 0000 = 0 = +-0V Signed Ni=12
+  _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(4195328)); // 01.00 0000 0000 = 1 Signed Ni=12 Npi=2
+  _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(0));  // 0000 0000 0000 = 0 = +-0V Signed Ni=12
   //Steps
   _confVector.append(static_cast<uint32_t>(15));
   //First and second code...dont care
@@ -1360,13 +1362,13 @@ int CalibrationEditor::_ADCOffsetConverterCalibration(int devId){
   //Setting the start of the calibration
   tempvector.clear();
   tempvector.push_back(1111);
-  _emu->usbWrite( devId, 286,tempvector);
+  _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
 
   //Read the configuration details for confirmation
   long int watchdog_timer=0;
   while (1){
     ++watchdog_timer;
-    _emu->usbRead( devId, 287,1,data);
+    _emu->usbRead( devId, STOP_LOCATION,1,data);
     if (data.at(0)==4444)
       break;
     if (watchdog_timer>30)
@@ -1441,7 +1443,7 @@ int CalibrationEditor::_convertersCalibration(int devId){
   //Reset Prior the test
   tempvector.clear();
   tempvector.push_back(2222);
-  _emu->usbWrite( devId, 286,tempvector);
+  _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
 
   //Setting the configuration file of calibration
   _confVector.clear();
@@ -1500,13 +1502,13 @@ int CalibrationEditor::_convertersCalibration(int devId){
   //Setting the start of the calibration
   tempvector.clear();
   tempvector.push_back(1111);
-  _emu->usbWrite( devId, 286,tempvector);
+  _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
 
   //Read the configuration details for confirmation
   long int watchdog_timer=0;
   while (1){
     ++watchdog_timer;
-    _emu->usbRead( devId, 287,1,data);
+    _emu->usbRead( devId, STOP_LOCATION,1,data);
     if (data.at(0)==4444)
       break;
     if (watchdog_timer>30)
@@ -1622,7 +1624,7 @@ int CalibrationEditor::_conversionResistorCalibration(int devId){
   //Reset Prior the test
   tempvector.clear();
   tempvector.push_back(2222);
-  _emu->usbWrite( devId, 286,tempvector);
+  _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
   _confVector.clear();
   _confVector.append(static_cast<uint32_t>(0));
   _confVector.insert(_confVector.size(),3,static_cast<uint32_t>(0));
@@ -1721,11 +1723,11 @@ int CalibrationEditor::_conversionResistorCalibration(int devId){
   //Setting the start of the calibration
   tempvector.clear();
   tempvector.push_back(1111);
-  _emu->usbWrite( devId, 286,tempvector);
+  _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
   long int watchdog_timer=0;
   while (1){
     ++watchdog_timer;
-    _emu->usbRead( devId, 287,1,data);
+    _emu->usbRead( devId, STOP_LOCATION,1,data);
     if (data.at(0)==4444)
       break;
     if (watchdog_timer>30)
@@ -2029,7 +2031,7 @@ int CalibrationEditor::_gridResistorCalibration(int devId, int testid ){
   //Reset Prior the test
   tempvector.clear();
   tempvector.push_back(2222);
-  _emu->usbWrite( devId, 286,tempvector);
+  _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
 
   //Need to set the test 7 test 8 of the ext resitor manually because there the data is inputed as one 32bit word
   int defaultresistor;
@@ -2425,11 +2427,11 @@ int CalibrationEditor::_gridResistorCalibration(int devId, int testid ){
   if (testid!=1&&testid!=4&&testid!=6){//not P0CHIP1-2 test and P3Chip1-2 and P1P3CHIP3, old way of testing
     tempvector.clear();
     tempvector.push_back(1111);
-    _emu->usbWrite( devId, 286,tempvector);
+    _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
     long int watchdog_timer=0;
     while (1){
       ++watchdog_timer;
-      _emu->usbRead( devId, 287,1,data);
+      _emu->usbRead( devId, STOP_LOCATION,1,data);
       if (data.at(0)==4444)
         break;
       if (watchdog_timer>30)
@@ -2439,11 +2441,11 @@ int CalibrationEditor::_gridResistorCalibration(int devId, int testid ){
   else{
     tempvector.clear();
     tempvector.push_back(1200+intcount);
-    _emu->usbWrite( devId, 286,tempvector);
+    _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
     long int watchdog_timer=0;
     while (1){
       ++watchdog_timer;
-      _emu->usbRead( devId, 287,1,data);
+      _emu->usbRead( devId, STOP_LOCATION,1,data);
       if (data.at(0)==4444)
         break;
       if (watchdog_timer>30)
@@ -2451,7 +2453,7 @@ int CalibrationEditor::_gridResistorCalibration(int devId, int testid ){
     }
     tempvector.clear();
     tempvector.push_back(2222);
-    _emu->usbWrite( devId, 286,tempvector);
+    _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
 
     intcount++;
     int switchgroup=1;//1-12
@@ -2483,11 +2485,11 @@ int CalibrationEditor::_gridResistorCalibration(int devId, int testid ){
       _emu->usbWrite( devId, 217,tempvector);
       tempvector.clear();
       tempvector.push_back(1200+intcount);
-      _emu->usbWrite( devId, 286,tempvector);
+      _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
       long int watchdog_timer=0;
       while (1){
         ++watchdog_timer;
-        _emu->usbRead( devId, 287,1,data);
+        _emu->usbRead( devId, STOP_LOCATION,1,data);
         if (data.at(0)==4444)
           break;
         if (watchdog_timer>30)
@@ -2496,7 +2498,7 @@ int CalibrationEditor::_gridResistorCalibration(int devId, int testid ){
 
       tempvector.clear();
       tempvector.push_back(2222);
-      _emu->usbWrite( devId, 286,tempvector);
+      _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
       intcount++;
       if ((intcount % 2 !=0)&&(intcount<25))//increase every two tests
         switchgroup++;
@@ -3528,5 +3530,5 @@ void CalibrationEditor::_softReset(){
   tempvector.clear();
   tempvector.push_back(2222);
   for (size_t i=0;i<_emu->getUSBDevicesCount();i++)
-    _emu->usbWrite( i, 286,tempvector);
+    _emu->usbWrite( i, START_RESET_LOCATION,tempvector);
 }
