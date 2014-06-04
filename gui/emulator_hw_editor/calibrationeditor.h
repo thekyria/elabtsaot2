@@ -68,8 +68,8 @@ class CalibrationEditor : public QSplitter{
  private:
 
   // --- Calibration components functions-----
-  int _ADCOffsetConverterCalibration(int devId);
-  int _convertersCalibration(int devId);
+  int _ADCcalibration(int devId);
+  int _DACcalibration(int devId);
   int _conversionResistorCalibration(int devId);
   int _gridResistorCalibration(int devId,int testid);
 

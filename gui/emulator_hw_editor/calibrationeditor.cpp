@@ -53,7 +53,7 @@ using std::vector;
 #define CONSTRES 2200.0
 #define START_RESET_LOCATION 334
 #define STOP_LOCATION 335
-
+#define START_OF_RESULTS 338
 CalibrationEditor::CalibrationEditor(Emulator* emu, Logger* log, QWidget* parent) :
     QSplitter(Qt::Vertical, parent), _emu(emu), _log(log), _cal_emuhw(new EmulatorHw()) {
 
@@ -647,7 +647,7 @@ void CalibrationEditor::startCalibrationSlot(){
       _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
       if (chk0->isChecked()){
         cout<<"Running ADC offset calibration..."<<endl;
-        int ans = _ADCOffsetConverterCalibration(devId);
+        int ans = _ADCcalibration(devId);
         if (ans==1){
           cout<<"Emulator board "<<_emu->getUSBDevices().at(devId).deviceName<<" failed to respond, please do a hardware reset"<<endl;
           _softReset();
@@ -658,7 +658,7 @@ void CalibrationEditor::startCalibrationSlot(){
       _log->notifyProgress(5);
       if (chk1->isChecked()){
         cout<<"Running DAC calibration..."<<endl;
-        int ans = _convertersCalibration(devId);
+        int ans = _DACcalibration(devId);
         if (ans==1){
           cout<<"Emulator board "<<_emu->getUSBDevices().at(devId).deviceName<<" failed to respond, please do a hardware reset"<<endl;
           _softReset();
@@ -1300,7 +1300,7 @@ void CalibrationEditor::calibrationImportSlot(){
 }
 
 
-int CalibrationEditor::_ADCOffsetConverterCalibration(int devId){
+int CalibrationEditor::_ADCcalibration(int devId){
   vector<uint32_t> tempvector;
   //Reset Prior the test
   tempvector.clear();
@@ -1378,7 +1378,7 @@ int CalibrationEditor::_ADCOffsetConverterCalibration(int devId){
 
 
   //Read the results from FPGA memory,first and last possition is empty
-  _emu->usbRead( devId, 290,385,data);
+  _emu->usbRead( devId, START_OF_RESULTS,385,data);
 
 
   //Initialize the decoding vectors
@@ -1438,7 +1438,7 @@ int CalibrationEditor::_ADCOffsetConverterCalibration(int devId){
   return 0; //Succeed
 }
 
-int CalibrationEditor::_convertersCalibration(int devId){
+int CalibrationEditor::_DACcalibration(int devId){
   vector<uint32_t> tempvector;
   //Reset Prior the test
   tempvector.clear();
@@ -1518,7 +1518,7 @@ int CalibrationEditor::_convertersCalibration(int devId){
 
 
   //Read the results from FPGA memory,first and last possition is empty
-  _emu->usbRead( devId, 290,385,data);
+  _emu->usbRead( devId, START_OF_RESULTS,385,data);
 
 
   //Initialize the decoding vectors
@@ -1737,10 +1737,10 @@ int CalibrationEditor::_conversionResistorCalibration(int devId){
 
   //Read the results from FPGA memory,first and last possition is empty
   vector<uint32_t> data1, data2, data3, data4;
-  _emu->usbRead( devId,  290 , 400 , data1 );
-  _emu->usbRead( devId,  690 , 400 , data2 );
-  _emu->usbRead( devId, 1090 , 400 , data3 );
-  _emu->usbRead( devId, 1490 ,  312 , data4 );
+  _emu->usbRead( devId,  START_OF_RESULTS , 400 , data1 );
+  _emu->usbRead( devId,  START_OF_RESULTS+400 , 400 , data2 );
+  _emu->usbRead( devId, START_OF_RESULTS+800 , 400 , data3 );
+  _emu->usbRead( devId, START_OF_RESULTS+1200 ,  312 , data4 );
   data.clear();
   data.insert(data.end(), data1.begin(), data1.end());
   data.insert(data.end(), data2.begin(), data2.end());
@@ -1933,6 +1933,8 @@ int CalibrationEditor::_conversionResistorCalibration(int devId){
       tempresreal.append(_P3Res.at(i).at(j));
       tempresimag.append(_P1Res.at(i).at(j));
     }
+    cout<<"Conversion resistor (Real/P3): "<<i+1<<" Value1: "<<_P3Res.at(i).at(0)<<" Value2: "<<_P3Res.at(i).at(1)<<" Value3: "<<_P3Res.at(i).at(2)<<endl;
+    cout<<"Conversion resistor (Imag/P1): "<<i+1<<" Value1: "<<_P1Res.at(i).at(0)<<" Value2: "<<_P1Res.at(i).at(1)<<" Value3: "<<_P1Res.at(i).at(2)<<endl;
     //First for the real part
     alpha=0.0;
     beta=0.0;
@@ -2006,11 +2008,11 @@ int CalibrationEditor::_conversionResistorCalibration(int devId){
   for(int i=0;i<24;++i){
     if(_calibrationRab[0][i]<9000 || _calibrationRab[0][i]>11000 || std::isnan(_calibrationRab[0][i])){
       error_found=1;
-      cout<<"Conversion resistor (real): "<<i+1<<" of device: "<< devId <<" exhibits a problem"<<endl;
+      cout<<"Conversion resistor (real): "<<i+1<<" of device: "<< devId <<" exhibits a problem"<<"Value Rab measured: "<< _calibrationRab[0][i] <<endl;
     }
     if(_calibrationRab[1][i]<9000 || _calibrationRab[1][i]>11000 || std::isnan(_calibrationRab[1][i])){
       error_found=1;
-      cout<<"Conversion resistor (imag): "<<i+1<<" of device: "<< devId <<" exhibits a problem"<<endl;
+      cout<<"Conversion resistor (imag): "<<i+1<<" of device: "<< devId <<" exhibits a problem"<<"Value Rab measured: "<< _calibrationRab[1][i]<<endl;
     }
   }
 
@@ -2508,10 +2510,10 @@ int CalibrationEditor::_gridResistorCalibration(int devId, int testid ){
 
   //Read the results from FPGA memory,first and last possition is empty
   vector<uint32_t> data1, data2, data3, data4;
-  _emu->usbRead( devId,  290 , 400 , data1 );
-  _emu->usbRead( devId,  690 , 400 , data2 );
-  _emu->usbRead( devId, 1090 , 400 , data3 );
-  _emu->usbRead( devId, 1490 ,  312 , data4 );
+  _emu->usbRead( devId,  START_OF_RESULTS , 400 , data1 );
+  _emu->usbRead( devId,  START_OF_RESULTS+400 , 400 , data2 );
+  _emu->usbRead( devId, START_OF_RESULTS+800 , 400 , data3 );
+  _emu->usbRead( devId, START_OF_RESULTS+1200 ,  312 , data4 );
   data.clear();
   data.insert(data.end(), data1.begin(), data1.end());
   data.insert(data.end(), data2.begin(), data2.end());
