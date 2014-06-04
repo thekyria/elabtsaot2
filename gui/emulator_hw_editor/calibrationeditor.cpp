@@ -184,7 +184,7 @@ CalibrationEditor::CalibrationEditor(Emulator* emu, Logger* log, QWidget* parent
   chk11 = new QCheckBox(this);
   QCheckBox *chkall = new QCheckBox(this);
   chk0->setText("ADC offset");
-  chk1->setText("DAC/ADC");
+  chk1->setText("DAC gain/offset");
   chk2->setText("Conversion Resistor");
   chk3->setText("Internal Resistor");
   chk4->setText("P0CHIP1-2");
@@ -197,9 +197,9 @@ CalibrationEditor::CalibrationEditor(Emulator* emu, Logger* log, QWidget* parent
   chk11->setText("P1P3EXT");
   chkall->setText("Calibrate ALL");
   chkall->setFont(labfont);
-  chk0->setEnabled(false);
-  chk1->setEnabled(false);
-  chk2->setEnabled(false);
+  chk0->setEnabled(true);
+  chk1->setEnabled(true);
+  chk2->setEnabled(true);
   chk0->setChecked(true);
   chk1->setChecked(true);
   chk2->setChecked(true);
@@ -646,7 +646,7 @@ void CalibrationEditor::startCalibrationSlot(){
       tempvector.push_back(2222);
       _emu->usbWrite( devId, START_RESET_LOCATION,tempvector);
       if (chk0->isChecked()){
-        cout<<"Running ADC offset calibration..."<<endl;
+        cout<<"Running ADC calibration..."<<endl;
         int ans = _ADCcalibration(devId);
         if (ans==1){
           cout<<"Emulator board "<<_emu->getUSBDevices().at(devId).deviceName<<" failed to respond, please do a hardware reset"<<endl;
@@ -842,7 +842,7 @@ void CalibrationEditor::displayCalibrationDataSlot(){
   ropl->addWidget(rop2);
 
   QCheckBox *op0=new QCheckBox("ADC offset");
-  QCheckBox *op1=new QCheckBox("ADC/DAC gain and offset");
+  QCheckBox *op1=new QCheckBox("DAC gain and offset");
   QCheckBox *op2=new QCheckBox("Mesured resistor values");
   QCheckBox *op4=new QCheckBox("Rwiper of resistors");
   QCheckBox *op5=new QCheckBox("Rab of resistors");
@@ -1685,19 +1685,14 @@ int CalibrationEditor::_conversionResistorCalibration(int devId){
   //Corrected offset for ADC
   _offsetGainHandling(&encodedinput,0); //insert ADC offset in final ADC ramp setting around 2048 = 2.5V, 0 for ADC offset from store
   qCopy(encodedinput.begin(),encodedinput.end(), std::back_inserter(_confVector));
-  //Temporary! Using Defaults
-  _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(4195328)); // 01.00 0000 0000 = 1 Signed Ni=12 Npi=2
-  _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(0));  // 0000 0000 0000 = 0 = +-0V Signed Ni=12
 
-//  //Correction of gain for DAC
-//  _offsetGainHandling(&encodedinput,1); //insert DAC gain correction!, arround 1
-//  _confVector.reserve(_confVector.size() + std::distance(encodedinput.begin(),encodedinput.end()));
-//  qCopy(encodedinput.begin(),encodedinput.end(), std::back_inserter(_confVector));
+  //Correction of gain for DAC
+  _offsetGainHandling(&encodedinput,1); //insert DAC gain correction!, arround 1
+  qCopy(encodedinput.begin(),encodedinput.end(), std::back_inserter(_confVector));
 
-//  //Correction of offset for DAC
-//  _offsetGainHandling(&encodedinput,2); //insert DAC offset correction!, arround 0
-//  _confVector.reserve(_confVector.size() + std::distance(encodedinput.begin(),encodedinput.end()));
-//  qCopy(encodedinput.begin(),encodedinput.end(), std::back_inserter(_confVector));
+  //Correction of offset for DAC
+  _offsetGainHandling(&encodedinput,2); //insert DAC offset correction!, arround 0
+  qCopy(encodedinput.begin(),encodedinput.end(), std::back_inserter(_confVector));
 
   if(autocheckopt->isChecked()){//Running the default new hardcoded version
     _confVector.append(static_cast<uint32_t>(20));
@@ -2385,19 +2380,13 @@ int CalibrationEditor::_gridResistorCalibration(int devId, int testid ){
   //Corrected offset for ADC
   _offsetGainHandling(&encodedinput,0); //insert ADC offset in final ADC ramp setting around 2048 = 2.5V, 0 for ADC offset from store
   qCopy(encodedinput.begin(),encodedinput.end(), std::back_inserter(_confVector));
-  //Temporary! Using Defaults
-  _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(4195328)); // 01.00 0000 0000 = 1 Signed Ni=12 Npi=2
-  _confVector.insert(_confVector.size(),24,static_cast<uint32_t>(0));  // 0000 0000 0000 = 0 = +-0V Signed Ni=12
+  //Correction of gain for DAC
+  _offsetGainHandling(&encodedinput,1); //insert DAC gain correction!, arround 1
+  qCopy(encodedinput.begin(),encodedinput.end(), std::back_inserter(_confVector));
 
-//  //Correction of gain for DAC
-//  _offsetGainHandling(&encodedinput,1); //insert DAC gain correction!, arround 1
-//  _confVector.reserve(_confVector.size() + std::distance(encodedinput.begin(),encodedinput.end()));
-//  qCopy(encodedinput.begin(),encodedinput.end(), std::back_inserter(_confVector));
-
-//  //Correction of offset for DAC
-//  _offsetGainHandling(&encodedinput,2); //insert DAC offset correction!, arround 0
-//  _confVector.reserve(_confVector.size() + std::distance(encodedinput.begin(),encodedinput.end()));
-//  qCopy(encodedinput.begin(),encodedinput.end(), std::back_inserter(_confVector));
+  //Correction of offset for DAC
+  _offsetGainHandling(&encodedinput,2); //insert DAC offset correction!, arround 0
+  qCopy(encodedinput.begin(),encodedinput.end(), std::back_inserter(_confVector));
 
   if (autocheckopt->isChecked()){//Running the default new hardcoded version
     _confVector.append(static_cast<uint32_t>(20));
@@ -2945,7 +2934,7 @@ void CalibrationEditor::_displayCurve(){
         }
         temprawresults=rawresults[realorimag][selection];
       }
-      else if(id==10){//DAC ADC data
+      else if(id==10){//DAC data
         double tempvoltage;
         //Parameters
         double startvoltage;
@@ -3284,18 +3273,18 @@ void CalibrationEditor::_displayCalibrationData(QVector<bool> dialogoptions, int
 
   if (dialogoptions[0]==true&&dialogoptions[2]==true){
     for (int i=0;i<24;++i)
-      cout<<"Offset real of ADC/DAC test of node "<<i+1<<" is "<<calibrationoffsetdata[0][i+24]<<endl;
+      cout<<"Offset real of DAC test of node "<<i+1<<" is "<<calibrationoffsetdata[0][i+24]<<endl;
     cout<<endl<<endl;
     for (int i=0;i<24;++i)
-      cout<<"Gain real of ADC/DAC test of node "<<i+1<<" is "<<calibrationgaindata[0][i+24]<<endl;
+      cout<<"Gain real of DAC test of node "<<i+1<<" is "<<calibrationgaindata[0][i+24]<<endl;
     cout<<endl<<endl;
   }
   else if (dialogoptions[0]==false&&dialogoptions[2]==true){
     for (int i=0;i<24;++i)
-      cout<<"Offset imag of ADC/DAC test of node "<<i+1<<" is "<<calibrationoffsetdata[1][i+24]<<endl;
+      cout<<"Offset imag of DAC test of node "<<i+1<<" is "<<calibrationoffsetdata[1][i+24]<<endl;
     cout<<endl<<endl;
     for (int i=0;i<24;++i)
-      cout<<"Gain imag of ADC/DAC test of node "<<i+1<<" is "<<calibrationgaindata[1][i+24]<<endl;
+      cout<<"Gain imag of DAC test of node "<<i+1<<" is "<<calibrationgaindata[1][i+24]<<endl;
     cout<<endl<<endl;
   }
 
@@ -3455,14 +3444,14 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
         tempreal=_calibrationOffsetData.at(0).at(i);
         tempreal=2.5-tempreal;
         tempreal=(tempreal*4096)/5;//convert the double to the 12bit value of the ramp
-        uintreal=static_cast<uint32_t>(tempreal);
+        uintreal= static_cast<uint32_t>(tempreal); //mask to keep the low 26bits
 
         tempimag=_calibrationOffsetData.at(1).at(i);
         tempimag=2.5-tempimag;
         tempimag=tempimag/5.0*4096;//convert the double to the 12bit value of the ramp
-        uintimag=static_cast<uint32_t>(tempimag);
+        uintimag= static_cast<uint32_t>(tempimag); //keep low 24bits
         uintimag=uintimag<<12;
-        combined=uintimag | uintreal;
+        combined= 0x00FFFFFF & (uintimag | uintreal);
 
         encodedinput->push_back(combined);
     }
@@ -3471,13 +3460,13 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
       double gaincorrectionimag;
       gaincorrectionreal = _calibrationGainData.at(0).at(i+24);
       gaincorrectionreal = gaincorrectionreal*(1<<10); //1. Multiply the floating point number by 2n,
-      uintreal = static_cast<uint32_t>(tempreal); //2. Round to the nearest integer
+      uintreal = static_cast<uint32_t>(gaincorrectionreal); //2. Round to the nearest integer
 
       gaincorrectionimag = _calibrationGainData.at(1).at(i+24);
       gaincorrectionimag = gaincorrectionimag*(1<<10);
       uintimag = static_cast<uint32_t>(gaincorrectionimag);
       uintimag = uintimag<<12;
-      combined = uintimag | uintreal;
+      combined = 0x00FFFFFF & (uintimag | uintreal);
 
       encodedinput->push_back(combined);
     }
@@ -3486,13 +3475,13 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
       double offsetcorrectionimag;
       offsetcorrectionreal = _calibrationOffsetData.at(0).at(i+24);
       offsetcorrectionreal = (offsetcorrectionreal*4096)/5; //convert the double to the 12bit value of the ramp correction
-      uintreal=static_cast<uint32_t>(offsetcorrectionreal);
+      uintreal= static_cast<uint32_t>(offsetcorrectionreal);
 
       offsetcorrectionimag = _calibrationOffsetData.at(1).at(i+24);
       offsetcorrectionimag = (offsetcorrectionimag*4096)/5.0;//convert the double to the 12bit value of the ramp correction
-      uintimag=static_cast<uint32_t>(offsetcorrectionimag);
+      uintimag= static_cast<uint32_t>(offsetcorrectionimag);
       uintimag=uintimag<<12;
-      combined=uintimag | uintreal;
+      combined= 0x00FFFFFF & (uintimag | uintreal);
       encodedinput->push_back(combined);
     }
   }
