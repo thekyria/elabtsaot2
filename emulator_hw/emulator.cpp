@@ -43,6 +43,7 @@ using std::min;
 #define DEFAULT_DCRATIOZ 20000
 #define DEFAULT_DCRATIOV 2
 #define DEFAULT_DCMAXI_PU 16
+#define START_RESET_CHANGE_LOC 334
 
 Emulator::Emulator(Powersystem const* pws) :
     _emuhw(new EmulatorHw()),
@@ -750,7 +751,7 @@ int Emulator::usbRead( size_t devId,
 
 int Emulator::resetCalibration( size_t devId ){
   vector<uint32_t> data(1, 2222);
-  return _usb->write( devId, 286, data );
+  return _usb->write( devId, START_RESET_CHANGE_LOC, data );
 }
 
 int Emulator::endCalibrationMode(){
@@ -1129,7 +1130,7 @@ vector<bool> Emulator::_isAtCalibrationMode(){
 int Emulator::_endCalibrationMode(size_t devId){
   vector<uint32_t> tempvector;
   tempvector.push_back(5555);
-  int ans = _usb->write( devId, 286, tempvector);
+  int ans = _usb->write( devId, START_RESET_CHANGE_LOC , tempvector);
   if (ans) return 1;
   return 0;
 }

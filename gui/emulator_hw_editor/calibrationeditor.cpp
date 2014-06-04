@@ -1933,8 +1933,8 @@ int CalibrationEditor::_conversionResistorCalibration(int devId){
       tempresreal.append(_P3Res.at(i).at(j));
       tempresimag.append(_P1Res.at(i).at(j));
     }
-    cout<<"Conversion resistor (Real/P3): "<<i+1<<" Value1: "<<_P3Res.at(i).at(0)<<" Value2: "<<_P3Res.at(i).at(1)<<" Value3: "<<_P3Res.at(i).at(2)<<endl;
-    cout<<"Conversion resistor (Imag/P1): "<<i+1<<" Value1: "<<_P1Res.at(i).at(0)<<" Value2: "<<_P1Res.at(i).at(1)<<" Value3: "<<_P1Res.at(i).at(2)<<endl;
+//    cout<<"Conversion resistor (Real/P3): "<<i+1<<" Value1: "<<_P3Res.at(i).at(0)<<" Value2: "<<_P3Res.at(i).at(1)<<" Value3: "<<_P3Res.at(i).at(2)<<endl;
+//    cout<<"Conversion resistor (Imag/P1): "<<i+1<<" Value1: "<<_P1Res.at(i).at(0)<<" Value2: "<<_P1Res.at(i).at(1)<<" Value3: "<<_P1Res.at(i).at(2)<<endl;
     //First for the real part
     alpha=0.0;
     beta=0.0;
