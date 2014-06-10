@@ -1180,8 +1180,8 @@ int encoder::detail::encode_GPFADCDACgot(Slice const& sl,
         tempMSB = static_cast<int32_t>(auxiliary::round(atom->node.imag_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));
         tempLSB = static_cast<int32_t>(auxiliary::round(atom->node.real_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));
         if (calibrated){
-          tempMSB -= HARDSUBSTRACTI; // 27 May 2014, HARD-substract "HARDSUBSTRACTI" from the intermediate result
-          tempLSB -= HARDSUBSTRACTR; // 27 May 2014, HARD-substract "HARDSUBSTRACTR" from the intermediate result
+          tempMSB -= HARDSUBSTRACTI; // 27 May 2014, HARD-substract from the intermediate result
+          tempLSB -= HARDSUBSTRACTR; // 27 May 2014, HARD-substract from the intermediate result
         }
       } else {
         // If the node contains a slack element, the nominal values are entered!
@@ -1345,13 +1345,9 @@ void encoder::detail::encode_GPFIinit(Slice const& sl, vector<uint32_t>& icar_co
     detail::form_word(Ireal, 12, 7, true, &tempLSB);
     detail::form_word(Iimag, 12, 7, true, &tempMSB);
     if (calibrated){ // Only if calibration data is available substract one "HARDSUBSTRACT" from the intermediate results
-      // HARDSUBSTRACTR & HARDSUBSTRACTI correspond to the Real and Imag NETWORKS
-      // Since the currents are "inverted" the imag current goes into the real network
-      // and the real current goes into the imag network. So corrections for the currents
-      // are "inverted". 05 Jun 2014
-      tempMSB -= HARDSUBSTRACTR; // 09 Mar 2014, HARD-substract HARDSUBSTRACTR from the intermediate result
+      tempMSB -= HARDSUBSTRACTI; // 09 Mar 2014, HARD-substract from the intermediate result
       tempMSB &= mask12; // masking the intermediate result to 12 bits
-      tempLSB -= HARDSUBSTRACTI; // 09 Mar 2014, HARD-substract HARDSUBSTRACTI from the intermediate result
+      tempLSB -= HARDSUBSTRACTR; // 09 Mar 2014, HARD-substract from the intermediate result
       tempLSB &= mask12; // masking the intermediate result to 12 bits
     }
     temp = (tempMSB<<12)|(tempLSB);
@@ -1396,13 +1392,9 @@ void encoder::detail::encode_GPFIinit(Slice const& sl, vector<uint32_t>& icar_co
     detail::form_word(Ireal, 12, 7, true, &tempLSB);
     detail::form_word(Iimag, 12, 7, true, &tempMSB);
     if (calibrated){ // Only if calibration data is available substract "HARDSUBSTRACT" from the intermediate results
-      // HARDSUBSTRACTR & HARDSUBSTRACTI correspond to the Real and Imag NETWORKS
-      // Since the currents are "inverted" the imag current goes into the real network
-      // and the real current goes into the imag network. So corrections for the currents
-      // are "inverted". 05 Jun 2014
-      tempMSB -= HARDSUBSTRACTR; // 09 Mar 2014, HARD-substract HARDSUBSTRACTR from the intermediate result
+      tempMSB -= HARDSUBSTRACTI; // 09 Mar 2014, HARD-substract from the intermediate result
       tempMSB &= mask12; // masking the intermediate result to 12 bits
-      tempLSB -= HARDSUBSTRACTI; // 09 Mar 2014, HARD-substract HARDSUBSTRACTI from the intermediate result
+      tempLSB -= HARDSUBSTRACTR; // 09 Mar 2014, HARD-substract from the intermediate result
       tempLSB &= mask12; // masking the intermediate result to 12 bits
     }
     temp = (tempMSB<<12)|(tempLSB);
