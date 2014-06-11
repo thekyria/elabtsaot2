@@ -3474,12 +3474,12 @@ void CalibrationEditor::_offsetGainHandling( QVector<uint32_t>*encodedinput,
       double offsetcorrectionreal;
       double offsetcorrectionimag;
       offsetcorrectionreal = _calibrationOffsetData.at(0).at(i+24);
-      offsetcorrectionreal = (offsetcorrectionreal*4096)/5.0; //convert the double to the 12bit value of the ramp correction
-      uintreal= static_cast<uint32_t>(offsetcorrectionreal) - static_cast<uint32_t>(0b10);
+      offsetcorrectionreal = (offsetcorrectionreal*4096)/5; //convert the double to the 12bit value of the ramp correction
+      uintreal= static_cast<uint32_t>(offsetcorrectionreal);
 
       offsetcorrectionimag = _calibrationOffsetData.at(1).at(i+24);
       offsetcorrectionimag = (offsetcorrectionimag*4096)/5.0;//convert the double to the 12bit value of the ramp correction
-      uintimag= static_cast<uint32_t>(offsetcorrectionimag) - static_cast<uint32_t>(0b01);
+      uintimag= static_cast<uint32_t>(offsetcorrectionimag);
       uintimag=uintimag<<12;
       combined= 0x00FFFFFF & (uintimag | uintreal);
       encodedinput->push_back(combined);
