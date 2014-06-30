@@ -1393,7 +1393,7 @@ int CalibrationEditor::_ADCcalibration(int devId){
   QVector<uint32_t> tempnodesdata = QVector<uint32_t>::fromStdVector(data);
   for (int i=0;i<24;++i){
     tempnodedata.clear();
-    tempnodedata=tempnodesdata.mid(1+i*16,15);
+    tempnodedata=tempnodesdata.mid(1+i*16,15); //16 because we always have one empty line
     _resultsHandling(tempnodedata,i,&decodedresultsreal,&decodedresultsimag,15);
   }
 
@@ -1407,12 +1407,14 @@ int CalibrationEditor::_ADCcalibration(int devId){
     meanreal=0;
     meanimag=0;
     //Real and imag part
-    for (int k=0;k<15;++k){
+    //We skip the first result of each node due to Guillaum'se request
+    for (int k=1;k<15;++k){
       meanreal=meanreal+decodedresultsreal[i][k];
       meanimag=meanimag+decodedresultsimag[i][k];
     }
-    meanreal=meanreal/15;
-    meanimag=meanimag/15;
+    //Which means they are 14 values and not 15 for this ADC test to consider
+    meanreal=meanreal/14;
+    meanimag=meanimag/14;
     //Now we have the mean value for both the real and imag
     //Store first the real part
     _calibrationNameData[0].push_back(QString("ADC offset real of node %0").arg(i+1));
