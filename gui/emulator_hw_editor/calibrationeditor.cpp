@@ -193,8 +193,8 @@ CalibrationEditor::CalibrationEditor(Emulator* emu, Logger* log, QWidget* parent
   chk7->setText("P3CHIP1-2");
   chk8->setText("P0P2CHIP3");
   chk9->setText("P1P3CHIP3");
-  chk10->setText("P0P2EXT");
-  chk11->setText("P1P3EXT");
+  chk10->setText("P1P3EXT");
+  chk11->setText("P0P2EXT");
   chkall->setText("Calibrate ALL");
   chkall->setFont(labfont);
   chk0->setEnabled(true);
@@ -749,19 +749,22 @@ void CalibrationEditor::startCalibrationSlot(){
       _log->notifyProgress(90);
 
       if (chk10->isChecked()){
-        cout<<"Running P0P2EXT resistor calibration..."<<endl;
-        int ans =_gridResistorCalibration(devId,7);
-        if (ans==3)
-          cout<<"I noticed some misbehaving P0P2EXT resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
-      }
-      _log->notifyProgress(95);
-
-      if (chk11->isChecked()){
         cout<<"Running P1P3EXT resistor calibration..."<<endl;
         int ans =_gridResistorCalibration(devId,8);
         if (ans==3)
           cout<<"I noticed some misbehaving P1P3EXT resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
       }
+      _log->notifyProgress(95);
+
+      if (chk11->isChecked()){
+        cout<<"Running P0P2EXT resistor calibration..."<<endl;
+        int ans =_gridResistorCalibration(devId,7);
+        if (ans==3)
+          cout<<"I noticed some misbehaving P0P2EXT resistors, I will continue, be careful where you map. Run 'check cells' function"<<endl;
+      }
+
+
+
 
       //Saving device data
       _master_store.at(i)->nameData=_calibrationNameData;
