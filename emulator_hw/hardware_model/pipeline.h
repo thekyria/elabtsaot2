@@ -55,8 +55,7 @@ class Pipeline {
 
  public:
 
-  //! Constructor
-  /*!
+  /*! Constructor
     \param element_capacity Capacity of the pipeline
     \param vertical_dim Vertical dimension of the emulator the pipeline is
                         instantiated for
@@ -64,24 +63,15 @@ class Pipeline {
                           instantiated for
   */
   Pipeline(size_t element_capacity, size_t vertical_dim, size_t horizontal_dim);
-  //! Destructor
-  virtual ~Pipeline(){}
+  virtual ~Pipeline(){} //!< Destructor
 
   //! Resets the pipeline
-  /*!
-    The function is declared virtual as, for child classes of Pipeline, a
-    specialized implementation should be provided.
-  */
   virtual void reset();
 
-  //! An element at a certain position is searched for
-  /*!
+  /*! An element at a certain position is searched for
     \param row vertical positioning of the searched for element
     \param col horizontal positioning of the searched for element
-
-    \return array index of element in the _position array if search successful;
-            -1 otherwise
-  */
+    \return array index of element in the _position array if search successful; -1 otherwise */
   int search_element(size_t row, size_t col) const;
 
   std::vector<std::string> stages() const;            //!< getter for _stages

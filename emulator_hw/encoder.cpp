@@ -1687,8 +1687,8 @@ void encoder::detail::encode_TDADCgOffset(Slice const& sl, vector<uint32_t>& adc
 
     if ( k < sl.dig.pipe_TDgen.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-      imag_offset = sl.ana.ADCOffset + am->node.imag_adc_offset_corr;
-      real_offset = sl.ana.ADCOffset + am->node.real_adc_offset_corr;
+      imag_offset = sl.ana.ADCOffset - am->node.imag_adc_offset_corr; // 04 Jul 2014: minus "-" instead of "+"
+      real_offset = sl.ana.ADCOffset - am->node.real_adc_offset_corr; // 04 Jul 2014: minus "-" instead of "+"
     } else { // k >= sl.dig.pipe_TDgen.element_count()
       imag_offset = sl.ana.ADCOffset;
       real_offset = sl.ana.ADCOffset;
@@ -1754,8 +1754,8 @@ void encoder::detail::encode_TDADCzOffset(Slice const& sl, vector<uint32_t>& adc
   for (size_t k=0; k!=atomCount; ++k){
     if ( k < sl.dig.pipe_TDzload.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-      imag_offset = sl.ana.ADCOffset + am->node.imag_adc_offset_corr;
-      real_offset = sl.ana.ADCOffset + am->node.real_adc_offset_corr;
+      imag_offset = sl.ana.ADCOffset - am->node.imag_adc_offset_corr; // 04 Jul 2014: minus "-" instead of "+"
+      real_offset = sl.ana.ADCOffset - am->node.real_adc_offset_corr; // 04 Jul 2014: minus "-" instead of "+"
     } else { // k >= sl.dig.pipe_zload.element_count()
       imag_offset = sl.ana.ADCOffset;
       real_offset = sl.ana.ADCOffset;
@@ -1821,8 +1821,8 @@ void encoder::detail::encode_TDADCiOffset(Slice const& sl, vector<uint32_t>& adc
   for (size_t k=0; k!=atomCount; ++k){
     if ( k < sl.dig.pipe_TDiload.element_count() ){
       Atom const* am = sl.ana.getAtom(pos[k].first,pos[k].second);
-      imag_offset = sl.ana.ADCOffset + am->node.imag_adc_offset_corr;
-      real_offset = sl.ana.ADCOffset + am->node.real_adc_offset_corr;
+      imag_offset = sl.ana.ADCOffset - am->node.imag_adc_offset_corr; // 04 Jul 2014: minus "-" instead of "+"
+      real_offset = sl.ana.ADCOffset - am->node.real_adc_offset_corr; // 04 Jul 2014: minus "-" instead of "+"
     } else { // k >= sl.dig.pipe_iload.element_count()
       imag_offset = sl.ana.ADCOffset;
       real_offset = sl.ana.ADCOffset;
@@ -1836,16 +1836,6 @@ void encoder::detail::encode_TDADCiOffset(Slice const& sl, vector<uint32_t>& adc
     temp = (tempMSB << 12) | (tempLSB);
     adciOffset_conf.push_back(static_cast<uint32_t>(temp));
   }
-}
-
-void encoder::detail::encode_TDDACGain(Slice const& sl, vector<uint32_t>& dacGain_conf){
-  dacGain_conf.clear();
-  // TODO
-}
-
-void encoder::detail::encode_TDDACOffset(Slice const& sl, vector<uint32_t>& dacOffset_conf){
-  dacOffset_conf.clear();
-  // TODO
 }
 
 void encoder::detail::encode_TDgenerators(Slice const& sl,
@@ -2001,19 +1991,38 @@ void encoder::detail::encode_TDzloads(Slice const& sl, vector<uint32_t>& zloads_
 
 void encoder::detail::encode_TDIinit(Slice const& sl, vector<uint32_t>& iInit_conf){
 
+  size_t rows, cols;
+  sl.ana.size(rows, cols);
+  size_t atomCount = rows*cols;
+
+  // Try to detect whether the board has been calibrated
+  bool calibrated(false);
+  for (size_t v(0); v!=rows; ++v){
+    for (size_t h(0); h!=cols; ++h){
+      Atom const* atom = sl.ana.getAtom(v,h);
+      if ( atom->node.real_dac_offset_corr != NODE_DAC_OFFSET_CORR_NOMINAL
+        || atom->node.real_dac_gain_corr   != NODE_DAC_GAIN_CORR_NOMINAL
+        || atom->node.imag_dac_offset_corr != NODE_DAC_OFFSET_CORR_NOMINAL
+        || atom->node.imag_dac_gain_corr   != NODE_DAC_GAIN_CORR_NOMINAL ){
+        calibrated = true;
+        break;
+      }
+    }
+  }
+
   iInit_conf.clear();
-  size_t pseudo_id;
+  iInit_conf.resize(atomCount, 0);
   int32_t tempMSB, tempLSB, temp;
-  // ***** iInit_conf *****
+  // ------------ iInit_conf --------------
   // 31    24 23          12 11           0
   // 00000000 [Q5.7  imag_I] [Q5.7  real_I]
   // 00000000 [  tempMBS   ] [  tempLSB   ]
   // 00000000 [           temp            ]
+  // --------------------------------------
   // Corresponds to the current that is to be injected to the grid on the first
   // iteration of the emulation. So, ideally this would be good to correspond to
   // the steady state current [pu] in the powersystem. This applies to ANY
   // element, be it an iload, a gen, or whatever
-  iInit_conf.resize(sl.dig.pipe_TDiload.element_count_max(), 0);
 
   // Note 1: for xloads the pipe_xload convention is that there is a flow INTO
   // the loads, whereas for the real emulator DAC, the convention is that there
@@ -2027,47 +2036,167 @@ void encoder::detail::encode_TDIinit(Slice const& sl, vector<uint32_t>& iInit_co
   //   (1/X) * V_R = -I_I
 
   // --- Initial currents of the generators ---
-  for (size_t k=0; k!=sl.dig.pipe_TDgen.element_count(); ++k){
-    pseudo_id = static_cast<size_t>(sl.dig.pipe_TDgen.position()[k].first) *
-                sl.dig.pipe_TDgen.hor_id_max() +
-                static_cast<size_t>(sl.dig.pipe_TDgen.position()[k].second);
-    detail::form_word(   sl.dig.pipe_TDgen.I0[k].real()  , 12, 7, true, &tempLSB );
-    detail::form_word(  -sl.dig.pipe_TDgen.I0[k].imag()  , 12, 7, true, &tempMSB );
+  TDGeneratorPipeline const& pipeG(sl.dig.pipe_TDgen);
+  vector<pair<int,int> > pos = pipeG.position();
+  for (size_t k=0; k!=pipeG.element_count(); ++k){
+
+    // Get the atom which corresponds to the current node
+    int ver = pos[k].first;
+    int hor = pos[k].second;
+    Atom const* atom = sl.ana.getAtom(ver,hor);
+
+    // Get the (original, perfect, uncalibrated) current that is stored in the pipelines
+    complex<double> I0 = pipeG.I0[k];
+    double Ireal =  I0.real() ;
+    double Iimag = -I0.imag();
+
+    // Calibrate the current
+    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
+    // Vimag) network so it is to be calibrated with imag_ corrections.
+    // Analogously for Iimag, to be calcibrated with real_ corrections.
+    Ireal += atom->node.imag_dac_offset_corr; // TODO: verify
+    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
+    Iimag += atom->node.real_dac_offset_corr; // TODO: verify
+    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
+
+    // Form the word
+    int32_t mask12 = (1<<12) - 1;
+    detail::form_word(Ireal, 12, 7, true, &tempLSB);
+    detail::form_word(Iimag, 12, 7, true, &tempMSB);
+    if (calibrated){ // Only if calibration data is available substract "HARDSUBSTRACT" from the intermediate results
+      tempMSB -= HARDSUBSTRACTI; // 04 Jul 2014, HARD-substract from the intermediate result
+      tempMSB &= mask12; // masking the intermediate result to 12 bits
+      tempLSB -= HARDSUBSTRACTR; // 04 Jul 2014, HARD-substract from the intermediate result
+      tempLSB &= mask12; // masking the intermediate result to 12 bits
+    }
     temp = (tempMSB << 12) | (tempLSB);
-    iInit_conf[pseudo_id] = static_cast<uint32_t>(temp);
+
+    // Write it to conf
+    size_t nodeId = pipeG.calculate_pseudo_id(ver,hor);
+    iInit_conf[nodeId] = static_cast<uint32_t>(temp);
   }
 
   // --- Initial currents of the constant current loads (iloads) ---
-  for (size_t k=0; k!=sl.dig.pipe_TDiload.element_count(); ++k){
-    pseudo_id = static_cast<size_t>(sl.dig.pipe_TDiload.position()[k].first) *
-                sl.dig.pipe_TDiload.hor_id_max() +
-                static_cast<size_t>(sl.dig.pipe_TDiload.position()[k].second);
-    detail::form_word(    -sl.dig.pipe_TDiload.Iconst[k].real()   , 12, 7, true, &tempLSB );
-    detail::form_word(  -(-sl.dig.pipe_TDiload.Iconst[k].imag())  , 12, 7, true, &tempMSB );
+  TDConstILoadPipeline const& pipeI(sl.dig.pipe_TDiload);
+  pos = pipeI.position();
+  for (size_t k=0; k!=pipeI.element_count(); ++k){
+
+    // Get the atom which corresponds to the current node
+    int ver = pos[k].first;
+    int hor = pos[k].second;
+    Atom const* atom = sl.ana.getAtom(ver,hor);
+
+    // Get the (original, perfect, uncalibrated) current that is stored in the pipelines
+    complex<double> I0 = pipeI.Iconst[k];
+    double Ireal =   -I0.real() ;
+    double Iimag = -(-I0.imag());
+
+    // Calibrate the current
+    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
+    // Vimag) network so it is to be calibrated with imag_ corrections.
+    // Analogously for Iimag, to be calcibrated with real_ corrections.
+    Ireal += atom->node.imag_dac_offset_corr; // TODO: verify
+    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
+    Iimag += atom->node.real_dac_offset_corr; // TODO: verify
+    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
+
+    // Form the word
+    int32_t mask12 = (1<<12) - 1;
+    detail::form_word(Ireal, 12, 7, true, &tempLSB);
+    detail::form_word(Iimag, 12, 7, true, &tempMSB);
+    if (calibrated){ // Only if calibration data is available substract "HARDSUBSTRACT" from the intermediate results
+      tempMSB -= HARDSUBSTRACTI; // 04 Jul 2014, HARD-substract from the intermediate result
+      tempMSB &= mask12; // masking the intermediate result to 12 bits
+      tempLSB -= HARDSUBSTRACTR; // 04 Jul 2014, HARD-substract from the intermediate result
+      tempLSB &= mask12; // masking the intermediate result to 12 bits
+    }
     temp = (tempMSB << 12) | (tempLSB);
-    iInit_conf[pseudo_id] = static_cast<uint32_t>(temp);
+
+    // Write it to conf
+    size_t nodeId = pipeI.calculate_pseudo_id(ver,hor);
+    iInit_conf[nodeId] = static_cast<uint32_t>(temp);
   }
 
   // --- Initial currents of the constant impedance loads (zloads) ---
-  for (size_t k=0; k!=sl.dig.pipe_TDzload.element_count(); ++k){
-    pseudo_id = static_cast<size_t>(sl.dig.pipe_TDzload.position()[k].first) *
-                sl.dig.pipe_TDzload.hor_id_max() +
-                static_cast<size_t>(sl.dig.pipe_TDzload.position()[k].second);
-    detail::form_word(    -sl.dig.pipe_TDzload.I0[k].real()   , 12, 7, true, &tempLSB );
-    detail::form_word(  -(-sl.dig.pipe_TDzload.I0[k].imag())  , 12, 7, true, &tempMSB );
+  TDConstZLoadPipeline const& pipeZ(sl.dig.pipe_TDzload);
+  pos = pipeZ.position();
+  for (size_t k=0; k!=pipeZ.element_count(); ++k){
+
+    // Get the atom which corresponds to the current node
+    int ver = pos[k].first;
+    int hor = pos[k].second;
+    Atom const* atom = sl.ana.getAtom(ver,hor);
+
+    // Get the (original, perfect, uncalibrated) current that is stored in the pipelines
+    complex<double> I0 = pipeZ.I0[k];
+    double Ireal =   -I0.real() ;
+    double Iimag = -(-I0.imag());
+
+    // Calibrate the current
+    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
+    // Vimag) network so it is to be calibrated with imag_ corrections.
+    // Analogously for Iimag, to be calcibrated with real_ corrections.
+    Ireal += atom->node.imag_dac_offset_corr; // TODO: verify
+    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
+    Iimag += atom->node.real_dac_offset_corr; // TODO: verify
+    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
+
+    // Form the word
+    int32_t mask12 = (1<<12) - 1;
+    detail::form_word(Ireal, 12, 7, true, &tempLSB);
+    detail::form_word(Iimag, 12, 7, true, &tempMSB);
+    if (calibrated){ // Only if calibration data is available substract "HARDSUBSTRACT" from the intermediate results
+      tempMSB -= HARDSUBSTRACTI; // 04 Jul 2014, HARD-substract from the intermediate result
+      tempMSB &= mask12; // masking the intermediate result to 12 bits
+      tempLSB -= HARDSUBSTRACTR; // 04 Jul 2014, HARD-substract from the intermediate result
+      tempLSB &= mask12; // masking the intermediate result to 12 bits
+    }
     temp = (tempMSB << 12) | (tempLSB);
-    iInit_conf[pseudo_id] = static_cast<uint32_t>(temp);
+
+    // Write it to conf
+    size_t nodeId = pipeZ.calculate_pseudo_id(ver,hor);
+    iInit_conf[nodeId] = static_cast<uint32_t>(temp);
   }
 
   // --- Initial currents of the constant power loads (ploads) ---
-  for (size_t k=0; k!=sl.dig.pipe_TDpload.element_count(); ++k){
-    pseudo_id = static_cast<size_t>(sl.dig.pipe_TDpload.position()[k].first) *
-                sl.dig.pipe_TDpload.hor_id_max() +
-                static_cast<size_t>(sl.dig.pipe_TDpload.position()[k].second);
-    detail::form_word(    -sl.dig.pipe_TDpload.I0[k].real()   , 12, 7, true, &tempLSB );
-    detail::form_word(  -(-sl.dig.pipe_TDpload.I0[k].imag())  , 12, 7, true, &tempMSB );
+  TDConstPLoadPipeline const& pipeP(sl.dig.pipe_TDpload);
+  pos = pipeP.position();
+  for (size_t k=0; k!=pipeP.element_count(); ++k){
+
+    // Get the atom which corresponds to the current node
+    int ver = pos[k].first;
+    int hor = pos[k].second;
+    Atom const* atom = sl.ana.getAtom(ver,hor);
+
+    // Get the (original, perfect, uncalibrated) current that is stored in the pipelines
+    complex<double> I0 = pipeP.I0[k];
+    double Ireal =   -I0.real() ;
+    double Iimag = -(-I0.imag());
+
+    // Calibrate the current
+    // NOTICE: Ireal is going to flow in the imaginary (in a voltage sense,
+    // Vimag) network so it is to be calibrated with imag_ corrections.
+    // Analogously for Iimag, to be calcibrated with real_ corrections.
+    Ireal += atom->node.imag_dac_offset_corr; // TODO: verify
+    Ireal *= atom->node.imag_dac_gain_corr;   // imag_dac_gain_corr is a multiplicative factor, so no translation is required
+    Iimag += atom->node.real_dac_offset_corr; // TODO: verify
+    Iimag *= atom->node.real_dac_gain_corr;   // real_dac_gain_corr is a multiplicative factor, so no translation is required
+
+    // Form the word
+    int32_t mask12 = (1<<12) - 1;
+    detail::form_word(Ireal, 12, 7, true, &tempLSB );
+    detail::form_word(Iimag, 12, 7, true, &tempMSB );
+    if (calibrated){ // Only if calibration data is available substract "HARDSUBSTRACT" from the intermediate results
+      tempMSB -= HARDSUBSTRACTI; // 04 Jul 2014, HARD-substract from the intermediate result
+      tempMSB &= mask12; // masking the intermediate result to 12 bits
+      tempLSB -= HARDSUBSTRACTR; // 04 Jul 2014, HARD-substract from the intermediate result
+      tempLSB &= mask12; // masking the intermediate result to 12 bits
+    }
     temp = (tempMSB << 12) | (tempLSB);
-    iInit_conf[pseudo_id] = static_cast<uint32_t>(temp);
+
+    // Write it to conf
+    size_t nodeId = pipeP.calculate_pseudo_id(ver,hor);
+    iInit_conf[nodeId] = static_cast<uint32_t>(temp);
   }
 
   // stamp NIOS confirmation on the last word of iInit_conf
@@ -2230,6 +2359,88 @@ void encoder::detail::encode_TDpositions(Slice const& sl, vector<uint32_t>& pos_
 
   // stamp NIOS confirmation on the last word of pos_conf
   stamp_NIOS_confirm( pos_conf.back() );
+}
+
+void encoder::detail::encode_TDDACGain(Slice const& sl, vector<uint32_t>& dacGain_conf){
+  int32_t tempMSB, tempLSB, temp;
+  int32_t mask12 = (1<<12) - 1;
+  size_t rows, cols;
+  sl.ana.size(rows,cols);
+  dacGain_conf.clear();
+  // ----------- DAC gain -----------
+  // 31  24 23        12 11         0
+  // 000000 [Q2.10 imag] [Q2.10 real]
+  // 000000 [ tempMSB  ] [ tempLSB  ]
+  // 000000 [         temp          ]
+  // --------------------------------
+  for (size_t v(0); v!=rows; ++v){
+    for (size_t h(0); h!=cols; ++h){
+      Atom const* atom = sl.ana.getAtom(v,h);
+      if (sl.dig.pipe_TDiload.search_element(v,h) < 0){
+        detail::form_word(atom->node.imag_dac_gain_corr, 12, 10, false, &tempMSB);
+        detail::form_word(atom->node.real_adc_gain_corr, 12, 10, false, &tempLSB);
+      } else  {
+        // If the node contains a iload, the nominal values are entered!
+        detail::form_word(NODE_DAC_GAIN_CORR_NOMINAL, 12, 10, false, &tempMSB);
+        detail::form_word(NODE_DAC_GAIN_CORR_NOMINAL, 12, 10, false, &tempLSB);
+      }
+      tempMSB &= mask12;
+      tempLSB &= mask12;
+      temp = (tempMSB << 12) | (tempLSB);
+      dacGain_conf.push_back(static_cast<uint32_t>(temp));
+    }
+  }
+}
+
+void encoder::detail::encode_TDDACOffset(Slice const& sl, vector<uint32_t>& dacOffset_conf){
+  int32_t tempMSB, tempLSB, temp;
+  int32_t mask12 = (1<<12) - 1;
+  size_t rows, cols;
+  sl.ana.size(rows,cols);
+  dacOffset_conf.clear();
+  // ---------- DAC offset ----------
+  // 31  24 23        12 11         0
+  // 000000 [Q2.10 imag] [Q2.10 real]
+  // 000000 [ tempMSB  ] [ tempLSB  ]
+  // 000000 [         temp          ]
+  // --------------------------------
+
+  // Try to detect whether the board has been calibrated
+  bool calibrated(false);
+  for (size_t v(0); v!=rows; ++v){
+    for (size_t h(0); h!=cols; ++h){
+      Atom const* atom = sl.ana.getAtom(v,h);
+      if ( atom->node.real_dac_offset_corr != NODE_DAC_OFFSET_CORR_NOMINAL
+        || atom->node.real_dac_gain_corr   != NODE_DAC_GAIN_CORR_NOMINAL
+        || atom->node.imag_dac_offset_corr != NODE_DAC_OFFSET_CORR_NOMINAL
+        || atom->node.imag_dac_gain_corr   != NODE_DAC_GAIN_CORR_NOMINAL ){
+        calibrated = true;
+        break;
+      }
+    }
+  }
+
+  for (size_t v(0); v!=rows; ++v){
+    for (size_t h(0); h!=cols; ++h){
+      Atom const* atom = sl.ana.getAtom(v,h);
+      if (sl.dig.pipe_TDiload.search_element(v,h) < 0){
+        tempMSB = static_cast<int32_t>(auxiliary::round(atom->node.imag_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));
+        tempLSB = static_cast<int32_t>(auxiliary::round(atom->node.real_dac_offset_corr/NODE_DAC_MAXOUT*pow(2,12)));
+        if (calibrated){
+          tempMSB -= HARDSUBSTRACTI; // 04 Jul 2014, HARD-substract from the intermediate result
+          tempLSB -= HARDSUBSTRACTR; // 04 Jul 2014, HARD-substract from the intermediate result
+        }
+      } else {
+        // If the node contains a slack element, the nominal values are entered!
+        tempMSB = static_cast<int32_t>(auxiliary::round(NODE_DAC_OFFSET_CORR_NOMINAL/NODE_DAC_MAXOUT*pow(2,12)));
+        tempLSB = static_cast<int32_t>(auxiliary::round(NODE_DAC_OFFSET_CORR_NOMINAL/NODE_DAC_MAXOUT*pow(2,12)));
+      }
+      tempMSB &= mask12;
+      tempLSB &= mask12;
+      temp = (tempMSB << 12) | (tempLSB);
+      dacOffset_conf.push_back(static_cast<uint32_t>(temp));
+    }
+  }
 }
 
 int encoder::detail::form_word(double val, size_t total_bits, size_t decimal_bits,
