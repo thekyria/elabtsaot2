@@ -977,16 +977,14 @@ int Emulator::encodePowersystem(EmulatorOpType opType){
   encoding.resize( _emuhw->sliceSet.size() );
 
   for( size_t k = 0 ; k != _emuhw->sliceSet.size(); ++k ){
-    int ans(0);
     switch (opType){
     case EMU_OPTYPE_GPF:
-      ans = encoder::encodeSliceGPF(_emuhw->sliceSet[k],encoding[k]); break;
+      encoder::encodeSliceGPF(_emuhw->sliceSet[k],encoding[k]); break;
     case EMU_OPTYPE_DCPF:
-      ans = encoder::encodeSliceDCPF(_emuhw->sliceSet[k],encoding[k]); break;
+      encoder::encodeSliceDCPF(_emuhw->sliceSet[k],encoding[k]); break;
     case EMU_OPTYPE_TD:
-      ans = encoder::encodeSliceTD(_emuhw->sliceSet[k],encoding[k]); break;
+      encoder::encodeSliceTD(_emuhw->sliceSet[k],encoding[k]); break;
     }
-    if (ans) return k;
   }
 
   // If the function executed properly, the state of Emulator changes

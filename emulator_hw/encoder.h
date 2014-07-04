@@ -50,13 +50,13 @@ namespace encoder{
 
 //! Performs the encoding of one of the slices of the emulator hardware into a
 //! bitstream suitable for PF analysis using the method of Guillaume Lanz
-int encodeSliceGPF(Slice const& sl, std::vector<uint32_t>& sliceConf);
+void encodeSliceGPF(Slice const& sl, std::vector<uint32_t>& sliceConf);
 //! Performs the encoding of one of the slices of the emulator hardware into a
 //! bitstream suitable for PF analysis using the DC power flow method
-int encodeSliceDCPF(Slice const& sl, std::vector<uint32_t>& sliceConf);
+void encodeSliceDCPF(Slice const& sl, std::vector<uint32_t>& sliceConf);
 //! Performs the encoding of one of the slices of the emulator hardware into a
 //! bitstream suitable for TD emulation
-int encodeSliceTD(Slice const& sl, std::vector<uint32_t>& sliceConf );
+void encodeSliceTD(Slice const& sl, std::vector<uint32_t>& sliceConf);
 
 //! Stamps (bitwise OR) an unsigned 32 bit integer word with the confirm stamp
 void stamp_NIOS_confirm(uint32_t& word, uint32_t confirm_stamp = 0xC0000000);
@@ -66,26 +66,26 @@ void stamp_NIOS_confirm(int32_t& word, uint32_t confirm_stamp = 0xC0000000);
 namespace detail{
 
 // General encoding functions
-int encode_vref(Slice const& sl, std::vector<uint32_t>& vref_conf);
-int encode_resistors(Slice const& sl, std::vector<uint32_t>& res_conf, std::vector<uint32_t>& res_tcon_conf);
-int encode_switches(Slice const& sl, std::vector<uint32_t>& switches_conf);
+void encode_vref(Slice const& sl, std::vector<uint32_t>& vref_conf);
+void encode_resistors(Slice const& sl, std::vector<uint32_t>& res_conf, std::vector<uint32_t>& res_tcon_conf);
+void encode_switches(Slice const& sl, std::vector<uint32_t>& switches_conf);
 
 // GPF specific encoding functions
-int encode_GPFADCDACgot(Slice const& sl,
-                        std::vector<uint32_t>& adcGain_conf,
-                        std::vector<uint32_t>& adcOffset_conf,
-                        std::vector<uint32_t>& dacGain_conf,
-                        std::vector<uint32_t>& dacOffset_conf);
-int encode_GPFpositions(Slice const& sl, std::vector<uint32_t>& nodeCount_conf,
-                        std::vector<uint32_t>& PQpos_conf,
-                        std::vector<uint32_t>& slpos_conf);
+void encode_GPFADCDACgot(Slice const& sl,
+                         std::vector<uint32_t>& adcGain_conf,
+                         std::vector<uint32_t>& adcOffset_conf,
+                         std::vector<uint32_t>& dacGain_conf,
+                         std::vector<uint32_t>& dacOffset_conf);
+void encode_GPFpositions(Slice const& sl, std::vector<uint32_t>& nodeCount_conf,
+                         std::vector<uint32_t>& PQpos_conf,
+                         std::vector<uint32_t>& slpos_conf);
 void encode_GPFauxiliary(std::vector<uint32_t>& conf_conf, std::vector<uint32_t>& nios_conf);
 void encode_GPFIinit(Slice const& sl, std::vector<uint32_t>& icar_conf, std::vector<uint32_t>& ipol_conf);
 void encode_GPFPQsetpoints(Slice const& sl, std::vector<uint32_t>& pqset_conf);
 
 // DCPF specific encoding functions
-int encode_DCPFgot(Slice const& sl, std::vector<uint32_t>& got_conf);
-int encode_DCPFpositions(Slice const& sl, std::vector<uint32_t>& ppos_conf, std::vector<uint32_t>& thpos_conf);
+void encode_DCPFgot(Slice const& sl, std::vector<uint32_t>& got_conf);
+void encode_DCPFpositions(Slice const& sl, std::vector<uint32_t>& ppos_conf, std::vector<uint32_t>& thpos_conf);
 void encode_DCPFI(Slice const& sl, std::vector<uint32_t>& i_conf);
 void encode_DCPFauxiliary(Slice const& sl,
                           std::vector<uint32_t>& starter_conf,
@@ -93,16 +93,22 @@ void encode_DCPFauxiliary(Slice const& sl,
                           std::vector<uint32_t>& nios_conf);
 
 // TD specific encoding functions
-int encode_TDgenerators( Slice const& sl,
-                         std::vector<uint32_t>& ggot_conf,
+void encode_TDADCgGain(Slice const& sl, std::vector<uint32_t>& adcgGain_conf);
+void encode_TDADCgOffset(Slice const& sl, std::vector<uint32_t>& adcgOffset_conf);
+void encode_TDADCzGain(Slice const& sl, std::vector<uint32_t>& adczGain_conf);
+void encode_TDADCzOffset(Slice const& sl, std::vector<uint32_t>& adczOffset_conf);
+void encode_TDADCiGain(Slice const& sl, std::vector<uint32_t>& adciGain_conf);
+void encode_TDADCiOffset(Slice const& sl, std::vector<uint32_t>& adciOffset_conf);
+void encode_TDgenerators(Slice const& sl,
                          std::vector<uint32_t>& gen_conf1,
                          std::vector<uint32_t>& gen_conf2,
-                         std::vector<uint32_t>& gen_conf3 );
-int encode_TDzloads( Slice const& sl, std::vector<uint32_t>& zgot_conf, std::vector<uint32_t>& zloads_conf );
-int encode_TDiloads( Slice const& sl, std::vector<uint32_t>& igot_conf, std::vector<uint32_t>& iloads_conf );
-int encode_TDploads( Slice const& sl, std::vector<uint32_t>& ploads_conf );
-int encode_TDpositions( Slice const& sl, std::vector<uint32_t>& pos_conf );
-int encode_TDauxiliary(std::vector<uint32_t>& pert_conf);
+                         std::vector<uint32_t>& gen_conf3);
+void encode_TDzloads(Slice const& sl, std::vector<uint32_t>& zloads_conf);
+void encode_TDIinit(Slice const& sl, std::vector<uint32_t>& iInit_conf);
+void encode_TDploads(Slice const& sl, std::vector<uint32_t>& ploads_conf);
+void encode_TDpositions(Slice const& sl, std::vector<uint32_t>& pos_conf);
+void encode_TDDACGain(Slice const& sl, std::vector<uint32_t>& dacGain_conf);
+void encode_TDDACOffset(Slice const& sl, std::vector<uint32_t>& dacOffset_conf);
 
 /*! Creates a 32 bit fixed point arithmetic word
   The result is written at the position pointed to by the pointer argument
@@ -110,7 +116,7 @@ int encode_TDauxiliary(std::vector<uint32_t>& pert_conf);
 
   Example for creating a signed Q3.10 number:
     int32_t temp;
-    form_word( floatval, 13, 10, true, &temp );
+    form_word(floatval, 13, 10, true, &temp);
 
   \param val floating point (double) number to be converted to fixed point
   \param total_bits total number of bits; X+Y in Q number format QX.Y

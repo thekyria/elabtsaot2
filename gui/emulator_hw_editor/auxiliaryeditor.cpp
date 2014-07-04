@@ -154,8 +154,8 @@ AuxiliaryEditor::AuxiliaryEditor(Emulator* emu, TDEmulator* tde_hwe, MoteurFengt
   encodingLay->addRow(encodePowersystemDCPFLabel,encodePowersystemDCPFBut);
 
   // Encode (TD) powersystem
-  QLabel* encodePowersystemTDLabel = new QLabel("Encode (TD) powersystem");
-  QPushButton* encodePowersystemTDBut = new QPushButton("Encode powersystem");
+  QLabel* encodePowersystemTDLabel = new QLabel("Encode powersystem (TD)");
+  QPushButton* encodePowersystemTDBut = new QPushButton("Encode powersystem (TD)");
   encodingLay->addRow(encodePowersystemTDLabel,encodePowersystemTDBut);
 
   // Write encoding
