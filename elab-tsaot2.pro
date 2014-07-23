@@ -5,7 +5,7 @@ include(elabtsaot2config.pri)
 
 #------------------ Version ------------------
 VER_MAJ = 2
-VER_MIN = 0
+VER_MIN = 1
 VER_PAT = 0
 VERSION = $${VER_MAJ}.$${VER_MIN}.$${VER_PAT}
 

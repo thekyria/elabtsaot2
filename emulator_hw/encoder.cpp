@@ -173,30 +173,31 @@ void encoder::encodeSliceTD(Slice const& sl, vector<uint32_t>& sliceConf){
   sliceConf.clear();
   // Vector          | vec.add | cyp.add [num.of.words] corresponing func.
   //-----------------|---------|-------------------------------------------------
-  // adcgGain_conf   |   0: 23 |   1: 24 [ 24] detail::encode_TDADCgGain
-  // adcgOffset_conf |  24: 47 |  25: 48 [ 24] detail::encode_TDADCgOffset
-  // adczGain_conf   |  48: 71 |  49: 72 [ 24] detail::encode_TDADCzGain
-  // adczOffset_conf |  72: 95 |  73: 96 [ 24] detail::encode_TDADCzOffset
-  // adciGain_conf   |  96:119 |  97:120 [ 24] detail::encode_TDADCiGain
-  // adciOffset_conf | 120:143 | 121:144 [ 24] detail::encode_TDADCiOffset
-  // gen_conf1       | 144:167 | 145:168 [ 24] detail::encode_TDgenerators
-  //  none = 1       |     168 |     169 [  1]  none
-  // gen_conf2       | 169:216 | 170:217 [ 48] detail::encode_TDgenerators
-  //  none           | 217:218 | 218:219 [  2]  none
-  // gen_conf3       | 219:282 | 220:283 [ 64] detail::encode_TDgenerators
-  // zloads_conf     | 283:306 | 284:307 [ 24] detail::encode_TDzloads
-  // ploads_conf     | 307:330 | 308:331 [ 24] detail::encode_TDploads
-  //  none           | 331:338 | 332:339 [  8]  none
-  // pos_conf        | 339:354 | 340:355 [ 16] detail::encode_TDpositions
-  // vref_conf       | 355:356 | 356:357 [  2] detail::encode_vref
-  // iInit_conf     | 357:380 | 358:381 [ 24] detail::encode_TDIinit
-  //  none           |     381 |     382 [  1]  none
-  // res_conf        | 382:485 | 383:486 [104] detail::encode_resistors
-  // res_tcon_conf   | 486:537 | 487:538 [ 52] detail::encode_resistors
-  // switches_conf   | 538:550 | 539:551 [ 13] detail::encode_switches
-  //  none    +stamp | 551:554 | 552:555 [  4]  none
-  //  none           | 555:559 | 556:560 [  5]  none
-  //           total     0:559 |   1:560 [560]
+  // adcgGain_conf   |    0:  23 |    1:  24 [  24] detail::encode_TDADCgGain
+  // adcgOffset_conf |   24:  47 |   25:  48 [  24] detail::encode_TDADCgOffset
+  // adczGain_conf   |   48:  71 |   49:  72 [  24] detail::encode_TDADCzGain
+  // adczOffset_conf |   72:  95 |   73:  96 [  24] detail::encode_TDADCzOffset
+  // adciGain_conf   |   96: 119 |   97: 120 [  24] detail::encode_TDADCiGain
+  // adciOffset_conf |  120: 143 |  121: 144 [  24] detail::encode_TDADCiOffset
+  // gen_conf1       |  144: 167 |  145: 168 [  24] detail::encode_TDgenerators
+  //  none = 1       |       168 |       169 [   1]  none
+  // gen_conf2       |  169: 216 |  170: 217 [  48] detail::encode_TDgenerators
+  //  none           |  217: 218 |  218: 219 [   2]  none
+  // gen_conf3       |  219: 282 |  220: 283 [  64] detail::encode_TDgenerators
+  // zloads_conf     |  283: 306 |  284: 307 [  24] detail::encode_TDzloads
+  // ploads_conf     |  307: 330 |  308: 331 [  24] detail::encode_TDploads
+  //  none           |  331: 338 |  332: 339 [   8]  none
+  // pos_conf        |  339: 354 |  340: 355 [  16] detail::encode_TDpositions
+  // vref_conf       |  355: 356 |  356: 357 [   2] detail::encode_vref
+  // iInit_conf      |  357: 380 |  358: 381 [  24] detail::encode_TDIinit
+  //  none           |       381 |       382 [   1]  none
+  // res_conf        |  382: 485 |  383: 486 [ 104] detail::encode_resistors
+  // res_tcon_conf   |  486: 537 |  487: 538 [  52] detail::encode_resistors
+  // switches_conf   |  538: 550 |  539: 551 [  13] detail::encode_switches
+  //  none    +stamp |  551: 554 |  552: 555 [   4]  none
+  //  none           |  555: 559 |  556: 560 [   5]  none
+  //  none-ext       |  560:3998 |  561:3999 [3439]  none 08 JUL 2014
+
   vector<uint32_t> adcgGain_conf;
   vector<uint32_t> adcgOffset_conf;
   vector<uint32_t> adczGain_conf;
@@ -260,6 +261,9 @@ void encoder::encodeSliceTD(Slice const& sl, vector<uint32_t>& sliceConf){
   sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
   none.clear(); none.resize(5,0);
   sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  none.resize(3439); sliceConf.insert(sliceConf.end(), none.begin(), none.end() );
+  sliceConf.insert(sliceConf.end(), dacGain_conf.begin(), dacGain_conf.end() );
+  sliceConf.insert(sliceConf.end(), dacOffset_conf.begin(), dacOffset_conf.end() );
 }
 
 // Auxiliary functions
