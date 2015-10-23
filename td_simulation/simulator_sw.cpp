@@ -276,10 +276,10 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
   double stopTime = _sce.stopTime();
   double t = _sce.startTime() - 2*currentTimeStep; // prevision in case there are events at t=0
 
-  cout << "INIT" << endl;
-  cout << "augY: " << augY << endl;
-  cout << "LUaugY: " << LUaugY << endl;
-  cout << "PaugY: " << PaugY << endl;
+//  cout << "INIT" << endl;
+//  cout << "augY: " << augY << endl;
+//  cout << "LUaugY: " << LUaugY << endl;
+//  cout << "PaugY: " << PaugY << endl;
 
   // Xgen, Pel, Vbus change after here for each run
   while (t < stopTime+currentTimeStep){
@@ -288,8 +288,8 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
     if (t+currentTimeStep > stopTime)
       currentTimeStep = stopTime-t;
 
-    cout << "ITERATION: " << iterationCount << endl;
-    cout << "TIME: " << t << endl;
+//    cout << "ITERATION: " << iterationCount << endl;
+//    cout << "TIME: " << t << endl;
 
     // ************************************
     // ****** HANDLING OF NON-ZLOADS ******
@@ -315,26 +315,26 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
         cout << "Operation failed!" << endl;
         return 3;
       } BOOST_CATCH_END
-      cout << "NON-ZLOADS" << endl;
-      cout << "augY: " << augY << endl;
-      cout << "LUaugY: " << LUaugY << endl;
-      cout << "PaugY: " << PaugY << endl;
+//      cout << "NON-ZLOADS" << endl;
+//      cout << "augY: " << augY << endl;
+//      cout << "LUaugY: " << LUaugY << endl;
+//      cout << "PaugY: " << PaugY << endl;
     } // COMMENTED-OUT ONLY FOR DEBUG PURPOSES
 
     // ************************************
     // ******** MAIN SEQUENCE *************
     // ************************************
-    cout << "MAIN SEQUENCE" << endl;
+//    cout << "MAIN SEQUENCE" << endl;
     Xgen = _rungeKutta(LUaugY, PaugY, Xgen, Efd, currentTimeStep); // integration
-    cout << "Xgen: " << Xgen << endl;
+//    cout << "Xgen: " << Xgen << endl;
     IN_1 = _calculateNortonCurrents(Xgen);                         // determine internal Norton currents
-    cout << "IN_1: " << IN_1 << endl;
+//    cout << "IN_1: " << IN_1 << endl;
     Vbus = _calculateGridVoltages(LUaugY, PaugY, IN_1);            // get grid voltage profile
-    cout << "Vbus: " << Vbus << endl;
+//    cout << "Vbus: " << Vbus << endl;
     Ibus = ublas::prod(augY,Vbus);                                 // calculate bus currents
-    cout << "Ibus: " << Ibus << endl;
+//    cout << "Ibus: " << Ibus << endl;
     Pel = _calculateGeneratorPowers(Vbus, Xgen);                   // calculate generator electric powers
-    cout << "Pel: " << Pel << endl;
+//    cout << "Pel: " << Pel << endl;
 
 
     // ************************************
@@ -417,19 +417,19 @@ int Simulator_sw::do_simulate( Scenario const& sce, TDResults& res){
         cout << "Operation failed!" << endl;
         return 4;
       } BOOST_CATCH_END
-      cout << "EVENT" << endl;
-      cout << "augY: " << augY << endl;
-      cout << "LUaugY: " << LUaugY << endl;
-      cout << "PaugY: " << PaugY << endl;
+//      cout << "EVENT" << endl;
+//      cout << "augY: " << augY << endl;
+//      cout << "LUaugY: " << LUaugY << endl;
+//      cout << "PaugY: " << PaugY << endl;
       // Xgen is not changed but the following line is necessary to update the size of IN_1
       IN_1 = _calculateNortonCurrents(Xgen);              // determine internal Norton currents
-      cout << "IN_1: " << IN_1 << endl;
+//      cout << "IN_1: " << IN_1 << endl;
       Vbus = _calculateGridVoltages(LUaugY, PaugY, IN_1); // get grid voltage profile
-      cout << "Vbus: " << Vbus << endl;
+//      cout << "Vbus: " << Vbus << endl;
       Ibus = ublas::prod(augY,Vbus);
-      cout << "Ibus: " << Ibus << endl;
+//      cout << "Ibus: " << Ibus << endl;
       Pel = _calculateGeneratorPowers(Vbus, Xgen);        // calculate generator electric powers
-      cout << "Pel: " << Pel << endl;
+//      cout << "Pel: " << Pel << endl;
 
       // Save again the values after the event at t for the t+ (just before, we saved them for t-)
       time_store.push_back(t);

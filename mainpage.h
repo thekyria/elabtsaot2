@@ -2,7 +2,7 @@
 
 \author Theodoros 'thekyria' Kyriakidis (2010-)
 \author Fragkiskos 'fragkis' Koufogiannis (2011)
-\author Georgios 'giorgos' Lilis (2011-)
+\author Georgios 'lilis' Lilis (2011-)
 
 \section intro Introduction
 Eis to onoma tou Patros kai tou Yiou kai tou Agiou Pneumatos. Amin.

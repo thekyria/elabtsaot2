@@ -80,8 +80,8 @@ template<typename T_>
 T_ getRandom(T_ min, T_ max) {
   typedef typename boost::mpl::if_<
     boost::is_floating_point<T_>, // if we have a floating point type
-    boost::uniform_real<>,       // use this, or
-    boost::uniform_int<>         // else use this one
+    boost::uniform_real<>,        // use this, or
+    boost::uniform_int<>          // else use this one
   >::type distro_type;
 
   boost::mt19937 seed( static_cast<unsigned int>(std::time(0)) );
